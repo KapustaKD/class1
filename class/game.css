@@ -27,53 +27,53 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    width: 1800px;
-    height: 900px;
+    width: 1920px;
+    height: 1080px;
     background-color: #ffffff;
     border: 2px solid #333;
     z-index: 0;
 }
 
-/* SVG-країни Вороного */
-#voronoi-countries {
+/* Статичні SVG-зони */
+#static-zones {
     position: absolute;
     top: 0;
     left: 0;
-    width: 1800px;
-    height: 900px;
+    width: 1920px;
+    height: 1080px;
     z-index: 1;
     pointer-events: none;
 }
 
-/* Клітинки з прив'язкою до країн */
-.board-cell.country-0 {
-    border-color: #D9534F;
-    box-shadow: 0 0 10px rgba(217, 83, 79, 0.3);
-    background: linear-gradient(135deg, #D9534F, #C9302C);
+/* Клітинки з прив'язкою до зон */
+.board-cell.zone-0 {
+    border-color: #b3b3b3;
+    box-shadow: 0 0 10px rgba(179, 179, 179, 0.3);
+    background: linear-gradient(135deg, #b3b3b3, #999999);
 }
 
-.board-cell.country-1 {
-    border-color: #5BC0DE;
-    box-shadow: 0 0 10px rgba(91, 192, 222, 0.3);
-    background: linear-gradient(135deg, #5BC0DE, #46B8DA);
+.board-cell.zone-1 {
+    border-color: #ffb3d1;
+    box-shadow: 0 0 10px rgba(255, 179, 209, 0.3);
+    background: linear-gradient(135deg, #ffb3d1, #ff99c7);
 }
 
-.board-cell.country-2 {
-    border-color: #5CB85C;
-    box-shadow: 0 0 10px rgba(92, 184, 92, 0.3);
-    background: linear-gradient(135deg, #5CB85C, #449D44);
+.board-cell.zone-2 {
+    border-color: #33cc33;
+    box-shadow: 0 0 10px rgba(51, 204, 51, 0.3);
+    background: linear-gradient(135deg, #33cc33, #29a329);
 }
 
-.board-cell.country-3 {
-    border-color: #F0AD4E;
-    box-shadow: 0 0 10px rgba(240, 173, 78, 0.3);
-    background: linear-gradient(135deg, #F0AD4E, #EC971F);
+.board-cell.zone-3 {
+    border-color: #3399ff;
+    box-shadow: 0 0 10px rgba(51, 153, 255, 0.3);
+    background: linear-gradient(135deg, #3399ff, #1a7ae6);
 }
 
-.board-cell.country-4 {
-    border-color: #9B59B6;
-    box-shadow: 0 0 10px rgba(155, 89, 182, 0.3);
-    background: linear-gradient(135deg, #9B59B6, #8E44AD);
+.board-cell.zone-4 {
+    border-color: #ffff4d;
+    box-shadow: 0 0 10px rgba(255, 255, 77, 0.3);
+    background: linear-gradient(135deg, #ffff4d, #ffff1a);
 }
 
 /* Фінішна клітинка з короною */

@@ -242,14 +242,26 @@ io.on('connection', (socket) => {
     
     // Кидання кубика
     socket.on('roll_dice', (data) => {
+        console.log('Сервер отримав подію roll_dice:', data);
         const player = players.get(socket.id);
-        if (!player || !player.isHost) return;
+        if (!player) {
+            console.log('Гравець не знайдений для roll_dice');
+            return;
+        }
         
         const room = rooms.get(data.roomId);
-        if (!room || room.gameState !== 'playing') return;
+        if (!room || room.gameState !== 'playing') {
+            console.log('Кімната не знайдена або гра не активна');
+            return;
+        }
         
         const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
-        if (currentPlayer.id !== socket.id) return;
+        if (currentPlayer.id !== socket.id) {
+            console.log('Не хід цього гравця');
+            return;
+        }
+        
+        console.log('Обробляємо кидання кубика для гравця:', currentPlayer.name);
         
         const roll = Math.floor(Math.random() * 6) + 1;
         let move = roll;
@@ -262,12 +274,16 @@ io.on('connection', (socket) => {
             }
         }
         
+        console.log('Кубик показав:', roll, 'Рух:', move);
+        
         // Повідомляємо всіх про кидання кубика
         io.to(room.id).emit('dice_rolled', {
             playerId: currentPlayer.id,
             roll,
             move
         });
+        
+        console.log('Відправлено подію dice_rolled всім гравцям');
     });
     
     // Переміщення гравця

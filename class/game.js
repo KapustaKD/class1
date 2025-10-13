@@ -41,7 +41,7 @@ class EducationalPathGame {
         try {
             const module = await import('./mapData.js');
             this.mapData = module.mapData;
-            console.log('Map data loaded successfully.');
+            console.log('Map data loaded successfully:', this.mapData);
         } catch (error) {
             console.error('Error loading map data:', error);
             // Fallback, якщо імпорт не вдався
@@ -132,6 +132,18 @@ class EducationalPathGame {
             });
         }
         
+        // Чекаємо завантаження даних карти перед створенням дошки
+        this.waitForMapDataAndCreateBoard();
+    }
+    
+    async waitForMapDataAndCreateBoard() {
+        // Чекаємо поки mapData завантажиться
+        while (!this.mapData || !this.mapData.cells || this.mapData.cells.length === 0) {
+            console.log('Waiting for map data...');
+            await this.sleep(100);
+        }
+        
+        console.log('Map data ready, creating board...');
         this.createBoard();
         this.gameActive = true;
         this.currentPlayerIndex = 0;
@@ -301,6 +313,15 @@ class EducationalPathGame {
         this.rollDiceBtn.disabled = true;
         let roll = Math.floor(Math.random() * 6) + 1;
         const player = this.players[this.currentPlayerIndex];
+        
+        // Перевіряємо чи є клас у гравця
+        if (!player.class) {
+            console.error('Player has no class assigned:', player);
+            this.logMessage(`Помилка: ${player.name} не має призначеного класу!`, 'system');
+            this.rollDiceBtn.disabled = false;
+            return;
+        }
+        
         let move = roll + player.class.moveModifier + player.moveModifier;
         if (player.class.id === 'peasant') move = Math.max(1, move);
         
@@ -427,7 +448,7 @@ class EducationalPathGame {
         const player = this.players[this.currentPlayerIndex];
         this.currentPlayerNameEl.textContent = player.name;
         this.currentPlayerNameEl.style.color = player.color;
-        this.currentPlayerClassEl.textContent = player.class ? player.class.name : '—';
+        this.currentPlayerClassEl.textContent = player.class ? player.class.name : 'Не обрано';
         this.currentPlayerPointsEl.textContent = player.points;
         this.leaderboardEl.innerHTML = `<h3 class="text-lg font-semibold mt-2">Таблиця лідерів</h3>` + this.players.filter(p => !p.hasLost).sort((a,b) => b.points - a.points).map(p => `<div style="color:${p.color};">${p.name}: ${p.points} ОО</div>`).join('');
     }

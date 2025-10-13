@@ -9,7 +9,9 @@ class MultiplayerGame extends EducationalPathGame {
         this.isHost = false;
         this.spectators = [];
         
+        // Спочатку налаштовуємо елементи мультиплеєра
         this.setupMultiplayerElements();
+        // Потім обробники подій мультиплеєра (перезаписують базові)
         this.setupMultiplayerEventListeners();
     }
     
@@ -20,6 +22,12 @@ class MultiplayerGame extends EducationalPathGame {
         
         this.localModeBtn = document.getElementById('local-mode-btn');
         this.onlineModeBtn = document.getElementById('online-mode-btn');
+        
+        console.log('Кнопки режиму:', {
+            localModeBtn: this.localModeBtn,
+            onlineModeBtn: this.onlineModeBtn,
+            modeSelection: this.modeSelection
+        });
         
         this.connectionStatus = document.getElementById('connection-status');
         this.statusIndicator = document.getElementById('status-indicator');
@@ -58,19 +66,56 @@ class MultiplayerGame extends EducationalPathGame {
         
         // Додаємо елемент для виходу з кімнати
         this.leaveRoomBtn = document.getElementById('leave-room-btn');
+        
+        console.log('Елементи мультиплеєра налаштовано');
     }
     
     setupMultiplayerEventListeners() {
-        this.localModeBtn.addEventListener('click', () => this.startLocalMode());
-        this.onlineModeBtn.addEventListener('click', () => this.startOnlineMode());
+        console.log('Налаштовуємо обробники подій для кнопок режиму');
         
-        this.createRoomBtn.addEventListener('click', () => this.createRoom());
-        this.joinRoomBtn.addEventListener('click', () => this.joinRoom());
+        if (this.localModeBtn) {
+            this.localModeBtn.addEventListener('click', () => {
+                console.log('Натиснуто локальний режим');
+                this.startLocalMode();
+            });
+        } else {
+            console.error('Кнопка локального режиму не знайдена!');
+        }
         
-        this.sendMessageBtn.addEventListener('click', () => this.sendMessage());
-        this.chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.sendMessage();
-        });
+        if (this.onlineModeBtn) {
+            this.onlineModeBtn.addEventListener('click', () => {
+                console.log('Натиснуто онлайн режим');
+                this.startOnlineMode();
+            });
+        } else {
+            console.error('Кнопка онлайн режиму не знайдена!');
+        }
+        
+        if (this.createRoomBtn) {
+            this.createRoomBtn.addEventListener('click', () => this.createRoom());
+        } else {
+            console.error('Кнопка створення кімнати не знайдена!');
+        }
+        
+        if (this.joinRoomBtn) {
+            this.joinRoomBtn.addEventListener('click', () => this.joinRoom());
+        } else {
+            console.error('Кнопка приєднання до кімнати не знайдена!');
+        }
+        
+        if (this.sendMessageBtn) {
+            this.sendMessageBtn.addEventListener('click', () => this.sendMessage());
+        } else {
+            console.error('Кнопка відправки повідомлення не знайдена!');
+        }
+        
+        if (this.chatInput) {
+            this.chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.sendMessage();
+            });
+        } else {
+            console.error('Поле вводу чату не знайдено!');
+        }
         
         // Обробник для кнопки початку гри
         if (this.startGameBtn) {
@@ -81,9 +126,12 @@ class MultiplayerGame extends EducationalPathGame {
         if (this.leaveRoomBtn) {
             this.leaveRoomBtn.addEventListener('click', () => this.leaveRoom());
         }
+        
+        console.log('Обробники подій мультиплеєра налаштовано');
     }
     
     startLocalMode() {
+        console.log('Запускаємо локальний режим');
         this.isOnlineMode = false;
         this.modeSelection.classList.add('hidden');
         this.gameContainer.classList.remove('hidden');
@@ -91,15 +139,18 @@ class MultiplayerGame extends EducationalPathGame {
         
         // Показуємо правила гри для локального режиму
         this.rulesModal.classList.remove('hidden');
+        console.log('Локальний режим запущено');
     }
     
     startOnlineMode() {
+        console.log('Запускаємо онлайн режим');
         this.isOnlineMode = true;
         this.modeSelection.classList.add('hidden');
         this.onlinePanel.classList.remove('hidden');
         
         // Підключаємося до сервера
         this.connectToServer();
+        console.log('Онлайн режим запущено');
     }
     
     connectToServer() {
@@ -736,8 +787,6 @@ class MultiplayerGame extends EducationalPathGame {
         player.position = data.position;
         this.updatePawnPosition(player);
         this.logMessage(`${player.name} перемістився на клітинку ${data.position}.`, 'system');
-    }
-    
     }
     
     handleSpecialCell(player, cellData) {

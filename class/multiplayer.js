@@ -73,8 +73,10 @@ class MultiplayerGame extends EducationalPathGame {
     setupMultiplayerEventListeners() {
         console.log('Налаштовуємо обробники подій для кнопок режиму');
         
+        // Обробники для кнопок режиму
         if (this.localModeBtn) {
-            this.localModeBtn.addEventListener('click', () => {
+            this.localModeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
                 console.log('Натиснуто локальний режим');
                 this.startLocalMode();
             });
@@ -83,7 +85,8 @@ class MultiplayerGame extends EducationalPathGame {
         }
         
         if (this.onlineModeBtn) {
-            this.onlineModeBtn.addEventListener('click', () => {
+            this.onlineModeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
                 console.log('Натиснуто онлайн режим');
                 this.startOnlineMode();
             });
@@ -133,23 +136,34 @@ class MultiplayerGame extends EducationalPathGame {
     startLocalMode() {
         console.log('Запускаємо локальний режим');
         this.isOnlineMode = false;
+        
+        // Приховуємо вибір режиму та онлайн панель
         this.modeSelection.classList.add('hidden');
-        this.gameContainer.classList.remove('hidden');
         this.onlinePanel.classList.add('hidden');
+        
+        // Показуємо ігровий контейнер
+        this.gameContainer.classList.remove('hidden');
         
         // Показуємо правила гри для локального режиму
         this.rulesModal.classList.remove('hidden');
+        
         console.log('Локальний режим запущено');
     }
     
     startOnlineMode() {
         console.log('Запускаємо онлайн режим');
         this.isOnlineMode = true;
+        
+        // Приховуємо вибір режиму та ігровий контейнер
         this.modeSelection.classList.add('hidden');
+        this.gameContainer.classList.add('hidden');
+        
+        // Показуємо онлайн панель
         this.onlinePanel.classList.remove('hidden');
         
         // Підключаємося до сервера
         this.connectToServer();
+        
         console.log('Онлайн режим запущено');
     }
     
@@ -880,11 +894,28 @@ class MultiplayerGame extends EducationalPathGame {
                     { text: 'Очікуємо вибору...', callback: () => {}, disabled: true }
                 ];
             }
-        } else if (data.eventType === 'section-end') {
+        } else if (data.eventType === 'reincarnation') {
             modalContent = `
-                <h3 class="text-2xl font-bold mb-4">Завершення епохи!</h3>
-                <p class="mb-4">${data.playerName} завершив епоху ${data.eventData.section}!</p>
+                <h3 class="text-2xl font-bold mb-4">Реінкарнація!</h3>
+                <p class="mb-4">${data.playerName} завершив епоху!</p>
                 <p class="mb-4">Перейти до наступної епохи та отримати ${data.eventData.points} ОО?</p>
+            `;
+            
+            if (isMyEvent) {
+                buttons = [
+                    { text: 'Так', callback: () => this.makeEventChoice('yes', data.eventType, data.eventData) },
+                    { text: 'Ні', callback: () => this.makeEventChoice('no', data.eventType, data.eventData) }
+                ];
+            } else {
+                buttons = [
+                    { text: 'Очікуємо вибору...', callback: () => {}, disabled: true }
+                ];
+            }
+        } else if (data.eventType === 'alternative-path') {
+            modalContent = `
+                <h3 class="text-2xl font-bold mb-4">Обхідна дорога!</h3>
+                <p class="mb-4">${data.playerName} знайшов обхідний шлях!</p>
+                <p class="mb-4">${data.eventData.description}</p>
             `;
             
             if (isMyEvent) {

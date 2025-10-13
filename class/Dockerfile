@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Встановлюємо залежності
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # Копіюємо всі файли проекту
 COPY . .
@@ -30,3 +30,4 @@ ENV PORT=3000
 
 # Команда запуску
 CMD ["npm", "start"]
+

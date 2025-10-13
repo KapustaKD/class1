@@ -20,59 +20,9 @@ class EducationalPathGame {
         this.panStartX = 0;
         this.panStartY = 0;
         
-        // Нова структура карти з 5 епохами
-        this.epochs = [
-            { 
-                id: 1, 
-                name: "Antic", 
-                baseX: 0, 
-                baseY: 0, 
-                color: "#d4a373",
-                bgColor: "#8b4513",
-                icon: "🏛️",
-                description: "Стародавні цивілізації та філософія"
-            },
-            { 
-                id: 2, 
-                name: "Medieval", 
-                baseX: 600, 
-                baseY: 0, 
-                color: "#8a7abf",
-                bgColor: "#4a4a4a",
-                icon: "🏰",
-                description: "Лицарі, замки та релігія"
-            },
-            { 
-                id: 3, 
-                name: "Industrial", 
-                baseX: 1200, 
-                baseY: 0, 
-                color: "#b0c4de",
-                bgColor: "#2c5aa0",
-                icon: "🏭",
-                description: "Промислова революція та технології"
-            },
-            { 
-                id: 4, 
-                name: "Modern", 
-                baseX: 600, 
-                baseY: 400, 
-                color: "#90be6d",
-                bgColor: "#2d5016",
-                icon: "🏢",
-                description: "Сучасні міста та інформаційна ера"
-            },
-            { 
-                id: 5, 
-                name: "Future", 
-                baseX: 1200, 
-                baseY: 400, 
-                color: "#f48fb1",
-                bgColor: "#8b008b",
-                icon: "🚀",
-                description: "Майбутнє та космічні технології"
-            }
-        ];
+        // Нова структура карти з островами епох
+        this.mapData = null;
+        this.loadMapData();
         
         // Координати клітинок для кожної епохи
         this.epochCoordinates = this.generateEpochCoordinates();
@@ -129,30 +79,162 @@ class EducationalPathGame {
         this.setupEventListeners();
     }
     
+    // Завантаження даних карти
+    loadMapData() {
+        // Створюємо дані карти програмно (оскільки не можемо імпортувати модуль)
+        this.mapData = {
+            canvasSize: { width: 1600, height: 900 },
+            epochs: [
+                {
+                    id: 1,
+                    name: 'Античність',
+                    color: '#c94a45',
+                    position: { x: 50, y: 50 },
+                    cells: []
+                },
+                {
+                    id: 2,
+                    name: 'Середньовіччя',
+                    color: '#e6c86e',
+                    position: { x: 500, y: 100 },
+                    cells: []
+                },
+                {
+                    id: 3,
+                    name: 'Індустріальна епоха',
+                    color: '#7ea4d4',
+                    position: { x: 950, y: 150 },
+                    cells: []
+                },
+                {
+                    id: 4,
+                    name: 'Сучасність',
+                    color: '#a34c56',
+                    position: { x: 150, y: 450 },
+                    cells: []
+                },
+                {
+                    id: 5,
+                    name: 'Майбутнє',
+                    color: '#84b56d',
+                    position: { x: 650, y: 500 },
+                    cells: []
+                }
+            ],
+            allCells: []
+        };
+        
+        this.generateEpochCells();
+    }
+    
+    // Генерація клітинок для кожної епохи
+    generateEpochCells() {
+        let cellCounter = 1;
+
+        // Епоха 1: Античність (клітинки 1-25) - звивистий шлях
+        const ancientEpoch = this.mapData.epochs.find(e => e.id === 1);
+        const ancientPath = [
+            { x: 50, y: 250 }, { x: 120, y: 280 }, { x: 200, y: 260 }, { x: 250, y: 200 }, { x: 210, y: 130 },
+            { x: 140, y: 100 }, { x: 60, y: 120 }, { x: 40, y: 50 }, { x: 100, y: 30 }, { x: 180, y: 60 },
+            { x: 220, y: 120 }, { x: 180, y: 180 }, { x: 120, y: 200 }, { x: 80, y: 160 }, { x: 100, y: 220 },
+            { x: 160, y: 240 }, { x: 200, y: 280 }, { x: 240, y: 320 }, { x: 280, y: 280 }, { x: 320, y: 240 },
+            { x: 300, y: 180 }, { x: 260, y: 140 }, { x: 220, y: 100 }, { x: 180, y: 80 }, { x: 140, y: 120 }
+        ];
+        
+        ancientPath.forEach(pos => {
+            ancientEpoch.cells.push({ id: cellCounter++, x: pos.x, y: pos.y });
+        });
+
+        // Епоха 2: Середньовіччя (клітинки 26-50) - спіральний шлях
+        const medievalEpoch = this.mapData.epochs.find(e => e.id === 2);
+        const medievalPath = [
+            { x: 50, y: 200 }, { x: 100, y: 180 }, { x: 150, y: 160 }, { x: 200, y: 180 }, { x: 250, y: 200 },
+            { x: 280, y: 250 }, { x: 250, y: 300 }, { x: 200, y: 320 }, { x: 150, y: 300 }, { x: 100, y: 280 },
+            { x: 80, y: 230 }, { x: 120, y: 200 }, { x: 160, y: 220 }, { x: 200, y: 240 }, { x: 180, y: 280 },
+            { x: 140, y: 300 }, { x: 100, y: 320 }, { x: 60, y: 300 }, { x: 40, y: 250 }, { x: 70, y: 200 },
+            { x: 110, y: 180 }, { x: 150, y: 200 }, { x: 190, y: 220 }, { x: 220, y: 260 }, { x: 200, y: 300 }
+        ];
+        
+        medievalPath.forEach(pos => {
+            medievalEpoch.cells.push({ id: cellCounter++, x: pos.x, y: pos.y });
+        });
+
+        // Епоха 3: Індустріальна епоха (клітинки 51-75) - прямокутний шлях
+        const industrialEpoch = this.mapData.epochs.find(e => e.id === 3);
+        const industrialPath = [
+            { x: 50, y: 150 }, { x: 100, y: 150 }, { x: 150, y: 150 }, { x: 200, y: 150 }, { x: 250, y: 150 },
+            { x: 250, y: 200 }, { x: 200, y: 200 }, { x: 150, y: 200 }, { x: 100, y: 200 }, { x: 50, y: 200 },
+            { x: 50, y: 250 }, { x: 100, y: 250 }, { x: 150, y: 250 }, { x: 200, y: 250 }, { x: 250, y: 250 },
+            { x: 250, y: 300 }, { x: 200, y: 300 }, { x: 150, y: 300 }, { x: 100, y: 300 }, { x: 50, y: 300 },
+            { x: 50, y: 350 }, { x: 100, y: 350 }, { x: 150, y: 350 }, { x: 200, y: 350 }, { x: 250, y: 350 }
+        ];
+        
+        industrialPath.forEach(pos => {
+            industrialEpoch.cells.push({ id: cellCounter++, x: pos.x, y: pos.y });
+        });
+
+        // Епоха 4: Сучасність (клітинки 76-100) - змійковий шлях
+        const modernEpoch = this.mapData.epochs.find(e => e.id === 4);
+        const modernPath = [
+            { x: 50, y: 200 }, { x: 100, y: 200 }, { x: 150, y: 200 }, { x: 200, y: 200 }, { x: 250, y: 200 },
+            { x: 250, y: 150 }, { x: 200, y: 150 }, { x: 150, y: 150 }, { x: 100, y: 150 }, { x: 50, y: 150 },
+            { x: 50, y: 100 }, { x: 100, y: 100 }, { x: 150, y: 100 }, { x: 200, y: 100 }, { x: 250, y: 100 },
+            { x: 250, y: 50 }, { x: 200, y: 50 }, { x: 150, y: 50 }, { x: 100, y: 50 }, { x: 50, y: 50 },
+            { x: 50, y: 0 }, { x: 100, y: 0 }, { x: 150, y: 0 }, { x: 200, y: 0 }, { x: 250, y: 0 }
+        ];
+        
+        modernPath.forEach(pos => {
+            modernEpoch.cells.push({ id: cellCounter++, x: pos.x, y: pos.y });
+        });
+
+        // Епоха 5: Майбутнє (клітинки 101-125) - круговий шлях
+        const futureEpoch = this.mapData.epochs.find(e => e.id === 5);
+        const futurePath = [];
+        
+        // Генеруємо круговий шлях
+        const centerX = 150;
+        const centerY = 150;
+        const radius = 100;
+        
+        for (let i = 0; i < 25; i++) {
+            const angle = (i / 25) * 2 * Math.PI;
+            const x = centerX + Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * radius;
+            futurePath.push({ x: Math.round(x), y: Math.round(y) });
+        }
+        
+        futurePath.forEach(pos => {
+            futureEpoch.cells.push({ id: cellCounter++, x: pos.x, y: pos.y });
+        });
+
+        // Заповнюємо масив усіх клітинок
+        this.mapData.allCells = [];
+        this.mapData.epochs.forEach(epoch => {
+            epoch.cells.forEach(cell => {
+                this.mapData.allCells.push({
+                    ...cell,
+                    epochId: epoch.id,
+                    absoluteX: epoch.position.x + cell.x,
+                    absoluteY: epoch.position.y + cell.y
+                });
+            });
+        });
+    }
+    
     // Генерація координат для кожної епохи
     generateEpochCoordinates() {
         const coordinates = [];
         
-        this.epochs.forEach((epoch, epochIndex) => {
-            const startId = epochIndex * 25 + 1;
-            
-            // Генеруємо сітку 5x5 для кожної епохи
-            for (let i = 0; i < 5; i++) {
-                for (let j = 0; j < 5; j++) {
-                    const cellId = startId + i * 5 + j;
-                    const x = epoch.baseX + j * 120; // 100px клітинка + 20px відступ
-                    const y = epoch.baseY + i * 120;
-                    
-                    coordinates.push({
-                        top: y,
-                        left: x,
-                        epoch: epochIndex,
-                        cellId: cellId,
-                        row: i,
-                        col: j
-                    });
-                }
-            }
+        this.mapData.epochs.forEach((epoch) => {
+            epoch.cells.forEach(cell => {
+                coordinates.push({
+                    top: epoch.position.y + cell.y,
+                    left: epoch.position.x + cell.x,
+                    epoch: epoch.id - 1, // 0-based index
+                    cellId: cell.id,
+                    epochId: epoch.id
+                });
+            });
         });
         
         return coordinates;
@@ -261,8 +343,8 @@ class EducationalPathGame {
     createBoard() {
         this.gameBoard.innerHTML = '';
         
-        // Створюємо фонові області для кожної епохи
-        this.createEpochBackgrounds();
+        // Створюємо фонові області для кожної епохи (острови)
+        this.createEpochIslands();
         
         // Стартова клітинка
         const startCell = document.createElement('div');
@@ -280,7 +362,7 @@ class EducationalPathGame {
             cell.id = `cell-${cellNum}`;
             
             // Визначаємо епоху для клітинки
-            const epoch = this.epochs[coord.epoch];
+            const epoch = this.mapData.epochs.find(e => e.id === coord.epochId);
             const special = this.specialCells[cellNum];
             
             let cellClass = special ? special.type : 'empty';
@@ -293,7 +375,7 @@ class EducationalPathGame {
             cell.innerHTML = `<span>${cellNum === this.BOARD_SIZE ? 'F' : cellNum}</span>`;
             
             // Додаємо підказку з епохою
-            cell.title = `${epoch.name} - ${epoch.description}`;
+            cell.title = `${epoch.name}`;
             
             this.gameBoard.appendChild(cell);
         });
@@ -310,30 +392,31 @@ class EducationalPathGame {
         });
     }
     
-    // Створення фонових областей для епох
-    createEpochBackgrounds() {
-        this.epochs.forEach((epoch) => {
-            const bg = document.createElement('div');
-            bg.id = `epoch-bg-${epoch.id}`;
-            bg.className = 'epoch-background';
-            bg.style.backgroundColor = epoch.bgColor;
-            bg.style.opacity = '0.3';
-            bg.style.borderRadius = '15px';
-            bg.style.border = `3px solid ${epoch.color}`;
+    // Створення островів епох
+    createEpochIslands() {
+        this.mapData.epochs.forEach((epoch) => {
+            const island = document.createElement('div');
+            island.id = `epoch-island-${epoch.id}`;
+            island.className = 'epoch-island';
+            island.style.backgroundColor = epoch.color;
+            island.style.opacity = '0.2';
+            island.style.borderRadius = '30px';
+            island.style.border = `4px solid ${epoch.color}`;
             
-            // Позиціонування епохи
-            bg.style.top = `${epoch.baseY}px`;
-            bg.style.left = `${epoch.baseX}px`;
-            bg.style.width = '600px'; // 5 клітинок * 120px
-            bg.style.height = '600px'; // 5 клітинок * 120px
+            // Позиціонування острова
+            island.style.top = `${epoch.position.y - 20}px`;
+            island.style.left = `${epoch.position.x - 20}px`;
+            island.style.width = '400px'; // Розмір острова
+            island.style.height = '400px';
             
-            // Додаємо іконку епохи
-            bg.innerHTML = `
-                <div style="position: absolute; top: 10px; left: 10px; font-size: 24px;">${epoch.icon}</div>
-                <div style="position: absolute; top: 10px; left: 50px; font-size: 16px; font-weight: bold; color: ${epoch.color};">${epoch.name}</div>
+            // Додаємо назву епохи
+            island.innerHTML = `
+                <div style="position: absolute; top: 10px; left: 10px; font-size: 20px; font-weight: bold; color: ${epoch.color}; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+                    ${epoch.name}
+                </div>
             `;
             
-            this.gameBoard.appendChild(bg);
+            this.gameBoard.appendChild(island);
         });
     }
     
@@ -342,50 +425,47 @@ class EducationalPathGame {
         this.pathSvg.innerHTML = '';
         
         // Малюємо шляхи для кожної епохи окремо
-        this.epochs.forEach((epoch, epochIndex) => {
-            const epochCells = this.epochCoordinates.filter(coord => coord.epoch === epochIndex);
-            if (epochCells.length === 0) return;
+        this.mapData.epochs.forEach((epoch) => {
+            if (epoch.cells.length === 0) return;
             
             // Малюємо з'єднання між сусідніми клітинками
-            for (let i = 0; i < epochCells.length - 1; i++) {
-                const currentCell = epochCells[i];
-                const nextCell = epochCells[i + 1];
+            for (let i = 0; i < epoch.cells.length - 1; i++) {
+                const currentCell = epoch.cells[i];
+                const nextCell = epoch.cells[i + 1];
                 
-                // Перевіряємо, чи клітинки сусідні (по горизонталі або вертикалі)
-                const isAdjacent = (
-                    (Math.abs(currentCell.row - nextCell.row) === 1 && currentCell.col === nextCell.col) ||
-                    (Math.abs(currentCell.col - nextCell.col) === 1 && currentCell.row === nextCell.row)
-                );
+                const p1 = { 
+                    x: epoch.position.x + currentCell.x + 50, 
+                    y: epoch.position.y + currentCell.y + 50 
+                };
+                const p2 = { 
+                    x: epoch.position.x + nextCell.x + 50, 
+                    y: epoch.position.y + nextCell.y + 50 
+                };
                 
-                if (isAdjacent) {
-                    const p1 = { x: currentCell.left + 50, y: currentCell.top + 50 };
-                    const p2 = { x: nextCell.left + 50, y: nextCell.top + 50 };
-                    
-                    let path = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    path.setAttribute('x1', p1.x);
-                    path.setAttribute('y1', p1.y);
-                    path.setAttribute('x2', p2.x);
-                    path.setAttribute('y2', p2.y);
-                    path.setAttribute('stroke', epoch.color);
-                    path.setAttribute('stroke-width', '6');
-                    path.setAttribute('stroke-linecap', 'round');
-                    path.setAttribute('opacity', '0.7');
-                    this.pathSvg.appendChild(path);
-                }
+                let path = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                path.setAttribute('x1', p1.x);
+                path.setAttribute('y1', p1.y);
+                path.setAttribute('x2', p2.x);
+                path.setAttribute('y2', p2.y);
+                path.setAttribute('stroke', epoch.color);
+                path.setAttribute('stroke-width', '6');
+                path.setAttribute('stroke-linecap', 'round');
+                path.setAttribute('opacity', '0.8');
+                this.pathSvg.appendChild(path);
             }
         });
         
-        // Малюємо переходи між епохами
+        // Малюємо переходи між епохами (телепорти)
         this.drawEpochTransitions();
     }
     
-    // Малювання переходів між епохами
+    // Малювання переходів між епохами (телепорти)
     drawEpochTransitions() {
         const transitions = [
-            { from: 25, to: 26, fromEpoch: 0, toEpoch: 1 }, // Antic → Medieval
-            { from: 50, to: 51, fromEpoch: 1, toEpoch: 2 }, // Medieval → Industrial
-            { from: 75, to: 76, fromEpoch: 1, toEpoch: 3 }, // Medieval → Modern
-            { from: 100, to: 101, fromEpoch: 3, toEpoch: 4 } // Modern → Future
+            { from: 25, to: 26, fromEpoch: 1, toEpoch: 2 }, // Античність → Середньовіччя
+            { from: 50, to: 51, fromEpoch: 2, toEpoch: 3 }, // Середньовіччя → Індустріальна
+            { from: 75, to: 76, fromEpoch: 3, toEpoch: 4 }, // Індустріальна → Сучасність
+            { from: 100, to: 101, fromEpoch: 4, toEpoch: 5 } // Сучасність → Майбутнє
         ];
         
         transitions.forEach(transition => {
@@ -393,24 +473,24 @@ class EducationalPathGame {
             const toCell = this.epochCoordinates.find(c => c.cellId === transition.to);
             
             if (fromCell && toCell) {
-                const fromEpoch = this.epochs[transition.fromEpoch];
-                const toEpoch = this.epochs[transition.toEpoch];
+                const fromEpoch = this.mapData.epochs.find(e => e.id === transition.fromEpoch);
+                const toEpoch = this.mapData.epochs.find(e => e.id === transition.toEpoch);
                 
                 const p1 = { x: fromCell.left + 50, y: fromCell.top + 50 };
                 const p2 = { x: toCell.left + 50, y: toCell.top + 50 };
                 
                 // Створюємо криву Безьє для переходу
                 const controlX = (p1.x + p2.x) / 2;
-                const controlY = Math.min(p1.y, p2.y) - 100;
+                const controlY = Math.min(p1.y, p2.y) - 150;
                 
                 let path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 path.setAttribute('d', `M ${p1.x} ${p1.y} Q ${controlX} ${controlY} ${p2.x} ${p2.y}`);
                 path.setAttribute('fill', 'none');
                 path.setAttribute('stroke', '#f6e05e');
-                path.setAttribute('stroke-width', '8');
-                path.setAttribute('stroke-dasharray', '20 10');
+                path.setAttribute('stroke-width', '10');
+                path.setAttribute('stroke-dasharray', '25 15');
                 path.setAttribute('stroke-linecap', 'round');
-                path.setAttribute('opacity', '0.8');
+                path.setAttribute('opacity', '0.9');
                 this.pathSvg.appendChild(path);
             }
         });

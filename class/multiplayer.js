@@ -814,9 +814,6 @@ class MultiplayerGame extends EducationalPathGame {
             return;
         }
         
-        // Оновлюємо позицію гравця
-        player.position = data.newPosition;
-        
         // Показуємо анімацію кубика
         this.rollDiceBtn.disabled = true;
         
@@ -830,12 +827,17 @@ class MultiplayerGame extends EducationalPathGame {
         };
         
         this.diceInner.style.transform = `rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg)`;
-        setTimeout(() => {
+        setTimeout(async () => {
             this.diceInner.style.transform = `${rotations[data.roll]} translateZ(40px)`;
-            this.updatePawnPosition(player);
+            
+            // Використовуємо плавну анімацію руху
+            await this.animatePawnMovement(player, data.newPosition - data.move, data.newPosition, data.move);
+            
+            // Оновлюємо позицію гравця
+            player.position = data.newPosition;
+            
+            this.logMessage(`${player.name}${player.class ? ' (' + player.class.name + ')' : ''} викинув ${data.roll}. Рух: ${data.move}. Позиція: ${data.newPosition}`, 'roll');
         }, 1000);
-        
-        this.logMessage(`${player.name}${player.class ? ' (' + player.class.name + ')' : ''} викинув ${data.roll}. Рух: ${data.move}. Позиція: ${data.newPosition}`, 'roll');
     }
     
     handleTurnUpdate(data) {
@@ -917,9 +919,10 @@ class MultiplayerGame extends EducationalPathGame {
         // Оновлюємо позицію та очки гравця
         const player = this.players.find(p => p.id === data.playerId);
         if (player) {
+            // Плавно переміщуємо фішку на нову позицію
+            this.updatePawnPosition(player);
             player.position = data.newPosition;
             player.points = data.newPoints;
-            this.updatePawnPosition(player);
         }
         
         // Показуємо повідомлення всім

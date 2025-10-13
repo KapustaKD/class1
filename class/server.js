@@ -123,6 +123,7 @@ io.on('connection', (socket) => {
     
     // Створення кімнати
     socket.on('create_room', (data) => {
+        console.log('Сервер отримав подію create_room:', data);
         try {
             const player = {
                 id: socket.id,
@@ -138,6 +139,7 @@ io.on('connection', (socket) => {
             };
             
             const room = createRoom(data.roomName, player);
+            console.log('Кімната створена:', room.id);
             
             socket.join(room.id);
             socket.emit('room_created', {
@@ -145,6 +147,7 @@ io.on('connection', (socket) => {
                 roomName: room.name,
                 players: room.players
             });
+            console.log('Відправлено подію room_created гравцю:', socket.id);
             
             // Повідомляємо всіх про нову кімнату
             io.emit('room_list_updated', Array.from(rooms.values()));
@@ -199,11 +202,20 @@ io.on('connection', (socket) => {
     
     // Старт гри
     socket.on('start_game', (data) => {
+        console.log('Сервер отримав подію start_game:', data);
         const player = players.get(socket.id);
-        if (!player || !player.isHost) return;
+        if (!player || !player.isHost) {
+            console.log('Гравець не є хостом або не знайдений');
+            return;
+        }
         
         const room = rooms.get(data.roomId);
-        if (!room) return;
+        if (!room) {
+            console.log('Кімната не знайдена');
+            return;
+        }
+        
+        console.log('Починаємо гру в кімнаті:', room.id);
         
         // Ініціалізуємо гру
         room.gameState = 'playing';
@@ -224,6 +236,8 @@ io.on('connection', (socket) => {
             players: room.gameData.players,
             currentPlayerIndex: room.gameData.currentPlayerIndex
         });
+        
+        console.log('Відправлено подію game_started всім гравцям в кімнаті:', room.id);
     });
     
     // Кидання кубика

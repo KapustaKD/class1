@@ -80,148 +80,24 @@ class EducationalPathGame {
         this.setupEventListeners();
     }
     
-    // Завантаження даних карти
+    // Завантаження даних карти з mapData.js
     loadMapData() {
-        // Створюємо статичну карту з 5 зонами та послідовним шляхом
-        this.mapData = {
-            mapWidth: 1920,  // Ширина білої карти
-            mapHeight: 1080, // Висота білої карти
-            
-            // Статичні зони з SVG-шляхами
-            zones: [
-                { 
-                    name: 'Сірі Землі', 
-                    color: '#b3b3b3', 
-                    svgPath: 'M 0 800 L 400 1000 L 600 900 L 300 700 Z' // Внизу зліва
-                },
-                { 
-                    name: 'Рожева Долина', 
-                    color: '#ffb3d1', 
-                    svgPath: 'M 300 700 L 600 900 L 900 850 L 700 600 Z' // Внизу в центрі
-                },
-                { 
-                    name: 'Зелений Ліс', 
-                    color: '#33cc33', 
-                    svgPath: 'M 700 600 L 900 850 L 1200 950 L 1000 700 Z' // Внизу справа
-                },
-                { 
-                    name: 'Синя Ріка', 
-                    color: '#3399ff', 
-                    svgPath: 'M 1000 700 L 1200 950 L 1600 500 L 1400 300 Z' // Вгорі в центрі/справа
-                },
-                { 
-                    name: 'Жовті Пустелі', 
-                    color: '#ffff4d', 
-                    svgPath: 'M 1400 300 L 1600 500 L 1920 200 L 1200 0 Z' // Вгорі зліва
-                }
-            ],
-            
-            // Опорні точки шляху
-            waypoints: [
-                { x: 150, y: 900, zone: 0 },   // Старт (Сірі Землі)
-                { x: 600, y: 850, zone: 1 },   // Перехід у Рожеву Долину
-                { x: 1100, y: 950, zone: 2 },  // Перехід у Зелений Ліс
-                { x: 1500, y: 500, zone: 3 },  // Підйом до Синьої Ріки
-                { x: 900, y: 200, zone: 4 },   // Перехід у Жовті Пустелі
-                { x: 300, y: 150, zone: 4 }    // Фініш (Жовті Пустелі)
-            ],
-            
-            // Масив для всіх 101 клітинок
-            cells: []
-        };
-        
-        this.generateSequentialPath();
-    }
-    
-    // Генерація послідовного шляху через опорні точки
-    generateSequentialPath() {
-        const cells = [];
-        const waypoints = this.mapData.waypoints;
-        
-        // Розподіляємо 101 клітинку між опорними точками
-        const cellsPerSegment = Math.floor(100 / (waypoints.length - 1));
-        
-        for (let i = 0; i < waypoints.length - 1; i++) {
-            const startPoint = waypoints[i];
-            const endPoint = waypoints[i + 1];
-            
-            // Кількість клітинок для цього сегмента
-            const segmentCells = (i === waypoints.length - 2) ? 
-                cellsPerSegment + (100 - cellsPerSegment * (waypoints.length - 1)) : 
-                cellsPerSegment;
-            
-            // Генеруємо клітинки для цього сегмента
-            for (let j = 0; j < segmentCells; j++) {
-                const progress = j / (segmentCells - 1);
-                
-                // Плавна інтерполяція між точками з кривою Безьє
-                const x = this.bezierInterpolate(
-                    startPoint.x, startPoint.x + (endPoint.x - startPoint.x) * 0.5,
-                    endPoint.x, endPoint.x, progress
-                );
-                const y = this.bezierInterpolate(
-                    startPoint.y, startPoint.y + (endPoint.y - startPoint.y) * 0.5,
-                    endPoint.y, endPoint.y, progress
-                );
-                
-                // Визначаємо зону для цієї клітинки
-                const zone = this.getZoneForPoint(x, y);
-                
-                cells.push({ 
-                    id: cells.length + 1, 
-                    x: x, 
-                    y: y, 
-                    zone: zone
-                });
-            }
-        }
-        
-        // Фінішна клітинка (корона)
-        cells.push({ 
-            id: 101, 
-            x: waypoints[waypoints.length - 1].x, 
-            y: waypoints[waypoints.length - 1].y, 
-            zone: waypoints[waypoints.length - 1].zone,
-            isFinish: true 
+        // Імпортуємо дані з mapData.js
+        import('./mapData.js').then(module => {
+            this.mapData = module.mapData;
+            console.log('Map data loaded:', this.mapData);
+        }).catch(error => {
+            console.error('Error loading map data:', error);
+            // Fallback дані якщо імпорт не вдався
+            this.mapData = {
+                canvasSize: { width: 1920, height: 1080 },
+                zones: [],
+                cells: []
+            };
         });
-        
-        this.mapData.cells = cells;
     }
     
-    // Інтерполяція Безьє для плавних кривих
-    bezierInterpolate(p0, p1, p2, p3, t) {
-        const u = 1 - t;
-        const tt = t * t;
-        const uu = u * u;
-        const uuu = uu * u;
-        const ttt = tt * t;
-        
-        return uuu * p0 + 3 * uu * t * p1 + 3 * u * tt * p2 + ttt * p3;
-    }
-    
-    // Визначення зони для точки
-    getZoneForPoint(x, y) {
-        // Перевіряємо, в якій зоні знаходиться точка
-        for (let i = 0; i < this.mapData.zones.length; i++) {
-            if (this.isPointInZone(x, y, this.mapData.zones[i].svgPath)) {
-                return i;
-            }
-        }
-        return 0; // За замовчуванням перша зона
-    }
-    
-    // Перевірка, чи точка знаходиться в зоні (спрощена версія)
-    isPointInZone(x, y, svgPath) {
-        // Спрощена перевірка - використовуємо прямокутні області
-        if (svgPath.includes('0 800')) return x >= 0 && x <= 600 && y >= 700; // Сірі Землі
-        if (svgPath.includes('300 700')) return x >= 300 && x <= 900 && y >= 600 && y <= 900; // Рожева Долина
-        if (svgPath.includes('700 600')) return x >= 700 && x <= 1200 && y >= 600 && y <= 950; // Зелений Ліс
-        if (svgPath.includes('1000 700')) return x >= 1000 && x <= 1600 && y >= 300 && y <= 950; // Синя Ріка
-        if (svgPath.includes('1400 300')) return x >= 1200 && x <= 1920 && y >= 0 && y <= 500; // Жовті Пустелі
-        return false;
-    }
-    
-    // Генерація координат для послідовного шляху
+    // Генерація координат для клітинок з mapData.js
     generateEpochCoordinates() {
         const coordinates = [];
         
@@ -231,16 +107,43 @@ class EducationalPathGame {
         }
         
         this.mapData.cells.forEach(cell => {
+            // Визначаємо зону для клітинки
+            const zone = this.getZoneForCell(cell);
+            
             coordinates.push({
                 top: cell.y,
                 left: cell.x,
-                zone: cell.zone,
+                zone: zone,
                 cellId: cell.id,
-                isFinish: cell.isFinish || false
+                isFinish: cell.id === 101
             });
         });
         
         return coordinates;
+    }
+    
+    // Визначення зони для клітинки
+    getZoneForCell(cell) {
+        if (!this.mapData.zones) return 0;
+        
+        // Перевіряємо, в якій зоні знаходиться клітинка
+        for (let i = 0; i < this.mapData.zones.length; i++) {
+            if (this.isPointInZone(cell.x, cell.y, this.mapData.zones[i].svgPath)) {
+                return i;
+            }
+        }
+        return 0; // За замовчуванням перша зона
+    }
+    
+    // Перевірка, чи точка знаходиться в зоні (спрощена версія)
+    isPointInZone(x, y, svgPath) {
+        // Спрощена перевірка на основі координат з mapData.js
+        if (svgPath.includes('0 1080')) return x >= 0 && x <= 700 && y >= 500; // Сірі Землі
+        if (svgPath.includes('700 1080')) return x >= 700 && x <= 1200 && y >= 650; // Рожева Долина
+        if (svgPath.includes('1200 1080')) return x >= 1200 && y >= 600; // Зелений Ліс
+        if (svgPath.includes('1920 800')) return x >= 800 && y >= 0 && y <= 600; // Синя Ріка
+        if (svgPath.includes('900 0')) return x >= 0 && x <= 900 && y >= 0 && y <= 500; // Жовті Пустелі
+        return false;
     }
     
     initializeElements() {
@@ -349,7 +252,7 @@ class EducationalPathGame {
         // Створюємо ОДИН великий білий контейнер карти
         this.createGameMap();
         
-        // Створюємо статичні SVG-зони
+        // Створюємо статичні SVG-зони з mapData.js
         this.createStaticZones();
         
         // Стартова клітинка
@@ -361,33 +264,35 @@ class EducationalPathGame {
         startCell.innerHTML = '<span>СТАРТ</span>';
         this.gameBoard.appendChild(startCell);
         
-        // Створюємо клітинки послідовного шляху
-        this.epochCoordinates.forEach((coord) => {
-            const cellNum = coord.cellId;
-            const cell = document.createElement('div');
-            cell.id = `cell-${cellNum}`;
+        // Створюємо клітинки з mapData.js
+        this.mapData.cells.forEach((cell) => {
+            const cellElement = document.createElement('div');
+            cellElement.id = `cell-${cell.id}`;
             
             // Визначаємо зону для клітинки
-            const zone = this.mapData.zones[coord.zone];
-            const special = this.specialCells[cellNum];
+            const zone = this.getZoneForCell(cell);
+            const zoneData = this.mapData.zones[zone];
+            const special = this.specialCells[cell.id];
             
             let cellClass = special ? special.type : 'empty';
-            if (coord.isFinish) cellClass = 'finish';
+            if (cell.id === 101) cellClass = 'finish';
             
-            cell.className = `board-cell ${cellClass} zone-${coord.zone}`;
-            cell.style.top = `${coord.top}px`;
-            cell.style.left = `${coord.left}px`;
+            cellElement.className = `board-cell ${cellClass} zone-${zone}`;
+            cellElement.style.top = `${cell.y}px`;
+            cellElement.style.left = `${cell.x}px`;
             
-            if (coord.isFinish) {
-                cell.innerHTML = '<span>👑</span>'; // Корона для фінішу
+            if (cell.id === 101) {
+                cellElement.innerHTML = '<span>👑</span>'; // Корона для фінішу
             } else {
-                cell.innerHTML = `<span>${cellNum}</span>`;
+                cellElement.innerHTML = `<span>${cell.id}</span>`;
             }
             
             // Додаємо підказку з зоною
-            cell.title = `${zone.name}`;
+            if (zoneData) {
+                cellElement.title = `${zoneData.name}`;
+            }
             
-            this.gameBoard.appendChild(cell);
+            this.gameBoard.appendChild(cellElement);
         });
         
         this.drawSequentialPath();
@@ -410,33 +315,32 @@ class EducationalPathGame {
         gameMap.style.position = 'absolute';
         gameMap.style.top = '0px';
         gameMap.style.left = '0px';
-        gameMap.style.width = `${this.mapData.mapWidth}px`;
-        gameMap.style.height = `${this.mapData.mapHeight}px`;
+        gameMap.style.width = `${this.mapData.canvasSize.width}px`;
+        gameMap.style.height = `${this.mapData.canvasSize.height}px`;
         gameMap.style.backgroundColor = '#ffffff';
         gameMap.style.border = '2px solid #333';
         gameMap.style.zIndex = '0';
         this.gameBoard.appendChild(gameMap);
     }
     
-    // Створення статичних SVG-зон
+    // Створення статичних SVG-зон з mapData.js
     createStaticZones() {
         const svgContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svgContainer.id = 'static-zones';
         svgContainer.style.position = 'absolute';
         svgContainer.style.top = '0px';
         svgContainer.style.left = '0px';
-        svgContainer.style.width = `${this.mapData.mapWidth}px`;
-        svgContainer.style.height = `${this.mapData.mapHeight}px`;
+        svgContainer.style.width = `${this.mapData.canvasSize.width}px`;
+        svgContainer.style.height = `${this.mapData.canvasSize.height}px`;
         svgContainer.style.zIndex = '1';
-        svgContainer.setAttribute('viewBox', `0 0 ${this.mapData.mapWidth} ${this.mapData.mapHeight}`);
+        svgContainer.setAttribute('viewBox', `0 0 ${this.mapData.canvasSize.width} ${this.mapData.canvasSize.height}`);
         
-        // Створюємо статичні зони
+        // Створюємо статичні зони з mapData.js
         this.mapData.zones.forEach((zone, index) => {
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', zone.svgPath);
             path.setAttribute('fill', zone.color);
-            path.setAttribute('opacity', '0.3');
-            path.setAttribute('stroke', zone.color);
+            path.setAttribute('stroke', zone.color.replace('0.7', '1.0')); // Повна непрозорість для контуру
             path.setAttribute('stroke-width', '2');
             path.setAttribute('stroke-opacity', '0.8');
             
@@ -444,10 +348,10 @@ class EducationalPathGame {
             
             // Додаємо назву зони
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', '100');
-            text.setAttribute('y', '50');
-            text.setAttribute('fill', zone.color);
-            text.setAttribute('font-size', '18');
+            text.setAttribute('x', '50');
+            text.setAttribute('y', '30');
+            text.setAttribute('fill', zone.color.replace('0.7', '1.0'));
+            text.setAttribute('font-size', '16');
             text.setAttribute('font-weight', 'bold');
             text.setAttribute('text-anchor', 'start');
             text.textContent = zone.name;
@@ -458,11 +362,11 @@ class EducationalPathGame {
         this.gameBoard.appendChild(svgContainer);
     }
     
-    // Малювання послідовного шляху
+    // Малювання послідовного шляху з mapData.js
     drawSequentialPath() {
         this.pathSvg.innerHTML = '';
         
-        // Малюємо з'єднання між сусідніми клітинками
+        // Малюємо з'єднання між сусідніми клітинками з mapData.js
         for (let i = 0; i < this.mapData.cells.length - 1; i++) {
             const currentCell = this.mapData.cells[i];
             const nextCell = this.mapData.cells[i + 1];

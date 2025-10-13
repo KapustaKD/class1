@@ -201,6 +201,10 @@ class MultiplayerGame extends EducationalPathGame {
                 console.log('Поточний гравець з сервера:', data.currentPlayer.name, 'ID:', data.currentPlayer.id);
             }
             
+            // Перевіряємо, чи я поточний гравець
+            const isMyTurn = data.currentPlayer && data.currentPlayer.id === this.playerId;
+            console.log('Це мій хід?', isMyTurn, 'Мій ID:', this.playerId);
+            
             this.updatePlayerInfo();
             this.updateDiceButtonState();
             
@@ -248,6 +252,8 @@ class MultiplayerGame extends EducationalPathGame {
             // Перевіряємо, чи знаходимося серед гравців
             const myPlayer = this.players.find(p => p.id === this.playerId);
             console.log('Мій гравець в грі:', myPlayer);
+            console.log('Мій playerId:', this.playerId);
+            console.log('Всі гравці:', this.players.map(p => ({ name: p.name, id: p.id })));
             
             // Переходимо до ігрового інтерфейсу
             this.showGameInterface();

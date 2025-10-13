@@ -20,65 +20,84 @@ class EducationalPathGame {
         this.panStartX = 0;
         this.panStartY = 0;
         
-        // Координати клітинок, розділені на 5 секцій без перетинів
-        this.cellCoordinates = [
-            // Секція 1: Античність (1-25) - спіраль внизу ліворуч
-            {top: 700, left: 75}, {top: 700, left: 125}, {top: 690, left: 175}, {top: 670, left: 225}, {top: 640, left: 265}, 
-            {top: 600, left: 290}, {top: 550, left: 300}, {top: 500, left: 295}, {top: 450, left: 275}, {top: 410, left: 240}, 
-            {top: 390, left: 190}, {top: 390, left: 140}, {top: 410, left: 90}, {top: 450, left: 75}, {top: 500, left: 90}, 
-            {top: 550, left: 110}, {top: 600, left: 140}, {top: 625, left: 190}, {top: 590, left: 230}, {top: 540, left: 240}, 
-            {top: 490, left: 225}, {top: 450, left: 190}, {top: 425, left: 140}, {top: 475, left: 125}, {top: 525, left: 175},
-            
-            // Секція 2: Середньовіччя (26-50) - змійка вгорі ліворуч
-            {top: 400, left: 325}, {top: 350, left: 350}, {top: 300, left: 375}, {top: 250, left: 400}, {top: 200, left: 425}, 
-            {top: 150, left: 440}, {top: 100, left: 450}, {top: 75, left: 500}, {top: 90, left: 550}, {top: 125, left: 590}, 
-            {top: 175, left: 610}, {top: 225, left: 600}, {top: 275, left: 575}, {top: 325, left: 540}, {top: 360, left: 490}, 
-            {top: 325, left: 450}, {top: 275, left: 425}, {top: 225, left: 475}, {top: 190, left: 525}, {top: 240, left: 550}, 
-            {top: 290, left: 500}, {top: 240, left: 450}, {top: 175, left: 490}, {top: 125, left: 525}, {top: 100, left: 575},
-            
-            // Секція 3: Відродження (51-75) - коло в центрі
-            {top: 400, left: 625}, {top: 425, left: 675}, {top: 475, left: 700}, {top: 525, left: 710}, {top: 575, left: 690}, 
-            {top: 625, left: 650}, {top: 675, left: 600}, {top: 690, left: 550}, {top: 650, left: 500}, {top: 600, left: 475}, 
-            {top: 550, left: 490}, {top: 500, left: 525}, {top: 475, left: 575}, {top: 490, left: 625}, {top: 540, left: 650}, 
-            {top: 590, left: 610}, {top: 625, left: 575}, {top: 575, left: 540}, {top: 525, left: 560}, {top: 575, left: 590}, 
-            {top: 540, left: 625}, {top: 500, left: 660}, {top: 450, left: 650}, {top: 425, left: 600}, {top: 450, left: 550},
-            
-            // Секція 4: Просвітництво (76-100) - змійка вгорі праворуч
-            {top: 350, left: 750}, {top: 300, left: 775}, {top: 250, left: 800}, {top: 200, left: 825}, {top: 150, left: 850}, 
-            {top: 100, left: 875}, {top: 75, left: 925}, {top: 100, left: 975}, {top: 150, left: 1000}, {top: 200, left: 1010}, 
-            {top: 250, left: 990}, {top: 300, left: 950}, {top: 325, left: 900}, {top: 290, left: 875}, {top: 240, left: 890}, 
-            {top: 190, left: 925}, {top: 150, left: 975}, {top: 175, left: 910}, {top: 225, left: 950}, {top: 275, left: 925}, 
-            {top: 250, left: 850}, {top: 200, left: 875}, {top: 150, left: 900}, {top: 125, left: 950}, {top: 160, left: 990},
-            
-            // Секція 5: Сучасність (101-124) - лінія внизу праворуч
-            {top: 400, left: 1025}, {top: 450, left: 1050}, {top: 500, left: 1075}, {top: 550, left: 1090}, {top: 600, left: 1075}, 
-            {top: 650, left: 1050}, {top: 690, left: 1000}, {top: 675, left: 950}, {top: 640, left: 925}, {top: 590, left: 940}, 
-            {top: 540, left: 975}, {top: 500, left: 1025}, {top: 525, left: 960}, {top: 575, left: 990}, {top: 625, left: 1025}, 
-            {top: 575, left: 1100}, {top: 525, left: 1125}, {top: 475, left: 1140}, {top: 425, left: 1125}, {top: 375, left: 1100}, 
-            {top: 325, left: 1125}, {top: 275, left: 1150}, {top: 225, left: 1160}, {top: 175, left: 1150}
+        // Нова структура карти з 5 епохами
+        this.epochs = [
+            { 
+                id: 1, 
+                name: "Античність", 
+                startCell: 1, 
+                endCell: 25, 
+                color: "#d4a373",
+                bgColor: "#8b4513",
+                icon: "🏛️",
+                description: "Стародавні цивілізації та філософія"
+            },
+            { 
+                id: 2, 
+                name: "Середньовіччя", 
+                startCell: 26, 
+                endCell: 50, 
+                color: "#8a7abf",
+                bgColor: "#4a4a4a",
+                icon: "🏰",
+                description: "Лицарі, замки та релігія"
+            },
+            { 
+                id: 3, 
+                name: "Відродження", 
+                startCell: 51, 
+                endCell: 75, 
+                color: "#b0c4de",
+                bgColor: "#2c5aa0",
+                icon: "🎨",
+                description: "Мистецтво, наука та відкриття"
+            },
+            { 
+                id: 4, 
+                name: "Просвітництво", 
+                startCell: 76, 
+                endCell: 100, 
+                color: "#90be6d",
+                bgColor: "#2d5016",
+                icon: "⚗️",
+                description: "Наука, технології та індустріалізація"
+            },
+            { 
+                id: 5, 
+                name: "Сучасність", 
+                startCell: 101, 
+                endCell: 125, 
+                color: "#f48fb1",
+                bgColor: "#8b008b",
+                icon: "🚀",
+                description: "Цифрова ера та майбутнє"
+            }
         ];
+        
+        // Координати клітинок для кожної епохи
+        this.epochCoordinates = this.generateEpochCoordinates();
         
         this.specialCells = {
             5: { type: 'quest' }, 
             10: { type: 'pvp-quest' }, 
             15: { type: 'event-good', effect: p => this.updatePoints(p, 20, "Винайдено писемність! +20 ОО.", true) }, 
             20: { type: 'creative-quest' }, 
-            25: { type: 'section-end', next: 26, points: 50, section: 'Античність', description: 'Завершено епоху Античності! Перехід до Середньовіччя.' },
+            25: { type: 'epoch-portal', nextEpoch: 2, points: 50, description: 'Завершено епоху Античності! Перехід до Середньовіччя.' },
             30: { type: 'quest' }, 
             35: { type: 'event-bad', effect: p => this.updatePoints(p, -20, "Втрата рукописів. -20 ОО.", true) }, 
             40: { type: 'pvp-quest' }, 
             45: { type: 'portal', target: 55, cost: 15 }, 
-            50: { type: 'section-end', next: 51, points: 60, section: 'Середньовіччя', description: 'Завершено епоху Середньовіччя! Перехід до Відродження.' },
+            50: { type: 'epoch-portal', nextEpoch: 3, points: 60, description: 'Завершено епоху Середньовіччя! Перехід до Відродження.' },
             55: { type: 'creative-quest' }, 
             60: { type: 'event-good', effect: p => this.updatePoints(p, 30, "Епоха Відродження! +30 ОО.", true) }, 
             65: { type: 'pvp-quest' }, 
             70: { type: 'event-bad', effect: p => { p.skipTurn = true; this.updatePoints(p, -10); }, description: "З'їв дивних грибів. Пропуск ходу та -10 ОО." }, 
-            75: { type: 'section-end', next: 76, points: 70, section: 'Відродження', description: 'Завершено епоху Відродження! Перехід до Просвітництва.' },
+            75: { type: 'epoch-portal', nextEpoch: 4, points: 70, description: 'Завершено епоху Відродження! Перехід до Просвітництва.' },
             80: { type: 'quest' }, 
             85: { type: 'portal', target: 95, cost: 20 }, 
             90: { type: 'pvp-quest' }, 
             95: { type: 'event-good', effect: p => { p.extraTurn = true; }, description: "Просвітництво! Додатковий хід." }, 
-            100: { type: 'section-end', next: 101, points: 80, section: 'Просвітництво', description: 'Завершено епоху Просвітництва! Перехід до Сучасності.' },
+            100: { type: 'epoch-portal', nextEpoch: 5, points: 80, description: 'Завершено епоху Просвітництва! Перехід до Сучасності.' },
             105: { type: 'creative-quest' }, 
             110: { type: 'event-bad', effect: p => this.movePlayerTo(p, 90), description: "Світова війна. Повернення назад." }, 
             115: { type: 'pvp-quest' }, 
@@ -108,6 +127,102 @@ class EducationalPathGame {
         
         this.initializeElements();
         this.setupEventListeners();
+    }
+    
+    // Генерація координат для кожної епохи
+    generateEpochCoordinates() {
+        const coordinates = [];
+        
+        // Епоха 1: Античність (1-25) - спіраль внизу ліворуч
+        const epoch1 = this.generateSpiralPath(75, 700, 25, 0);
+        coordinates.push(...epoch1);
+        
+        // Епоха 2: Середньовіччя (26-50) - змійка вгорі ліворуч
+        const epoch2 = this.generateSnakePath(325, 400, 25, 1);
+        coordinates.push(...epoch2);
+        
+        // Епоха 3: Відродження (51-75) - коло в центрі
+        const epoch3 = this.generateCircularPath(625, 400, 25, 2);
+        coordinates.push(...epoch3);
+        
+        // Епоха 4: Просвітництво (76-100) - змійка вгорі праворуч
+        const epoch4 = this.generateSnakePath(750, 350, 25, 3);
+        coordinates.push(...epoch4);
+        
+        // Епоха 5: Сучасність (101-125) - лінія внизу праворуч
+        const epoch5 = this.generateLinearPath(1025, 400, 25, 4);
+        coordinates.push(...epoch5);
+        
+        return coordinates;
+    }
+    
+    // Генерація спірального шляху
+    generateSpiralPath(startX, startY, count, epochIndex) {
+        const coords = [];
+        let x = startX, y = startY;
+        let radius = 50;
+        let angle = 0;
+        
+        for (let i = 0; i < count; i++) {
+            coords.push({ top: y, left: x, epoch: epochIndex });
+            
+            // Спіральний рух
+            angle += Math.PI / 8;
+            radius += 2;
+            x = startX + Math.cos(angle) * radius;
+            y = startY + Math.sin(angle) * radius;
+        }
+        
+        return coords;
+    }
+    
+    // Генерація змійкового шляху
+    generateSnakePath(startX, startY, count, epochIndex) {
+        const coords = [];
+        let x = startX, y = startY;
+        let direction = 1;
+        
+        for (let i = 0; i < count; i++) {
+            coords.push({ top: y, left: x, epoch: epochIndex });
+            
+            // Змійковий рух
+            if (i % 5 === 4) {
+                direction *= -1;
+                y += 30;
+            } else {
+                x += direction * 40;
+            }
+        }
+        
+        return coords;
+    }
+    
+    // Генерація кругового шляху
+    generateCircularPath(centerX, centerY, count, epochIndex) {
+        const coords = [];
+        const radius = 100;
+        
+        for (let i = 0; i < count; i++) {
+            const angle = (i / count) * 2 * Math.PI;
+            const x = centerX + Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * radius;
+            coords.push({ top: y, left: x, epoch: epochIndex });
+        }
+        
+        return coords;
+    }
+    
+    // Генерація лінійного шляху
+    generateLinearPath(startX, startY, count, epochIndex) {
+        const coords = [];
+        
+        for (let i = 0; i < count; i++) {
+            const x = startX + i * 30;
+            const y = startY + Math.sin(i * 0.3) * 20;
+            coords.push({ top: y, left: x, epoch: epochIndex });
+        }
+        
+        return coords;
     }
     
     initializeElements() {
@@ -213,6 +328,9 @@ class EducationalPathGame {
     createBoard() {
         this.gameBoard.innerHTML = '';
         
+        // Створюємо фонові області для кожної епохи
+        this.createEpochBackgrounds();
+        
         // Стартова клітинка
         const startCell = document.createElement('div');
         startCell.id = 'cell-0';
@@ -222,23 +340,32 @@ class EducationalPathGame {
         startCell.innerHTML = '<span>СТАРТ</span>';
         this.gameBoard.appendChild(startCell);
         
-        // Інші клітинки
-        this.cellCoordinates.forEach((coord, i) => {
+        // Створюємо клітинки для кожної епохи
+        this.epochCoordinates.forEach((coord, i) => {
             const cellNum = i + 1;
             const cell = document.createElement('div');
             cell.id = `cell-${cellNum}`;
+            
+            // Визначаємо епоху для клітинки
+            const epoch = this.epochs[coord.epoch];
             const special = this.specialCells[cellNum];
+            
             let cellClass = special ? special.type : 'empty';
             if (cellNum >= 121 && cellNum <= 123) cellClass += ' future';
             if (cellNum === this.BOARD_SIZE) cellClass = 'finish';
-            cell.className = `board-cell ${cellClass}`;
+            
+            cell.className = `board-cell ${cellClass} epoch-${epoch.id}`;
             cell.style.top = `${coord.top}px`;
             cell.style.left = `${coord.left}px`;
             cell.innerHTML = `<span>${cellNum === this.BOARD_SIZE ? 'F' : cellNum}</span>`;
+            
+            // Додаємо підказку з епохою
+            cell.title = `${epoch.name} - ${epoch.description}`;
+            
             this.gameBoard.appendChild(cell);
         });
         
-        this.drawPath();
+        this.drawEpochPaths();
         
         // Фішки гравців
         this.players.forEach(p => {
@@ -247,6 +374,71 @@ class EducationalPathGame {
             pawn.className = 'player-pawn';
             pawn.style.backgroundColor = p.color;
             startCell.appendChild(pawn);
+        });
+    }
+    
+    // Створення фонових областей для епох
+    createEpochBackgrounds() {
+        this.epochs.forEach((epoch, index) => {
+            const bg = document.createElement('div');
+            bg.id = `epoch-bg-${epoch.id}`;
+            bg.className = 'epoch-background';
+            bg.style.backgroundColor = epoch.bgColor;
+            bg.style.opacity = '0.3';
+            bg.style.borderRadius = '20px';
+            bg.style.border = `3px solid ${epoch.color}`;
+            
+            // Позиціонування залежно від епохи
+            const positions = [
+                { top: '600px', left: '25px', width: '300px', height: '200px' }, // Античність
+                { top: '50px', left: '300px', width: '300px', height: '200px' }, // Середньовіччя
+                { top: '300px', left: '600px', width: '200px', height: '200px' }, // Відродження
+                { top: '50px', left: '700px', width: '300px', height: '200px' }, // Просвітництво
+                { top: '600px', left: '1000px', width: '300px', height: '200px' } // Сучасність
+            ];
+            
+            const pos = positions[index];
+            bg.style.top = pos.top;
+            bg.style.left = pos.left;
+            bg.style.width = pos.width;
+            bg.style.height = pos.height;
+            
+            // Додаємо іконку епохи
+            bg.innerHTML = `<div style="position: absolute; top: 10px; left: 10px; font-size: 24px;">${epoch.icon}</div>`;
+            
+            this.gameBoard.appendChild(bg);
+        });
+    }
+    
+    // Малювання шляхів всередині кожної епохи
+    drawEpochPaths() {
+        this.pathSvg.innerHTML = '';
+        
+        // Малюємо шляхи для кожної епохи окремо
+        this.epochs.forEach((epoch, epochIndex) => {
+            const epochCells = this.epochCoordinates.filter(coord => coord.epoch === epochIndex);
+            if (epochCells.length === 0) return;
+            
+            let pathData = '';
+            for (let i = 0; i < epochCells.length - 1; i++) {
+                const p1 = { x: epochCells[i].left, y: epochCells[i].top };
+                const p2 = { x: epochCells[i+1].left, y: epochCells[i+1].top };
+                
+                if (i === 0) pathData += `M ${p1.x} ${p1.y} `;
+                pathData += `L ${p2.x} ${p2.y} `;
+            }
+            
+            if (pathData) {
+                let path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', pathData);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', epoch.color);
+                path.setAttribute('stroke-width', '8');
+                path.setAttribute('stroke-dasharray', '15 10');
+                path.setAttribute('stroke-linecap', 'round');
+                path.setAttribute('opacity', '0.7');
+                this.pathSvg.appendChild(path);
+            }
         });
     }
     
@@ -339,7 +531,7 @@ class EducationalPathGame {
     }
     
     // Ігрова логіка
-    rollTheDice() {
+    async rollTheDice() {
         this.rollDiceBtn.disabled = true;
         let roll = Math.floor(Math.random() * 6) + 1;
         const player = this.players[this.currentPlayerIndex];
@@ -358,9 +550,9 @@ class EducationalPathGame {
         };
         
         this.diceInner.style.transform = `rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg)`;
-        setTimeout(() => {
+        setTimeout(async () => {
             this.diceInner.style.transform = `${rotations[roll]} translateZ(40px)`;
-            this.movePlayer(player, move);
+            await this.movePlayer(player, move);
         }, 1000);
     }
     
@@ -368,12 +560,13 @@ class EducationalPathGame {
         const startPos = player.position;
         const endPos = Math.min(startPos + steps, this.BOARD_SIZE);
         
-        for (let i = startPos + 1; i <= endPos; i++) {
-            player.position = i;
-            this.updatePawnPosition(player);
-            await new Promise(res => setTimeout(res, 300));
-        }
+        // Використовуємо нову плавну анімацію
+        await this.animatePawnMovement(player, startPos, endPos, steps);
         
+        // Оновлюємо позицію гравця
+        player.position = endPos;
+        
+        // Перевіряємо події на кінцевій клітинці
         this.checkCell(player);
     }
     
@@ -407,10 +600,18 @@ class EducationalPathGame {
             case 'creative-quest':
                 this.triggerCreativeQuest(player);
                 break;
-            case 'section-end':
-                this.updatePoints(player, cellData.points, cellData.description);
-                this.logMessage(`${player.name} завершив епоху ${cellData.section}! Перехід до наступної епохи.`, 'system');
-                this.movePlayerTo(player, cellData.next);
+            case 'epoch-portal':
+                this.showQuestModal('Портал між епохами!', `${cellData.description} Перейти до наступної епохи?`, [
+                    { text: 'Так', callback: () => { 
+                        this.updatePoints(player, cellData.points, cellData.description);
+                        this.teleportToNextEpoch(player, cellData.nextEpoch);
+                        this.questModal.classList.add('hidden');
+                    }},
+                    { text: 'Ні', callback: () => { 
+                        this.questModal.classList.add('hidden'); 
+                        this.nextTurn(); 
+                    }}
+                ]);
                 break;
             case 'machine-uprising':
                 player.hasLost = true;
@@ -528,6 +729,169 @@ class EducationalPathGame {
         if (cell && pawn) {
             cell.appendChild(pawn);
             this.centerViewOn(cell);
+        }
+    }
+    
+    // Плавна анімація руху фішки покроково
+    async animatePawnMovement(player, fromPosition, toPosition, steps) {
+        console.log(`Анімація руху ${player.name} з ${fromPosition} до ${toPosition}, кроків: ${steps}`);
+        
+        const pawn = document.getElementById(`pawn-${player.id}`);
+        if (!pawn) return;
+        
+        // Блокуємо кнопку кидання кубика під час анімації
+        this.rollDiceBtn.disabled = true;
+        this.rollDiceBtn.style.opacity = '0.5';
+        
+        // Додаємо клас руху
+        pawn.classList.add('moving');
+        
+        // Якщо рух далекий, додаємо ефект вітру
+        if (steps > 3) {
+            pawn.classList.add('wind-effect');
+        }
+        
+        try {
+            // Рухаємося покроково
+            for (let i = 1; i <= steps; i++) {
+                const currentPosition = fromPosition + i;
+                
+                // Переміщуємо фішку на поточну клітинку
+                await this.movePawnToCell(pawn, currentPosition);
+                
+                // Невелика затримка між кроками
+                await this.sleep(250);
+                
+                // Перевіряємо події на поточній клітинці
+                if (i === steps) {
+                    // Останній крок - перевіряємо події
+                    const cellData = this.specialCells[currentPosition];
+                    if (cellData) {
+                        console.log(`Гравець ${player.name} потрапив на подію на клітинці ${currentPosition}`);
+                        await this.handleSpecialCell(player, cellData);
+                    }
+                }
+            }
+            
+            // Додаємо ефект приземлення
+            pawn.classList.remove('moving');
+            pawn.classList.add('landing');
+            
+            // Додаємо слід
+            pawn.classList.add('trail');
+            
+            // Очищуємо ефекти після анімації
+            setTimeout(() => {
+                pawn.classList.remove('landing', 'trail', 'wind-effect');
+            }, 600);
+            
+        } catch (error) {
+            console.error('Помилка під час анімації:', error);
+        } finally {
+            // Розблоковуємо кнопку
+            this.rollDiceBtn.disabled = false;
+            this.rollDiceBtn.style.opacity = '1';
+        }
+    }
+    
+    // Переміщення фішки на конкретну клітинку
+    async movePawnToCell(pawn, cellPosition) {
+        return new Promise((resolve) => {
+            const targetCell = document.getElementById(`cell-${cellPosition}`);
+            if (!targetCell) {
+                resolve();
+                return;
+            }
+            
+            // Переміщуємо фішку в нову клітинку
+            targetCell.appendChild(pawn);
+            
+            // Центруємо вид на клітинці
+            this.centerViewOn(targetCell);
+            
+            // Чекаємо завершення CSS transition
+            setTimeout(resolve, 250);
+        });
+    }
+    
+    // Утиліта для затримки
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    // Телепорт між епохами
+    async teleportToNextEpoch(player, nextEpochId) {
+        const nextEpoch = this.epochs.find(e => e.id === nextEpochId);
+        if (!nextEpoch) return;
+        
+        console.log(`${player.name} телепортується до епохи ${nextEpoch.name}`);
+        
+        // Показуємо анімацію телепорту
+        await this.showTeleportAnimation(player, nextEpoch);
+        
+        // Переміщуємо гравця на першу клітинку нової епохи
+        const newPosition = nextEpoch.startCell;
+        const oldPosition = player.position;
+        
+        player.position = newPosition;
+        
+        // Плавно переміщуємо фішку
+        await this.movePawnToCell(document.getElementById(`pawn-${player.id}`), newPosition);
+        
+        // Центруємо камеру на новій епосі
+        this.centerViewOnEpoch(nextEpochId);
+        
+        this.logMessage(`${player.name} телепортувався до епохи ${nextEpoch.name}!`, 'system');
+        
+        // Перевіряємо події на новій клітинці
+        this.checkCell(player);
+    }
+    
+    // Анімація телепорту
+    async showTeleportAnimation(player, epoch) {
+        const pawn = document.getElementById(`pawn-${player.id}`);
+        if (!pawn) return;
+        
+        // Додаємо ефект телепорту
+        pawn.style.transition = 'all 0.5s ease-in-out';
+        pawn.style.transform = 'scale(0) rotate(360deg)';
+        pawn.style.opacity = '0';
+        
+        // Показуємо ефект світла
+        const lightEffect = document.createElement('div');
+        lightEffect.style.position = 'absolute';
+        lightEffect.style.top = pawn.style.top;
+        lightEffect.style.left = pawn.style.left;
+        lightEffect.style.width = '50px';
+        lightEffect.style.height = '50px';
+        lightEffect.style.background = 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%)';
+        lightEffect.style.borderRadius = '50%';
+        lightEffect.style.transform = 'translate(-50%, -50%)';
+        lightEffect.style.animation = 'teleportFlash 0.5s ease-out';
+        lightEffect.style.pointerEvents = 'none';
+        
+        this.gameBoard.appendChild(lightEffect);
+        
+        // Чекаємо завершення анімації
+        await this.sleep(500);
+        
+        // Відновлюємо фішку
+        pawn.style.transform = 'scale(1) rotate(0deg)';
+        pawn.style.opacity = '1';
+        
+        // Видаляємо ефект світла
+        lightEffect.remove();
+    }
+    
+    // Центрування камери на епосі
+    centerViewOnEpoch(epochId) {
+        const epoch = this.epochs.find(e => e.id === epochId);
+        if (!epoch) return;
+        
+        // Знаходимо першу клітинку епохи
+        const firstCell = document.getElementById(`cell-${epoch.startCell}`);
+        if (firstCell) {
+            this.centerViewOn(firstCell);
         }
     }
     

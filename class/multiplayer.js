@@ -102,7 +102,11 @@ class MultiplayerGame extends EducationalPathGame {
             this.updatePlayersList(data.players);
             this.showPlayersList();
             this.showChat();
+            this.showRoomCode(data.roomId);
             this.logMessage(`Кімната "${data.roomName}" створена! Код: ${this.roomId}`, 'system');
+            
+            // Показуємо код кімнати в модальному вікні
+            this.showRoomCodeModal(data.roomId, data.roomName);
         });
         
         this.socket.on('room_joined', (data) => {
@@ -237,6 +241,27 @@ class MultiplayerGame extends EducationalPathGame {
     
     showChat() {
         this.chatContainer.classList.remove('hidden');
+    }
+    
+    showRoomCode(roomCode) {
+        const roomCodeDisplay = document.getElementById('room-code-display');
+        const roomCodeText = document.getElementById('room-code-text');
+        const copyRoomCodeBtn = document.getElementById('copy-room-code-btn');
+        
+        if (roomCodeDisplay && roomCodeText) {
+            roomCodeText.textContent = roomCode;
+            roomCodeDisplay.classList.remove('hidden');
+            
+            if (copyRoomCodeBtn) {
+                copyRoomCodeBtn.addEventListener('click', () => {
+                    navigator.clipboard.writeText(roomCode).then(() => {
+                        if (window.gameUI) {
+                            window.gameUI.showNotification('Код скопійовано!', 'success');
+                        }
+                    });
+                });
+            }
+        }
     }
     
     sendMessage() {
@@ -388,6 +413,51 @@ class MultiplayerGame extends EducationalPathGame {
                 choice,
                 voterId: this.playerId
             });
+        }
+    }
+    
+    // Показуємо код кімнати в модальному вікні
+    showRoomCodeModal(roomCode, roomName) {
+        const modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Кімната створена!</h3>
+            <p class="mb-4">Поділіться цим кодом з іншими гравцями:</p>
+            <div class="bg-gray-100 p-4 rounded-lg mb-4 text-center">
+                <span class="text-3xl font-bold text-blue-600">${roomCode}</span>
+            </div>
+            <button id="copy-code-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mb-2">
+                📋 Скопіювати код
+            </button>
+            <button id="close-room-modal-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
+                Закрити
+            </button>
+        `;
+        
+        if (window.gameUI) {
+            window.gameUI.showQuestModal('Кімната створена', modalContent);
+            
+            // Додаємо обробники подій
+            setTimeout(() => {
+                const copyBtn = document.getElementById('copy-code-btn');
+                const closeBtn = document.getElementById('close-room-modal-btn');
+                
+                if (copyBtn) {
+                    copyBtn.addEventListener('click', () => {
+                        navigator.clipboard.writeText(roomCode).then(() => {
+                            if (window.gameUI) {
+                                window.gameUI.showNotification('Код скопійовано!', 'success');
+                            }
+                        });
+                    });
+                }
+                
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => {
+                        if (window.gameUI) {
+                            window.gameUI.hideModal('quest');
+                        }
+                    });
+                }
+            }, 100);
         }
     }
 }

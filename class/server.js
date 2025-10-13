@@ -336,38 +336,102 @@ io.on('connection', (socket) => {
         });
     });
     
-    // Обробляємо подію гравця
-    socket.on('player_on_event', (data) => {
-        console.log('Гравець потрапив на подію:', data);
-        const player = players.get(socket.id);
-        if (!player) return;
-        
-        const room = rooms.get(data.roomId);
-        if (!room || room.gameState !== 'playing') return;
-        
-        // Перевіряємо, чи це справді поточний гравець
-        const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
-        if (currentPlayer.id !== player.id) {
-            console.log('Не той гравець намагається активувати подію');
-            return;
-        }
-        
-        // Зберігаємо інформацію про поточну подію
-        room.currentEventPlayerId = player.id;
-        room.currentEventData = data.eventData;
-        
-        console.log(`${player.name} потрапив на подію ${data.eventType}`);
-        
-        // Відправляємо подію всім гравцям
-        io.to(room.id).emit('show_event_prompt', {
-            playerId: player.id,
-            playerName: player.name,
-            eventType: data.eventType,
-            eventData: data.eventData
+        // Обробляємо подію гравця
+        socket.on('player_on_event', (data) => {
+            console.log('Гравець потрапив на подію:', data);
+            const player = players.get(socket.id);
+            if (!player) return;
+
+            const room = rooms.get(data.roomId);
+            if (!room || room.gameState !== 'playing') return;
+
+            // Перевіряємо, чи це справді поточний гравець
+            const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+            if (currentPlayer.id !== player.id) {
+                console.log('Не той гравець намагається активувати подію');
+                return;
+            }
+
+            // Зберігаємо інформацію про поточну подію
+            room.currentEventPlayerId = player.id;
+            room.currentEventData = data.eventData;
+
+            console.log(`${player.name} потрапив на подію ${data.eventType}`);
+
+            // Обробляємо різні типи подій
+            if (data.eventType === 'pvp-quest') {
+                // Вибираємо випадкового опонента
+                const availablePlayers = room.gameData.players.filter(p => p.id !== player.id && !p.hasWon && !p.hasLost);
+                if (availablePlayers.length === 0) {
+                    // Якщо немає опонентів, пропускаємо подію
+                    io.to(room.id).emit('event_result', {
+                        playerId: player.id,
+                        playerName: player.name,
+                        choice: 'skip',
+                        resultMessage: `${player.name} не знайшов опонента для ПВП-квесту.`,
+                        newPosition: player.position,
+                        newPoints: player.points
+                    });
+                    return;
+                }
+
+                const opponent = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
+                
+                // Створюємо стан гри в хрестики-нулики
+                room.ticTacToeState = {
+                    board: [null, null, null, null, null, null, null, null, null],
+                    turn: player.id,
+                    players: [player.id, opponent.id],
+                    gameType: 'tic-tac-toe'
+                };
+
+                // Відправляємо початок гри
+                io.to(room.id).emit('tic_tac_toe_start', {
+                    gameState: room.ticTacToeState,
+                    player1: { id: player.id, name: player.name },
+                    player2: { id: opponent.id, name: opponent.name }
+                });
+
+            } else if (data.eventType === 'quest') {
+                // Запускаємо вікторину
+                const questions = [
+                    {
+                        question: "Яка столиця України?",
+                        options: ["Київ", "Львів", "Харків", "Одеса"],
+                        correctAnswer: 0
+                    },
+                    {
+                        question: "Хто написав 'Кобзар'?",
+                        options: ["Іван Франко", "Тарас Шевченко", "Леся Українка", "Михайло Коцюбинський"],
+                        correctAnswer: 1
+                    },
+                    {
+                        question: "Який рік проголошення незалежності України?",
+                        options: ["1990", "1991", "1992", "1989"],
+                        correctAnswer: 1
+                    }
+                ];
+
+                const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+                
+                io.to(room.id).emit('quiz_start', {
+                    question: randomQuestion,
+                    activePlayerId: player.id,
+                    activePlayerName: player.name
+                });
+
+            } else {
+                // Для інших подій використовуємо стару логіку
+                io.to(room.id).emit('show_event_prompt', {
+                    playerId: player.id,
+                    playerName: player.name,
+                    eventType: data.eventType,
+                    eventData: data.eventData
+                });
+            }
+
+            console.log('Відправлено подію всім гравцям');
         });
-        
-        console.log('Відправлено подію show_event_prompt всім гравцям');
-    });
     
     // Обробляємо вибір гравця в події
     socket.on('event_choice_made', (data) => {
@@ -648,6 +712,127 @@ io.on('connection', (socket) => {
             message: data.message
         });
     });
+
+    // Обробляємо хід в хрестики-нулики
+    socket.on('tic_tac_toe_move', (data) => {
+        console.log('Отримано хід в хрестики-нулики:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+
+        const room = rooms.get(data.roomId);
+        if (!room || !room.ticTacToeState) return;
+
+        // Перевіряємо, чи це хід поточного гравця
+        if (room.ticTacToeState.turn !== player.id) {
+            console.log('Не той гравець намагається зробити хід');
+            return;
+        }
+
+        // Перевіряємо, чи клітинка вільна
+        if (room.ticTacToeState.board[data.cellIndex] !== null) {
+            console.log('Клітинка вже зайнята');
+            return;
+        }
+
+        // Робимо хід
+        const symbol = room.ticTacToeState.players[0] === player.id ? 'X' : 'O';
+        room.ticTacToeState.board[data.cellIndex] = symbol;
+
+        // Перевіряємо на перемогу
+        const winner = checkTicTacToeWinner(room.ticTacToeState.board);
+        
+        if (winner) {
+            // Гра закінчена
+            const winnerPlayer = room.gameData.players.find(p => 
+                room.ticTacToeState.players[winner === 'X' ? 0 : 1] === p.id
+            );
+            
+            io.to(room.id).emit('tic_tac_toe_end', {
+                winner: winnerPlayer.id,
+                winnerName: winnerPlayer.name,
+                gameState: room.ticTacToeState
+            });
+
+            // Очищуємо стан гри
+            room.ticTacToeState = null;
+        } else if (room.ticTacToeState.board.every(cell => cell !== null)) {
+            // Нічия
+            io.to(room.id).emit('tic_tac_toe_end', {
+                winner: null,
+                winnerName: null,
+                gameState: room.ticTacToeState
+            });
+
+            room.ticTacToeState = null;
+        } else {
+            // Змінюємо хід
+            room.ticTacToeState.turn = room.ticTacToeState.players.find(id => id !== player.id);
+            
+            io.to(room.id).emit('tic_tac_toe_update', {
+                gameState: room.ticTacToeState
+            });
+        }
+    });
+
+    // Обробляємо відповідь на вікторину
+    socket.on('quiz_answer', (data) => {
+        console.log('Отримано відповідь на вікторину:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+
+        const room = rooms.get(data.roomId);
+        if (!room) return;
+
+        // Перевіряємо, чи це правильний гравець
+        if (room.currentEventPlayerId !== player.id) {
+            console.log('Не той гравець намагається відповісти');
+            return;
+        }
+
+        const isCorrect = data.answer === data.correctAnswer;
+        let resultMessage = '';
+        let pointsChange = 0;
+
+        if (isCorrect) {
+            pointsChange = 30;
+            resultMessage = `${player.name} правильно відповів на питання! +${pointsChange} ОО.`;
+        } else {
+            pointsChange = -10;
+            resultMessage = `${player.name} неправильно відповів. ${pointsChange} ОО.`;
+        }
+
+        player.points += pointsChange;
+
+        io.to(room.id).emit('quiz_end', {
+            playerId: player.id,
+            playerName: player.name,
+            wasCorrect: isCorrect,
+            correctAnswer: data.correctAnswer,
+            pointsChange: pointsChange,
+            resultMessage: resultMessage
+        });
+
+        // Очищуємо поточну подію
+        room.currentEventPlayerId = null;
+        room.currentEventData = null;
+    });
+
+    // Функція перевірки переможця в хрестики-нулики
+    function checkTicTacToeWinner(board) {
+        const winningCombinations = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // горизонтальні
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // вертикальні
+            [0, 4, 8], [2, 4, 6] // діагональні
+        ];
+
+        for (let combination of winningCombinations) {
+            const [a, b, c] = combination;
+            if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                return board[a];
+            }
+        }
+        return null;
+    }
     
     // Відключення
     socket.on('disconnect', () => {

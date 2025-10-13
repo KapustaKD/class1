@@ -300,12 +300,15 @@ io.on('connection', (socket) => {
         console.log('Відправлено подію dice_rolled всім гравцям');
         
         // Переходимо до наступного гравця
+        console.log('Старий currentPlayerIndex:', room.gameData.currentPlayerIndex);
         room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+        console.log('Новий currentPlayerIndex:', room.gameData.currentPlayerIndex);
         
         // Пропускаємо гравців, які вибули
         while (room.gameData.players[room.gameData.currentPlayerIndex].hasWon || 
                room.gameData.players[room.gameData.currentPlayerIndex].hasLost) {
             room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+            console.log('Пропущено вибулого гравця, новий індекс:', room.gameData.currentPlayerIndex);
         }
         
         // Повідомляємо всіх про зміну черги

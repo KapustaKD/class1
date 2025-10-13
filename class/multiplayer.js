@@ -759,6 +759,26 @@ class MultiplayerGame extends EducationalPathGame {
         this.logMessage(`${player.name} перемістився на клітинку ${data.position}.`, 'system');
     }
     
+    // Перевизначаємо movePlayer для відправки turn_completed після анімації
+    async movePlayer(player, steps) {
+        const startPos = player.position;
+        const endPos = Math.min(startPos + steps, this.BOARD_SIZE);
+        
+        for (let i = startPos + 1; i <= endPos; i++) {
+            player.position = i;
+            this.updatePawnPosition(player);
+            await new Promise(res => setTimeout(res, 300));
+        }
+        
+        this.checkCell(player);
+        
+        // Після завершення анімації відправляємо подію turn_completed
+        if (this.isOnlineMode && this.roomId) {
+            console.log('Відправляємо turn_completed після завершення анімації');
+            this.socket.emit('turn_completed', { roomId: this.roomId });
+        }
+    }
+    
     syncGameState(data) {
         this.players = data.players;
         this.currentPlayerIndex = data.currentPlayerIndex;
@@ -898,9 +918,9 @@ class MultiplayerGame extends EducationalPathGame {
                 isCurrentPlayer
             });
             
-            // Кнопка завжди активна, але показуємо різний текст
-            this.rollDiceBtn.disabled = false;
-            this.rollDiceBtn.style.opacity = '1';
+            // Кнопка активна тільки для поточного гравця
+            this.rollDiceBtn.disabled = !isCurrentPlayer;
+            this.rollDiceBtn.style.opacity = isCurrentPlayer ? '1' : '0.5';
             
             if (isCurrentPlayer) {
                 this.rollDiceBtn.textContent = '🎲 Ваш хід - Кинути кубик';

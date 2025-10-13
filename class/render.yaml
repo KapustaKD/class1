@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: educational-path-game
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+    healthCheckPath: /
+    autoDeploy: true
+    branch: main
+    dockerfilePath: ./Dockerfile

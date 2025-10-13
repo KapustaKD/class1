@@ -1,0 +1,388 @@
+/* Основний CSS для гри */
+body { 
+    font-family: 'Montserrat', sans-serif; 
+    touch-action: none; 
+}
+
+.game-viewport { 
+    width: 100%; 
+    height: 100%; 
+    position: relative; 
+    border-radius: 1rem; 
+    background-color: #2d3748; 
+    overflow: hidden; 
+    cursor: grab; 
+}
+
+#game-board-container { 
+    position: relative; 
+    width: 1200px; 
+    height: 800px; 
+    transform-origin: 0 0; 
+    transition: transform 0.5s ease; 
+}
+
+/* Фонові області епох */
+.era-background { 
+    position: absolute; 
+    border-radius: 50%; 
+    filter: blur(50px); 
+    opacity: 0.6; 
+}
+
+#era-bg-antiquity { 
+    background-color: #8c4f4f; 
+    top: 350px; 
+    left: 25px; 
+    width: 500px; 
+    height: 400px; 
+}
+
+#era-bg-middle-ages { 
+    background-color: #c2a77d; 
+    top: 0px; 
+    left: 200px; 
+    width: 600px; 
+    height: 450px; 
+}
+
+#era-bg-renaissance { 
+    background-color: #6d8e95; 
+    top: 300px; 
+    left: 450px; 
+    width: 550px; 
+    height: 450px; 
+}
+
+#era-bg-modern { 
+    background-color: #5568a3; 
+    top: 0px; 
+    left: 750px; 
+    width: 500px; 
+    height: 450px; 
+}
+
+#era-bg-contemporary { 
+    background-color: #a76b9a; 
+    top: 350px; 
+    left: 800px; 
+    width: 450px; 
+    height: 400px; 
+}
+
+.map-image { 
+    position: absolute; 
+    pointer-events: none; 
+    opacity: 0.3; 
+}
+
+#path-svg { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    z-index: 1; 
+}
+
+/* Клітинки дошки */
+.board-cell { 
+    position: absolute; 
+    border: 2px solid #1a202c; 
+    border-radius: 50%; 
+    width: 35px; 
+    height: 35px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-weight: bold; 
+    font-size: 0.8rem; 
+    transition: all 0.3s ease; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4); 
+    z-index: 2; 
+    transform: translate(-50%, -50%); 
+}
+
+.board-cell.start { 
+    background-color: #48bb78; 
+    color: white; 
+}
+
+.board-cell.finish { 
+    background-color: #f6e05e; 
+    color: #4a5568; 
+}
+
+.board-cell.quest { 
+    background: linear-gradient(45deg, #63b3ed, #3b82f6); 
+    color: white; 
+}
+
+.board-cell.pvp-quest { 
+    background: linear-gradient(45deg, #f56565, #c53030); 
+    color: white; 
+    border-color: #f6e05e; 
+}
+
+.board-cell.creative-quest { 
+    background: linear-gradient(45deg, #9f7aea, #6b46c1); 
+    color: white; 
+}
+
+.board-cell.event-good { 
+    background-color: #9f7aea; 
+    color: white; 
+}
+
+.board-cell.event-bad { 
+    background-color: #f56565; 
+    color: white; 
+}
+
+.board-cell.empty { 
+    background-color: #e2e8f0; 
+    color: #2d3748;
+}
+
+.board-cell.reincarnation { 
+    background: radial-gradient(circle, #f6e05e, #d69e2e); 
+    color: #4a5568; 
+    border-color: white; 
+}
+
+.board-cell.machine-uprising { 
+    background: linear-gradient(45deg, #1a202c, #4a5568); 
+    color: #f56565; 
+    border: 3px dashed #f56565; 
+    animation: pulse-red 2s infinite; 
+}
+
+.board-cell.future { 
+    background: linear-gradient(45deg, #a0aec0, #e2e8f0); 
+    color: #1a202c; 
+    border-color: #63b3ed;
+}
+
+.board-cell.portal { 
+    background: linear-gradient(135deg, #00dbde 0%, #fc00ff 100%); 
+    color: white; 
+}
+
+.board-cell.alternative-path { 
+    background: linear-gradient(45deg, #fbb6ce, #f687b3); 
+    color: white; 
+    border-style: dashed; 
+}
+
+/* Анімації */
+@keyframes pulse-red { 
+    0%, 100% { 
+        box-shadow: 0 0 15px #f56565; 
+    } 
+    50% { 
+        box-shadow: 0 0 30px #f56565; 
+    } 
+}
+
+/* Фішки гравців */
+.player-pawn { 
+    width: 12px; 
+    height: 12px; 
+    border-radius: 50%; 
+    border: 1px solid white; 
+    position: absolute; 
+    transition: all 0.5s ease-in-out; 
+    box-shadow: 0 1px 2px rgba(0,0,0,0.5); 
+}
+
+#pawn-1 { 
+    background-color: #e53e3e; 
+    top: 20%; 
+    left: 20%; 
+}
+
+#pawn-2 { 
+    background-color: #38b2ac; 
+    top: 20%; 
+    right: 20%; 
+}
+
+#pawn-3 { 
+    background-color: #ed8936; 
+    bottom: 20%; 
+    left: 20%; 
+}
+
+#pawn-4 { 
+    background-color: #d69e2e; 
+    bottom: 20%; 
+    right: 20%; 
+}
+
+/* Кубик */
+.dice { 
+    width: 80px; 
+    height: 80px; 
+    perspective: 1000px; 
+}
+
+.dice-inner { 
+    width: 100%; 
+    height: 100%; 
+    position: relative; 
+    transform-style: preserve-3d; 
+    transition: transform 1s; 
+}
+
+.dice-face { 
+    position: absolute; 
+    width: 80px; 
+    height: 80px; 
+    background: white; 
+    border: 2px solid #4a5568; 
+    font-size: 3rem; 
+    font-weight: bold; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    color: #2d3748; 
+}
+
+.face-1 { transform: rotateY(0deg) translateZ(40px); }
+.face-2 { transform: rotateY(90deg) translateZ(40px); }
+.face-3 { transform: rotateY(180deg) translateZ(40px); }
+.face-4 { transform: rotateY(-90deg) translateZ(40px); }
+.face-5 { transform: rotateX(90deg) translateZ(40px); }
+.face-6 { transform: rotateX(-90deg) translateZ(40px); }
+
+/* Модальні вікна */
+.modal-backdrop { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background-color: rgba(0,0,0,0.7); 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    z-index: 100; 
+    backdrop-filter: blur(5px); 
+}
+
+.modal-content { 
+    background: white; 
+    padding: 1.5rem; 
+    border-radius: 1rem; 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+    max-width: 90%; 
+    width: 450px; 
+    max-height: 80vh; 
+    overflow-y: auto; 
+    transition: transform 0.3s ease, box-shadow 0.3s ease; 
+}
+
+@keyframes shake { 
+    0%, 100% { transform: translateX(0); } 
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); } 
+    20%, 40%, 60%, 80% { transform: translateX(10px); } 
+}
+
+.modal-shake { 
+    animation: shake 0.6s ease-in-out; 
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.7); 
+}
+
+@keyframes pulse-green { 
+    0% { transform: scale(1); } 
+    50% { transform: scale(1.05); } 
+    100% { transform: scale(1); } 
+}
+
+.modal-pulse-green { 
+    animation: pulse-green 0.5s ease-in-out; 
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.7); 
+}
+
+/* Хрестики-нулики */
+.tic-tac-toe-grid { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 2px; 
+    width: 150px; 
+    height: 150px; 
+    margin: 0 auto; 
+}
+
+.tic-tac-toe-cell { 
+    width: 50px; 
+    height: 50px; 
+    border: 2px solid #4a5568; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 2rem; 
+    cursor: pointer; 
+    background: white; 
+}
+
+.tic-tac-toe-cell:hover { 
+    background: #f7fafc; 
+}
+
+.tic-tac-toe-cell.disabled { 
+    cursor: not-allowed; 
+    opacity: 0.5; 
+}
+
+/* Онлайн панель */
+#connection-status {
+    font-size: 0.9rem;
+}
+
+#status-indicator {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.player-card {
+    background: #374151;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    border: 2px solid transparent;
+    transition: border-color 0.3s;
+}
+
+.player-card.current-player {
+    border-color: #fbbf24;
+}
+
+.player-card.spectator {
+    border-color: #6b7280;
+    opacity: 0.7;
+}
+
+.chat-message {
+    margin-bottom: 0.5rem;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+}
+
+.chat-message.system {
+    background: #374151;
+    font-style: italic;
+}
+
+.chat-message.player {
+    background: #1f2937;
+}
+
+.chat-message.spectator {
+    background: #111827;
+    opacity: 0.8;
+}

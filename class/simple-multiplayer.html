@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Освітній Шлях: Революція - Простий Мультиплеєр</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Весь CSS з оригінальної гри */
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-board-container {
+            flex: 1;
+            position: relative;
+            background: #f0f0f0;
+            overflow: hidden;
+            width: 1200px;
+            height: 800px;
+        }
+
+        .board-cell {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            border: 2px solid #333;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .player-pawn {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid #000;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        .control-panel {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .dice {
+            width: 80px;
+            height: 80px;
+            position: relative;
+            margin: 0 auto;
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease;
+        }
+
+        .dice-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+        }
+
+        .dice-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .face-1 { transform: rotateY(0deg) translateZ(40px); }
+        .face-2 { transform: rotateY(90deg) translateZ(40px); }
+        .face-3 { transform: rotateY(180deg) translateZ(40px); }
+        .face-4 { transform: rotateY(270deg) translateZ(40px); }
+        .face-5 { transform: rotateX(90deg) translateZ(40px); }
+        .face-6 { transform: rotateX(-90deg) translateZ(40px); }
+
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 450px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Стилі для клітинок */
+        .cell-start { background: #4ade80; }
+        .cell-finish { background: #f59e0b; }
+        .cell-event-good { background: #10b981; }
+        .cell-event-bad { background: #ef4444; }
+        .cell-quest { background: #8b5cf6; }
+        .cell-portal { background: #06b6d4; }
+        .cell-alternative { background: #f97316; }
+        .cell-reincarnation { background: #ec4899; }
+        .cell-machine-uprising { background: #6b7280; }
+        .cell-future { background: #6366f1; }
+
+        /* Стилі для гравців */
+        .player-1 { background: #ef4444; }
+        .player-2 { background: #3b82f6; }
+        .player-3 { background: #10b981; }
+        .player-4 { background: #f59e0b; }
+
+        /* Стилі для ер */
+        .era-bg {
+            position: absolute;
+            opacity: 0.1;
+            pointer-events: none;
+        }
+
+        .map-image {
+            position: absolute;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Ігрова дошка -->
+        <div class="game-board-container" id="game-board-container">
+            <!-- SVG для шляхів -->
+            <svg id="game-paths" width="100%" height="100%" viewBox="0 0 1200 800">
+                <!-- Шляхи будуть додані динамічно -->
+            </svg>
+            
+            <!-- Клітинки дошки -->
+            <div id="board-cells"></div>
+            
+            <!-- Фігурки гравців -->
+            <div id="player-pawns"></div>
+            
+            <!-- Фонові зображення ер -->
+            <div id="era-backgrounds"></div>
+        </div>
+
+        <!-- Панель управління -->
+        <div class="control-panel">
+            <h1 class="text-2xl font-bold mb-4 text-center">Освітній Шлях: Революція</h1>
+            
+            <!-- Інформація про поточного гравця -->
+            <div id="current-player-info" class="mb-4 p-3 bg-gray-700 rounded-lg">
+                <div id="current-player-name" class="text-lg font-bold">Гравець 1</div>
+                <div id="player-points-info" class="text-lg font-bold">Очки Освіти: <span id="current-player-points" class="text-yellow-300">0</span></div>
+            </div>
+            
+            <!-- Таблиця лідерів -->
+            <div id="leaderboard"></div>
+            
+            <!-- Кубик -->
+            <div class="flex justify-center items-center my-2 h-24">
+                <div class="dice" id="dice">
+                    <div class="dice-inner" id="dice-inner">
+                        <div class="dice-face face-1">1</div>
+                        <div class="dice-face face-2">2</div>
+                        <div class="dice-face face-3">3</div>
+                        <div class="dice-face face-4">4</div>
+                        <div class="dice-face face-5">5</div>
+                        <div class="dice-face face-6">6</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Кнопка кидання кубика -->
+            <button id="roll-dice-btn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition duration-300 shadow-lg text-xl">Кинути кубик</button>
+            
+            <!-- Ігровий журнал -->
+            <div class="flex-grow flex flex-col">
+                <h3 class="text-xl font-semibold mt-2">Ігровий журнал</h3>
+                <div id="game-log" class="bg-gray-800 rounded-lg p-2 mt-2 overflow-y-auto text-sm text-gray-300" style="height: 200px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальне вікно для квестів -->
+    <div id="quest-modal" class="modal-backdrop hidden">
+        <div id="quest-modal-content" class="modal-content text-gray-800 text-center"></div>
+    </div>
+
+    <!-- Простий мультиплеєр через localStorage -->
+    <script>
+        // Простий мультиплеєр через localStorage (синхронізація між вкладками)
+        class SimpleMultiplayerGame {
+            constructor() {
+                this.gameState = {
+                    players: [],
+                    currentPlayerIndex: 0,
+                    gamePhase: 'setup', // setup, playing, finished
+                    diceValue: 0,
+                    gameLog: []
+                };
+                
+                this.initializeGame();
+                this.setupEventListeners();
+                this.startSyncLoop();
+            }
+
+            initializeGame() {
+                // Завантажити стан з localStorage або створити новий
+                const savedState = localStorage.getItem('educational-path-game');
+                if (savedState) {
+                    this.gameState = JSON.parse(savedState);
+                } else {
+                    this.createNewGame();
+                }
+                
+                this.renderGame();
+            }
+
+            createNewGame() {
+                this.gameState = {
+                    players: [
+                        { id: 1, name: 'Гравець 1', position: 0, points: 0, class: 'aristocrat', color: 'red' },
+                        { id: 2, name: 'Гравець 2', position: 0, points: 0, class: 'peasant', color: 'blue' }
+                    ],
+                    currentPlayerIndex: 0,
+                    gamePhase: 'playing',
+                    diceValue: 0,
+                    gameLog: ['🎮 Гра розпочата!']
+                };
+                
+                this.saveGameState();
+            }
+
+            saveGameState() {
+                localStorage.setItem('educational-path-game', JSON.stringify(this.gameState));
+            }
+
+            startSyncLoop() {
+                // Синхронізація кожні 2 секунди
+                setInterval(() => {
+                    const savedState = localStorage.getItem('educational-path-game');
+                    if (savedState) {
+                        const newState = JSON.parse(savedState);
+                        if (JSON.stringify(newState) !== JSON.stringify(this.gameState)) {
+                            this.gameState = newState;
+                            this.renderGame();
+                        }
+                    }
+                }, 2000);
+            }
+
+            rollDice() {
+                if (this.gameState.gamePhase !== 'playing') return;
+                
+                const diceValue = Math.floor(Math.random() * 6) + 1;
+                this.gameState.diceValue = diceValue;
+                
+                const currentPlayer = this.gameState.players[this.gameState.currentPlayerIndex];
+                const newPosition = Math.min(currentPlayer.position + diceValue, 100);
+                
+                currentPlayer.position = newPosition;
+                
+                this.gameState.gameLog.unshift(`🎲 ${currentPlayer.name} кинув ${diceValue}, перемістився на клітинку ${newPosition}`);
+                
+                // Перевірка перемоги
+                if (newPosition >= 100) {
+                    this.gameState.gamePhase = 'finished';
+                    this.gameState.gameLog.unshift(`🏆 ${currentPlayer.name} переміг!`);
+                } else {
+                    // Наступний гравець
+                    this.gameState.currentPlayerIndex = (this.gameState.currentPlayerIndex + 1) % this.gameState.players.length;
+                }
+                
+                this.saveGameState();
+                this.renderGame();
+            }
+
+            renderGame() {
+                this.renderPlayers();
+                this.renderDice();
+                this.renderGameLog();
+                this.renderCurrentPlayer();
+            }
+
+            renderPlayers() {
+                const pawnsContainer = document.getElementById('player-pawns');
+                pawnsContainer.innerHTML = '';
+                
+                this.gameState.players.forEach((player, index) => {
+                    const pawn = document.createElement('div');
+                    pawn.className = `player-pawn player-${index + 1}`;
+                    pawn.style.left = `${player.position * 12}px`;
+                    pawn.style.top = `${50 + index * 20}px`;
+                    pawn.title = `${player.name} (${player.points} очок)`;
+                    pawnsContainer.appendChild(pawn);
+                });
+            }
+
+            renderDice() {
+                const dice = document.getElementById('dice');
+                if (this.gameState.diceValue > 0) {
+                    dice.style.transform = `rotateX(${Math.random() * 360}deg) rotateY(${Math.random() * 360}deg)`;
+                }
+            }
+
+            renderGameLog() {
+                const gameLog = document.getElementById('game-log');
+                gameLog.innerHTML = '';
+                
+                this.gameState.gameLog.slice(0, 10).forEach(logEntry => {
+                    const div = document.createElement('div');
+                    div.textContent = logEntry;
+                    div.className = 'mb-1 p-1 bg-gray-700 rounded';
+                    gameLog.appendChild(div);
+                });
+            }
+
+            renderCurrentPlayer() {
+                const currentPlayer = this.gameState.players[this.gameState.currentPlayerIndex];
+                document.getElementById('current-player-name').textContent = currentPlayer.name;
+                document.getElementById('current-player-points').textContent = currentPlayer.points;
+            }
+
+            setupEventListeners() {
+                document.getElementById('roll-dice-btn').addEventListener('click', () => {
+                    this.rollDice();
+                });
+            }
+        }
+
+        // Запуск гри
+        document.addEventListener('DOMContentLoaded', () => {
+            new SimpleMultiplayerGame();
+        });
+    </script>
+</body>
+</html>

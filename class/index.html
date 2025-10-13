@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Освітній Шлях: Революція - Мультиплеєр</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="game.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Налаштування для продакшн середовища
+        window.APP_CONFIG = {
+            isProduction: window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1',
+            socketUrl: window.location.origin
+        };
+    </script>
+</head>
+<body class="bg-gray-800 text-white flex flex-col items-center min-h-screen p-4">
+
+    <h1 class="text-4xl font-bold mb-4 text-yellow-300">Освітній Шлях: Революція</h1>
+
+    <!-- Меню вибору режиму -->
+    <div id="mode-selection" class="text-center mb-8">
+        <h2 class="text-2xl font-bold mb-4">Оберіть режим гри</h2>
+        <div class="flex gap-4 justify-center">
+            <button id="local-mode-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-xl">
+                🏠 Локальна гра
+            </button>
+            <button id="online-mode-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-xl">
+                🌐 Онлайн гра
+            </button>
+        </div>
+    </div>
+
+    <!-- Основна гра (прихована спочатку) -->
+    <div id="game-container" class="hidden w-full max-w-screen-2xl flex flex-col lg:flex-row gap-8 lg:h-[85vh]">
+        <!-- Ігрове поле -->
+        <div class="lg:flex-grow bg-gray-700 p-2 rounded-2xl shadow-2xl flex">
+            <div class="game-viewport" id="game-viewport">
+                <div id="game-board-container">
+                    <div id="era-bg-antiquity" class="era-background"></div>
+                    <div id="era-bg-middle-ages" class="era-background"></div>
+                    <div id="era-bg-renaissance" class="era-background"></div>
+                    <div id="era-bg-modern" class="era-background"></div>
+                    <div id="era-bg-contemporary" class="era-background"></div>
+                    <img src="https://img.icons8.com/ios/452/greek-pillar.png" class="map-image" style="width: 100px; top: 450px; left: 75px;">
+                    <img src="https://www.pngkey.com/png/full/103-1035515_scroll-png-picture-scroll.png" class="map-image" style="width: 125px; top: 550px; left: 225px; transform: rotate(-15deg);">
+                    <img src="https://img.icons8.com/ios-filled/500/000000/castle.png" class="map-image" style="width: 150px; top: 75px; left: 400px;">
+                    <img src="https://img.icons8.com/ios/452/gutenberg-press.png" class="map-image" style="width: 125px; top: 500px; left: 700px;">
+                    <img src="https://www.pngkey.com/png/full/8-83145_rocket-ship-png-transparent-rocket-png.png" class="map-image" style="width: 100px; top: 75px; left: 1000px; transform: rotate(20deg);">
+                    <img src="https://img.icons8.com/dotty/80/000000/florence-light-bulb.png" class="map-image" style="width: 100px; top: 450px; left: 1050px;">
+                    <svg id="path-svg" viewbox="0 0 1200 800" preserveAspectRatio="none"></svg>
+                    <div id="game-board"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Панель керування -->
+        <div class="w-full lg:w-96 bg-gray-700 p-6 rounded-2xl shadow-2xl flex flex-col gap-4 shrink-0">
+            <div>
+                <h2 class="text-2xl font-bold border-b-2 border-yellow-300 pb-2 mb-2">Інформація</h2>
+                <div id="player-info" class="text-lg">Хід гравця: <span id="current-player-name" class="font-bold"></span></div>
+                <div id="player-class-info" class="text-md text-gray-300">Клас: <span id="current-player-class"></span></div>
+                <div id="player-points-info" class="text-lg font-bold">Очки Освіти: <span id="current-player-points" class="text-yellow-300"></span></div>
+            </div>
+            <div id="leaderboard"></div>
+            <div class="flex justify-center items-center my-2 h-24">
+                <div class="dice" id="dice">
+                    <div class="dice-inner" id="dice-inner">
+                        <div class="dice-face face-1">1</div>
+                        <div class="dice-face face-2">2</div>
+                        <div class="dice-face face-3">3</div>
+                        <div class="dice-face face-4">4</div>
+                        <div class="dice-face face-5">5</div>
+                        <div class="dice-face face-6">6</div>
+                    </div>
+                </div>
+            </div>
+            <button id="roll-dice-btn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition duration-300 shadow-lg text-xl">Кинути кубик</button>
+            <div class="flex-grow flex flex-col">
+                <h3 class="text-xl font-semibold mt-2">Ігровий журнал</h3>
+                <div id="game-log" class="bg-gray-800 rounded-lg p-2 mt-2 overflow-y-auto text-sm text-gray-300" style="height: 200px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Онлайн панель (прихована спочатку) -->
+    <div id="online-panel" class="hidden w-full max-w-screen-2xl bg-gray-700 p-6 rounded-2xl shadow-2xl">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">Онлайн гра</h2>
+            <div id="connection-status" class="flex items-center gap-2">
+                <div id="status-indicator" class="w-3 h-3 rounded-full bg-red-500"></div>
+                <span id="status-text">Не підключено</span>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Створення кімнати -->
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h3 class="text-xl font-bold mb-4">Створити кімнату</h3>
+                <div class="space-y-3">
+                    <input id="room-name" type="text" placeholder="Назва кімнати" class="w-full p-2 border border-gray-300 rounded text-black">
+                    <input id="player-name" type="text" placeholder="Ваше ім'я" class="w-full p-2 border border-gray-300 rounded text-black">
+                    <button id="create-room-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Створити</button>
+                </div>
+            </div>
+            
+            <!-- Приєднання до кімнати -->
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h3 class="text-xl font-bold mb-4">Приєднатися до кімнати</h3>
+                <div class="space-y-3">
+                    <input id="room-code" type="text" placeholder="Код кімнати" class="w-full p-2 border border-gray-300 rounded text-black">
+                    <input id="join-player-name" type="text" placeholder="Ваше ім'я" class="w-full p-2 border border-gray-300 rounded text-black">
+                    <button id="join-room-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Приєднатися</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Список гравців -->
+        <div id="players-list" class="mt-6 hidden">
+            <h3 class="text-xl font-bold mb-4">Гравці в кімнаті</h3>
+            <div id="players-container" class="grid grid-cols-2 gap-2"></div>
+        </div>
+        
+        <!-- Чат -->
+        <div id="chat-container" class="mt-6 hidden">
+            <h3 class="text-xl font-bold mb-4">Чат</h3>
+            <div id="chat-messages" class="bg-gray-800 rounded-lg p-3 h-32 overflow-y-auto mb-3"></div>
+            <div class="flex gap-2">
+                <input id="chat-input" type="text" placeholder="Повідомлення..." class="flex-1 p-2 border border-gray-300 rounded text-black">
+                <button id="send-message-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Відправити</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальні вікна -->
+    <div id="rules-modal" class="modal-backdrop">
+        <div class="modal-content text-gray-800">
+            <h2 class="text-3xl font-bold mb-4 text-center">Класи та Перемога</h2>
+            <p class="text-center mb-4">Мета гри - першим набрати <strong>300 Очок Освіти (ОО)</strong>.</p>
+            <div class="space-y-4 text-left">
+                <div><h3 class="text-xl font-bold text-yellow-600">⚜️ Аристократ</h3><p><strong>Старт:</strong> 50 ОО. <strong>Здібність:</strong> Завжди ходить на 1 клітинку більше.</p></div>
+                <div><h3 class="text-xl font-bold text-gray-600">⚖️ Міщанин</h3><p><strong>Старт:</strong> 20 ОО. <strong>Здібність:</strong> Нейтральний клас без бонусів.</p></div>
+                <div><h3 class="text-xl font-bold text-green-600">🌱 Селянин</h3><p><strong>Старт:</strong> 0 ОО. <strong>Здібність:</strong> Завжди ходить на 1 клітинку менше (мін. 1).</p></div>
+            </div>
+            <button id="show-setup-btn" class="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 text-xl">Зрозуміло!</button>
+        </div>
+    </div>
+    
+    <div id="start-modal" class="modal-backdrop hidden">
+        <div class="modal-content text-gray-800">
+            <h2 class="text-3xl font-bold mb-4 text-center">Налаштування гри</h2>
+            <div class="mb-4">
+                <label for="player-count" class="block text-lg font-medium mb-2">Кількість гравців:</label>
+                <select id="player-count" class="w-full p-2 border border-gray-300 rounded-lg text-black">
+                    <option value="2" selected>2</option>
+                    <option value="3">3</option>
+                </select>
+            </div>
+            <div id="player-setup-container"></div>
+            <button id="start-game-btn" class="w-full mt-6 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 text-xl">Почати гру</button>
+        </div>
+    </div>
+    
+    <div id="quest-modal" class="modal-backdrop hidden">
+        <div id="quest-modal-content" class="modal-content text-gray-800 text-center"></div>
+    </div>
+
+    <!-- Підключення скриптів -->
+    <script src="utils.js"></script>
+    <script src="ui.js"></script>
+    <script src="game.js"></script>
+    <script src="multiplayer.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

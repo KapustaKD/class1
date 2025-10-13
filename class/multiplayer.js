@@ -632,7 +632,9 @@ class MultiplayerGame extends EducationalPathGame {
             const currentPlayerPointsEl = document.getElementById('current-player-points');
             
             if (currentPlayerNameEl) {
-                currentPlayerNameEl.textContent = currentPlayer.name;
+                const isMyTurn = this.isOnlineMode && currentPlayer && currentPlayer.id === this.playerId;
+                const turnIndicator = isMyTurn ? '🎯 ' : '⏳ ';
+                currentPlayerNameEl.textContent = `${turnIndicator}${currentPlayer.name}`;
                 currentPlayerNameEl.style.color = currentPlayer.color;
             }
             
@@ -896,18 +898,22 @@ class MultiplayerGame extends EducationalPathGame {
                 isCurrentPlayer
             });
             
-            this.rollDiceBtn.disabled = !isCurrentPlayer;
-            this.rollDiceBtn.style.opacity = isCurrentPlayer ? '1' : '0.5';
+            // Кнопка завжди активна, але показуємо різний текст
+            this.rollDiceBtn.disabled = false;
+            this.rollDiceBtn.style.opacity = '1';
             
             if (isCurrentPlayer) {
-                this.rollDiceBtn.textContent = 'Кинути кубик';
+                this.rollDiceBtn.textContent = '🎲 Ваш хід - Кинути кубик';
+                this.rollDiceBtn.style.backgroundColor = '#10b981'; // Зелений колір
             } else {
-                this.rollDiceBtn.textContent = `Хід гравця ${currentPlayer?.name || 'невідомо'}`;
+                this.rollDiceBtn.textContent = `⏳ Не ваш хід - Хід гравця ${currentPlayer?.name || 'невідомо'}`;
+                this.rollDiceBtn.style.backgroundColor = '#6b7280'; // Сірий колір
             }
         } else {
             this.rollDiceBtn.disabled = !this.gameActive;
             this.rollDiceBtn.style.opacity = this.gameActive ? '1' : '0.5';
             this.rollDiceBtn.textContent = 'Кинути кубик';
+            this.rollDiceBtn.style.backgroundColor = '#eab308'; // Жовтий колір
         }
     }
     

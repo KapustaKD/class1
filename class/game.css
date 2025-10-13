@@ -22,52 +22,73 @@ body {
     transition: transform 0.5s ease; 
 }
 
-/* Острови епох */
-.epoch-island {
+/* Кольорові зони */
+.color-zone {
     position: absolute;
-    border-radius: 30px;
-    filter: blur(20px);
-    opacity: 0.2;
+    border-radius: 50px;
+    filter: blur(25px);
+    opacity: 0.15;
     transition: all 0.3s ease;
     z-index: 1;
-    box-shadow: 0 0 30px rgba(0,0,0,0.3);
+    box-shadow: 0 0 40px rgba(0,0,0,0.3);
 }
 
-.epoch-island:hover {
-    opacity: 0.4;
-    filter: blur(15px);
-    transform: scale(1.02);
+.color-zone:hover {
+    opacity: 0.25;
+    filter: blur(20px);
+    transform: scale(1.01);
 }
 
-/* Клітинки з прив'язкою до епох */
-.board-cell.epoch-1 {
-    border-color: #c94a45;
-    box-shadow: 0 0 10px rgba(201, 74, 69, 0.3);
-    background: linear-gradient(135deg, #c94a45, #b83e3a);
+/* Клітинки з прив'язкою до зон */
+.board-cell.zone-1 {
+    border-color: #ff1a1a;
+    box-shadow: 0 0 10px rgba(255, 26, 26, 0.3);
+    background: linear-gradient(135deg, #ff1a1a, #e61a1a);
 }
 
-.board-cell.epoch-2 {
-    border-color: #e6c86e;
-    box-shadow: 0 0 10px rgba(230, 200, 110, 0.3);
-    background: linear-gradient(135deg, #e6c86e, #d6b85e);
+.board-cell.zone-2 {
+    border-color: #33adff;
+    box-shadow: 0 0 10px rgba(51, 173, 255, 0.3);
+    background: linear-gradient(135deg, #33adff, #1a9bff);
 }
 
-.board-cell.epoch-3 {
-    border-color: #7ea4d4;
-    box-shadow: 0 0 10px rgba(126, 164, 212, 0.3);
-    background: linear-gradient(135deg, #7ea4d4, #6e94c4);
+.board-cell.zone-3 {
+    border-color: #a6ff4d;
+    box-shadow: 0 0 10px rgba(166, 255, 77, 0.3);
+    background: linear-gradient(135deg, #a6ff4d, #96ef3d);
 }
 
-.board-cell.epoch-4 {
-    border-color: #a34c56;
-    box-shadow: 0 0 10px rgba(163, 76, 86, 0.3);
-    background: linear-gradient(135deg, #a34c56, #933c46);
+.board-cell.zone-4 {
+    border-color: #f5e68a;
+    box-shadow: 0 0 10px rgba(245, 230, 138, 0.3);
+    background: linear-gradient(135deg, #f5e68a, #e5d67a);
 }
 
-.board-cell.epoch-5 {
-    border-color: #84b56d;
-    box-shadow: 0 0 10px rgba(132, 181, 109, 0.3);
-    background: linear-gradient(135deg, #84b56d, #74a55d);
+.board-cell.zone-5 {
+    border-color: #ff1aff;
+    box-shadow: 0 0 10px rgba(255, 26, 255, 0.3);
+    background: linear-gradient(135deg, #ff1aff, #ef1aef);
+}
+
+/* Фінішна клітинка з короною */
+.board-cell.finish {
+    background: radial-gradient(circle, #ffd700, #ffb347);
+    color: #8b4513;
+    border: 4px solid #ffd700;
+    animation: crownGlow 2s infinite;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+@keyframes crownGlow {
+    0%, 100% { 
+        box-shadow: 0 0 20px #ffd700;
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 40px #ffd700;
+        transform: scale(1.05);
+    }
 }
 
 /* Реінкарнація */

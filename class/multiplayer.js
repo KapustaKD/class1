@@ -195,8 +195,8 @@ class MultiplayerGame extends EducationalPathGame {
             this.gameActive = true;
             
             // Переходимо до ігрового інтерфейсу
-            this.showGameContainer();
-            this.updateUI();
+            this.showGameInterface();
+            this.updatePlayerInfo();
             
             // Приховуємо онлайн панель
             this.onlinePanel.classList.add('hidden');
@@ -364,6 +364,77 @@ class MultiplayerGame extends EducationalPathGame {
             console.log('Починаємо онлайн гру');
             this.socket.emit('start_game', { roomId: this.roomId });
         }
+    }
+    
+    // Показуємо ігровий інтерфейс
+    showGameInterface() {
+        // Показуємо ігровий контейнер
+        if (this.gameContainer) {
+            this.gameContainer.classList.remove('hidden');
+        }
+        
+        // Приховуємо онлайн панель
+        if (this.onlinePanel) {
+            this.onlinePanel.classList.add('hidden');
+        }
+        
+        // Приховуємо вибір режиму
+        if (this.modeSelection) {
+            this.modeSelection.classList.add('hidden');
+        }
+        
+        // Створюємо ігрову дошку
+        this.createBoard();
+        
+        console.log('Ігровий інтерфейс показано');
+    }
+    
+    // Оновлюємо інформацію про гравця
+    updatePlayerInfo() {
+        if (this.players && this.players.length > 0) {
+            const currentPlayer = this.players[this.currentPlayerIndex];
+            
+            // Оновлюємо інформацію про поточного гравця
+            const currentPlayerNameEl = document.getElementById('current-player-name');
+            const currentPlayerClassEl = document.getElementById('current-player-class');
+            const currentPlayerPointsEl = document.getElementById('current-player-points');
+            
+            if (currentPlayerNameEl) {
+                currentPlayerNameEl.textContent = currentPlayer.name;
+                currentPlayerNameEl.style.color = currentPlayer.color;
+            }
+            
+            if (currentPlayerClassEl) {
+                currentPlayerClassEl.textContent = currentPlayer.class?.name || 'Не обрано';
+            }
+            
+            if (currentPlayerPointsEl) {
+                currentPlayerPointsEl.textContent = currentPlayer.points || 0;
+            }
+            
+            // Оновлюємо таблицю лідерів
+            this.updateLeaderboard();
+        }
+    }
+    
+    // Оновлюємо таблицю лідерів
+    updateLeaderboard() {
+        const leaderboardEl = document.getElementById('leaderboard');
+        if (!leaderboardEl || !this.players) return;
+        
+        const sortedPlayers = this.players
+            .filter(p => !p.hasLost)
+            .sort((a, b) => (b.points || 0) - (a.points || 0));
+        
+        leaderboardEl.innerHTML = `
+            <h3 class="text-lg font-semibold mt-2">Таблиця лідерів</h3>
+            ${sortedPlayers.map((p, index) => `
+                <div class="flex justify-between items-center py-1">
+                    <span style="color:${p.color};">${p.name}</span>
+                    <span class="text-yellow-300">${p.points || 0} ОО</span>
+                </div>
+            `).join('')}
+        `;
     }
     
     rollTheDice() {

@@ -192,6 +192,14 @@ class MultiplayerGame extends EducationalPathGame {
             this.handleRemoteGameEnd(data);
         });
         
+        this.socket.on('player_eliminated', (data) => {
+            this.handlePlayerElimination(data);
+        });
+        
+        this.socket.on('tournament_ended', (data) => {
+            this.handleTournamentEnd(data);
+        });
+        
         this.socket.on('game_started', (data) => {
             console.log('Гра почалася:', data);
             this.players = data.players;
@@ -374,6 +382,109 @@ class MultiplayerGame extends EducationalPathGame {
         }
     }
     
+    // Перевизначення методу завершення гри для мультиплеєру
+    endGame(winner, customMessage = "") {
+        if (this.isOnlineMode) {
+            // В онлайн режимі відправляємо подію на сервер
+            this.socket.emit('player_won', {
+                roomId: this.roomId,
+                playerId: winner?.id,
+                message: customMessage
+            });
+        } else {
+            // Локальний режим
+            super.endGame(winner, customMessage);
+        }
+    }
+    
+    // Обробка вибування гравця
+    handlePlayerElimination(data) {
+        const eliminatedPlayer = this.players.find(p => p.id === data.playerId);
+        if (!eliminatedPlayer) return;
+        
+        eliminatedPlayer.hasWon = true;
+        eliminatedPlayer.finalPosition = data.position;
+        
+        this.logMessage(`🎉 ${eliminatedPlayer.name} досяг 300 ОО і займає ${data.position} місце!`, 'system');
+        
+        // Оновлюємо інтерфейс
+        this.updatePlayerInfo();
+        this.updateDiceButtonState();
+        
+        // Перевіряємо, чи залишилися активні гравці
+        const activePlayers = this.players.filter(p => !p.hasWon && !p.hasLost);
+        if (activePlayers.length <= 1) {
+            // Гра закінчена
+            this.handleGameEnd();
+        }
+    }
+    
+    // Обробка завершення всієї гри
+    handleGameEnd() {
+        const sortedPlayers = this.players
+            .filter(p => p.hasWon || p.hasLost)
+            .sort((a, b) => {
+                if (a.hasWon && !b.hasWon) return -1;
+                if (!a.hasWon && b.hasWon) return 1;
+                return (b.points || 0) - (a.points || 0);
+            });
+        
+        let message = "🏆 Турнір завершено!\n\n";
+        sortedPlayers.forEach((player, index) => {
+            const position = index + 1;
+            const medal = position === 1 ? "🥇" : position === 2 ? "🥈" : position === 3 ? "🥉" : "🏅";
+            message += `${medal} ${position} місце: ${player.name} (${player.points || 0} ОО)\n`;
+        });
+        
+        this.logMessage(message, 'system');
+        
+        // Показуємо фінальне модальне вікно
+        this.showFinalResults(sortedPlayers);
+    }
+    
+    // Показуємо фінальні результати
+    showFinalResults(sortedPlayers) {
+        const resultsHTML = `
+            <h2 class="text-4xl font-bold text-yellow-400 mb-6">🏆 Турнір завершено!</h2>
+            <div class="space-y-4 mb-6">
+                ${sortedPlayers.map((player, index) => {
+                    const position = index + 1;
+                    const medal = position === 1 ? "🥇" : position === 2 ? "🥈" : position === 3 ? "🥉" : "🏅";
+                    return `
+                        <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl">${medal}</span>
+                                <span class="text-xl font-semibold" style="color: ${player.color};">${player.name}</span>
+                            </div>
+                            <span class="text-lg text-yellow-300">${player.points || 0} ОО</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            <button id="restart-tournament-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 text-xl">
+                Новий турнір
+            </button>
+        `;
+        
+        if (window.gameUI) {
+            window.gameUI.showQuestModal('Результати турніру', resultsHTML);
+            
+            setTimeout(() => {
+                const restartBtn = document.getElementById('restart-tournament-btn');
+                if (restartBtn) {
+                    restartBtn.addEventListener('click', () => {
+                        location.reload();
+                    });
+                }
+            }, 100);
+        }
+    }
+    
+    // Обробка завершення турніру з сервера
+    handleTournamentEnd(data) {
+        this.showFinalResults(data.finalPositions);
+    }
+    
     // Показуємо ігровий інтерфейс
     showGameInterface() {
         // Показуємо ігровий контейнер
@@ -446,7 +557,7 @@ class MultiplayerGame extends EducationalPathGame {
             }
             
             if (currentPlayerPointsEl) {
-                currentPlayerPointsEl.textContent = currentPlayer.points || 0;
+                currentPlayerPointsEl.textContent = `${currentPlayer.points || 0} ОО`;
             }
             
             // Оновлюємо таблицю лідерів

@@ -401,12 +401,22 @@ io.on('connection', (socket) => {
             }
         } else if (data.eventType === 'reincarnation') {
             if (data.choice === 'yes') {
-                // Переміщуємо гравця на наступну секцію
-                player.position = data.nextPosition;
-                player.points += data.points;
-                resultMessage = `${player.name} завершив епоху ${data.section}! Перехід до наступної епохи, отримано ${data.points} ОО.`;
+                // Переміщуємо гравця на першу клітинку наступної епохи
+                const nextEpochStartCell = data.eventData.nextEpoch * 25 + 1;
+                player.position = nextEpochStartCell;
+                player.points += data.eventData.points;
+                resultMessage = `${player.name} завершив епоху! Перехід до наступної епохи, отримано ${data.eventData.points} ОО.`;
             } else {
                 resultMessage = `${player.name} відмовився від переходу між епохами.`;
+            }
+        } else if (data.eventType === 'alternative-path') {
+            if (data.choice === 'yes') {
+                // Переміщуємо гравця на цільову позицію
+                player.position = data.eventData.target;
+                player.points -= data.eventData.cost;
+                resultMessage = `${player.name} скористався обхідною дорогою! Переміщено на клітинку ${data.eventData.target}, втрачено ${data.eventData.cost} ОО.`;
+            } else {
+                resultMessage = `${player.name} відмовився від обхідної дороги.`;
             }
         }
         

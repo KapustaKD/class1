@@ -471,7 +471,7 @@ class EducationalPathGame {
         const player = this.players[this.currentPlayerIndex];
         this.currentPlayerNameEl.textContent = player.name;
         this.currentPlayerNameEl.style.color = player.color;
-        this.currentPlayerClassEl.textContent = player.class.name;
+        this.currentPlayerClassEl.textContent = player.class ? player.class.name : '—';
         this.currentPlayerPointsEl.textContent = player.points;
         this.leaderboardEl.innerHTML = `<h3 class="text-lg font-semibold mt-2">Таблиця лідерів</h3>` + 
             this.players.filter(p => !p.hasLost).sort((a,b) => b.points - a.points).map(p => 

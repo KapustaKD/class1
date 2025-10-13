@@ -193,9 +193,24 @@ class MultiplayerGame extends EducationalPathGame {
         this.socket.on('turn_changed', (data) => {
             console.log('Отримано подію turn_changed:', data);
             this.currentPlayerIndex = data.currentPlayerIndex;
+            
+            // Оновлюємо інформацію про поточного гравця
+            if (data.currentPlayer) {
+                console.log('Поточний гравець з сервера:', data.currentPlayer.name, 'ID:', data.currentPlayer.id);
+            }
+            
             this.updatePlayerInfo();
             this.updateDiceButtonState();
-            this.logMessage(`Тепер хід гравця ${this.players[this.currentPlayerIndex].name}.`, 'turn');
+            
+            const currentPlayer = this.players[this.currentPlayerIndex];
+            if (currentPlayer) {
+                this.logMessage(`Тепер хід гравця ${currentPlayer.name}.`, 'turn');
+            } else {
+                console.error('Поточний гравець не знайдений!', {
+                    currentPlayerIndex: this.currentPlayerIndex,
+                    players: this.players
+                });
+            }
         });
         
         this.socket.on('quest_started', (data) => {
@@ -683,6 +698,8 @@ class MultiplayerGame extends EducationalPathGame {
                 // Показуємо повідомлення користувачу
                 if (!isCurrentPlayer) {
                     this.logMessage(`Зараз хід гравця ${currentPlayer?.name || 'невідомо'}`, 'system');
+                } else {
+                    console.log('Гравець може кинути кубик - це його хід');
                 }
             }
         } else {
@@ -847,6 +864,44 @@ class MultiplayerGame extends EducationalPathGame {
             'peasant': '<li>Починаєте з 0 очками освіти</li><li>Кожен рух на -1 клітинку менше</li><li>Мінімум 1 клітинка за хід</li>'
         };
         return descriptions[classId] || '<li>Особливості класу</li>';
+    }
+    
+    // Оновлюємо стан кнопки кидання кубика
+    updateDiceButtonState() {
+        if (!this.rollDiceBtn) return;
+        
+        console.log('updateDiceButtonState викликано:', {
+            isOnlineMode: this.isOnlineMode,
+            gameActive: this.gameActive,
+            currentPlayerIndex: this.currentPlayerIndex,
+            players: this.players?.length,
+            myPlayerId: this.playerId
+        });
+        
+        if (this.isOnlineMode && this.gameActive) {
+            const currentPlayer = this.players[this.currentPlayerIndex];
+            const isCurrentPlayer = currentPlayer && currentPlayer.id === this.playerId;
+            
+            console.log('Онлайн режим - стан кнопки:', {
+                currentPlayer: currentPlayer?.name,
+                currentPlayerId: currentPlayer?.id,
+                myPlayerId: this.playerId,
+                isCurrentPlayer
+            });
+            
+            this.rollDiceBtn.disabled = !isCurrentPlayer;
+            this.rollDiceBtn.style.opacity = isCurrentPlayer ? '1' : '0.5';
+            
+            if (isCurrentPlayer) {
+                this.rollDiceBtn.textContent = 'Кинути кубик';
+            } else {
+                this.rollDiceBtn.textContent = `Хід гравця ${currentPlayer?.name || 'невідомо'}`;
+            }
+        } else {
+            this.rollDiceBtn.disabled = !this.gameActive;
+            this.rollDiceBtn.style.opacity = this.gameActive ? '1' : '0.5';
+            this.rollDiceBtn.textContent = 'Кинути кубик';
+        }
     }
     
     // Показуємо код кімнати в модальному вікні

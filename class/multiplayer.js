@@ -258,14 +258,40 @@ class MultiplayerGame extends EducationalPathGame {
             this.showEventPrompt(data);
         });
         
-        this.socket.on('event_result', (data) => {
-            console.log('Отримано подію event_result:', data);
-            this.handleEventResult(data);
-        });
-        
-        this.socket.on('quest_started', (data) => {
-            this.handleRemoteQuest(data);
-        });
+                this.socket.on('event_result', (data) => {
+                    console.log('Отримано подію event_result:', data);
+                    this.handleEventResult(data);
+                });
+
+                this.socket.on('quest_started', (data) => {
+                    this.handleRemoteQuest(data);
+                });
+
+                // Обробники міні-ігор
+                this.socket.on('tic_tac_toe_start', (data) => {
+                    console.log('Початок гри в хрестики-нулики:', data);
+                    this.showTicTacToeGame(data);
+                });
+
+                this.socket.on('tic_tac_toe_update', (data) => {
+                    console.log('Оновлення гри в хрестики-нулики:', data);
+                    this.updateTicTacToeGame(data);
+                });
+
+                this.socket.on('tic_tac_toe_end', (data) => {
+                    console.log('Кінець гри в хрестики-нулики:', data);
+                    this.endTicTacToeGame(data);
+                });
+
+                this.socket.on('quiz_start', (data) => {
+                    console.log('Початок вікторини:', data);
+                    this.showQuiz(data);
+                });
+
+                this.socket.on('quiz_end', (data) => {
+                    console.log('Кінець вікторини:', data);
+                    this.endQuiz(data);
+                });
         
         this.socket.on('quest_vote', (data) => {
             this.handleQuestVote(data);
@@ -962,6 +988,211 @@ class MultiplayerGame extends EducationalPathGame {
         // Оновлюємо UI
         this.updatePlayerInfo();
         this.updateLeaderboard();
+    }
+
+    // Міні-ігри
+    showTicTacToeGame(data) {
+        const isPlayer1 = data.player1.id === this.playerId;
+        const isPlayer2 = data.player2.id === this.playerId;
+        const isParticipant = isPlayer1 || isPlayer2;
+        const isMyTurn = data.gameState.turn === this.playerId;
+
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Хрестики-нулики!</h3>
+            <p class="mb-4">${data.player1.name} проти ${data.player2.name}</p>
+            <div class="tic-tac-toe-board grid grid-cols-3 gap-2 mb-4">
+        `;
+
+        for (let i = 0; i < 9; i++) {
+            const symbol = data.gameState.board[i] || '';
+            const isClickable = isParticipant && isMyTurn && !symbol;
+            const clickHandler = isClickable ? `onclick="game.makeTicTacToeMove(${i})"` : '';
+            const cursorClass = isClickable ? 'cursor-pointer hover:bg-gray-200' : 'cursor-not-allowed';
+            
+            modalContent += `
+                <div class="w-16 h-16 border-2 border-gray-400 flex items-center justify-center text-2xl font-bold ${cursorClass}" ${clickHandler}>
+                    ${symbol}
+                </div>
+            `;
+        }
+
+        modalContent += `
+            </div>
+            <p class="text-center">
+                ${isParticipant ? (isMyTurn ? 'Ваш хід!' : 'Хід опонента...') : 'Спостерігайте за грою'}
+            </p>
+        `;
+
+        this.showQuestModal('ПВП-квест', modalContent, []);
+    }
+
+    updateTicTacToeGame(data) {
+        const isMyTurn = data.gameState.turn === this.playerId;
+        const isParticipant = data.gameState.players.includes(this.playerId);
+
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Хрестики-нулики!</h3>
+            <div class="tic-tac-toe-board grid grid-cols-3 gap-2 mb-4">
+        `;
+
+        for (let i = 0; i < 9; i++) {
+            const symbol = data.gameState.board[i] || '';
+            const isClickable = isParticipant && isMyTurn && !symbol;
+            const clickHandler = isClickable ? `onclick="game.makeTicTacToeMove(${i})"` : '';
+            const cursorClass = isClickable ? 'cursor-pointer hover:bg-gray-200' : 'cursor-not-allowed';
+            
+            modalContent += `
+                <div class="w-16 h-16 border-2 border-gray-400 flex items-center justify-center text-2xl font-bold ${cursorClass}" ${clickHandler}>
+                    ${symbol}
+                </div>
+            `;
+        }
+
+        modalContent += `
+            </div>
+            <p class="text-center">
+                ${isParticipant ? (isMyTurn ? 'Ваш хід!' : 'Хід опонента...') : 'Спостерігайте за грою'}
+            </p>
+        `;
+
+        this.showQuestModal('ПВП-квест', modalContent, []);
+    }
+
+    endTicTacToeGame(data) {
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Хрестики-нулики завершено!</h3>
+            <div class="tic-tac-toe-board grid grid-cols-3 gap-2 mb-4">
+        `;
+
+        for (let i = 0; i < 9; i++) {
+            const symbol = data.gameState.board[i] || '';
+            modalContent += `
+                <div class="w-16 h-16 border-2 border-gray-400 flex items-center justify-center text-2xl font-bold">
+                    ${symbol}
+                </div>
+            `;
+        }
+
+        modalContent += `</div>`;
+
+        if (data.winner) {
+            modalContent += `<p class="text-center text-green-600 font-bold mb-4">Переможець: ${data.winnerName}!</p>`;
+            
+            if (data.winner === this.playerId) {
+                modalContent += `<p class="text-center mb-4">Ви можете обмінятися місцями з будь-яким гравцем!</p>`;
+                
+                const buttons = this.players
+                    .filter(p => p.id !== this.playerId)
+                    .map(p => ({
+                        text: `Обмінятися з ${p.name}`,
+                        callback: () => this.swapPositions(p.id)
+                    }));
+                
+                buttons.push({ text: 'Не обмінюватися', callback: () => this.closeMiniGame() });
+                
+                this.showQuestModal('ПВП-квест', modalContent, buttons);
+            } else {
+                this.showQuestModal('ПВП-квест', modalContent, [
+                    { text: 'Закрити', callback: () => this.closeMiniGame() }
+                ]);
+            }
+        } else {
+            modalContent += `<p class="text-center text-gray-600 font-bold mb-4">Нічия!</p>`;
+            this.showQuestModal('ПВП-квест', modalContent, [
+                { text: 'Закрити', callback: () => this.closeMiniGame() }
+            ]);
+        }
+    }
+
+    makeTicTacToeMove(cellIndex) {
+        this.socket.emit('tic_tac_toe_move', {
+            roomId: this.roomId,
+            cellIndex: cellIndex
+        });
+    }
+
+    showQuiz(data) {
+        const isMyQuiz = data.activePlayerId === this.playerId;
+        
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Вікторина!</h3>
+            <p class="mb-4">${data.activePlayerName} відповідає на питання</p>
+            <div class="quiz-question mb-4">
+                <p class="text-lg font-semibold mb-4">${data.question.question}</p>
+                <div class="quiz-options space-y-2">
+        `;
+
+        data.question.options.forEach((option, index) => {
+            const isClickable = isMyQuiz;
+            const clickHandler = isClickable ? `onclick="game.answerQuiz(${index})"` : '';
+            const cursorClass = isClickable ? 'cursor-pointer hover:bg-gray-200' : 'cursor-not-allowed';
+            
+            modalContent += `
+                <div class="p-3 border-2 border-gray-400 rounded ${cursorClass}" ${clickHandler}>
+                    ${String.fromCharCode(65 + index)}. ${option}
+                </div>
+            `;
+        });
+
+        modalContent += `
+                </div>
+            </div>
+            <p class="text-center">
+                ${isMyQuiz ? 'Оберіть відповідь!' : 'Очікуйте відповіді...'}
+            </p>
+        `;
+
+        this.showQuestModal('Вікторина', modalContent, []);
+    }
+
+    endQuiz(data) {
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Вікторина завершена!</h3>
+            <p class="mb-4">${data.resultMessage}</p>
+        `;
+
+        if (data.wasCorrect) {
+            modalContent += `<p class="text-center text-green-600 font-bold">Правильно! +${data.pointsChange} ОО</p>`;
+        } else {
+            modalContent += `<p class="text-center text-red-600 font-bold">Неправильно! ${data.pointsChange} ОО</p>`;
+        }
+
+        this.showQuestModal('Вікторина', modalContent, [
+            { text: 'Закрити', callback: () => this.closeMiniGame() }
+        ]);
+    }
+
+    answerQuiz(answerIndex) {
+        this.socket.emit('quiz_answer', {
+            roomId: this.roomId,
+            answer: answerIndex,
+            correctAnswer: this.currentQuizCorrectAnswer
+        });
+    }
+
+    swapPositions(targetPlayerId) {
+        // Логіка обміну місцями
+        const targetPlayer = this.players.find(p => p.id === targetPlayerId);
+        const currentPlayer = this.players.find(p => p.id === this.playerId);
+        
+        if (targetPlayer && currentPlayer) {
+            const tempPosition = currentPlayer.position;
+            currentPlayer.position = targetPlayer.position;
+            targetPlayer.position = tempPosition;
+            
+            this.logMessage(`${currentPlayer.name} обмінявся місцями з ${targetPlayer.name}!`, 'system');
+            this.updatePawnPosition(currentPlayer);
+            this.updatePawnPosition(targetPlayer);
+        }
+        
+        this.closeMiniGame();
+    }
+
+    closeMiniGame() {
+        this.questModal.classList.add('hidden');
+        
+        // Передаємо хід наступному гравцю
+        this.socket.emit('next_turn', { roomId: this.roomId });
     }
     
     syncGameState(data) {

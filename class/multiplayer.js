@@ -165,10 +165,12 @@ class MultiplayerGame extends EducationalPathGame {
         });
         
         this.socket.on('dice_rolled', (data) => {
+            console.log('Отримано подію dice_rolled:', data);
             this.handleRemoteDiceRoll(data);
         });
         
         this.socket.on('player_moved', (data) => {
+            console.log('Отримано подію player_moved:', data);
             this.handleRemotePlayerMove(data);
         });
         
@@ -438,10 +440,34 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     rollTheDice() {
+        console.log('rollTheDice викликано:', {
+            isOnlineMode: this.isOnlineMode,
+            isHost: this.isHost,
+            gameActive: this.gameActive,
+            currentPlayerIndex: this.currentPlayerIndex,
+            players: this.players?.length
+        });
+        
         if (this.isOnlineMode) {
-            // В онлайн режимі тільки хост може кидати кубик
-            if (this.isHost && this.gameActive) {
+            // В онлайн режимі тільки поточний гравець може кидати кубик
+            const currentPlayer = this.players[this.currentPlayerIndex];
+            const isCurrentPlayer = currentPlayer && currentPlayer.id === this.playerId;
+            
+            console.log('Перевірка можливості кинути кубик:', {
+                isCurrentPlayer,
+                currentPlayerId: currentPlayer?.id,
+                myPlayerId: this.playerId,
+                gameActive: this.gameActive
+            });
+            
+            if (isCurrentPlayer && this.gameActive) {
+                console.log('Відправляємо подію roll_dice');
                 this.socket.emit('roll_dice', { roomId: this.roomId });
+            } else {
+                console.log('Не можна кинути кубик:', {
+                    isCurrentPlayer,
+                    gameActive: this.gameActive
+                });
             }
         } else {
             // Локальний режим
@@ -450,8 +476,14 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     handleRemoteDiceRoll(data) {
+        console.log('handleRemoteDiceRoll викликано:', data);
         const player = this.players.find(p => p.id === data.playerId);
-        if (!player) return;
+        if (!player) {
+            console.log('Гравець не знайдений для dice_rolled');
+            return;
+        }
+        
+        console.log('Обробляємо кидання кубика для гравця:', player.name);
         
         this.rollDiceBtn.disabled = true;
         

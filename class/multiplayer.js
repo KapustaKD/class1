@@ -178,45 +178,24 @@ class MultiplayerGame extends EducationalPathGame {
             this.syncGameState(data);
         });
         
-        this.socket.on('dice_rolled', (data) => {
-            console.log('Отримано подію dice_rolled:', data);
-            this.handleRemoteDiceRoll(data);
-            // Не оновлюємо кнопку тут, оновимо після turn_changed
+        this.socket.on('dice_result', (data) => {
+            console.log('Отримано подію dice_result:', data);
+            this.handleDiceResult(data);
         });
         
-        this.socket.on('player_moved', (data) => {
-            console.log('Отримано подію player_moved:', data);
-            this.handleRemotePlayerMove(data);
-            this.updateDiceButtonState();
+        this.socket.on('turn_update', (data) => {
+            console.log('Отримано подію turn_update:', data);
+            this.handleTurnUpdate(data);
         });
         
-        this.socket.on('turn_changed', (data) => {
-            console.log('Отримано подію turn_changed:', data);
-            console.log('Старий currentPlayerIndex:', this.currentPlayerIndex);
-            this.currentPlayerIndex = data.currentPlayerIndex;
-            console.log('Новий currentPlayerIndex:', this.currentPlayerIndex);
-            
-            // Оновлюємо інформацію про поточного гравця
-            if (data.currentPlayer) {
-                console.log('Поточний гравець з сервера:', data.currentPlayer.name, 'ID:', data.currentPlayer.id);
-            }
-            
-            // Перевіряємо, чи я поточний гравець
-            const isMyTurn = data.currentPlayer && data.currentPlayer.id === this.playerId;
-            console.log('Це мій хід?', isMyTurn, 'Мій ID:', this.playerId);
-            
-            this.updatePlayerInfo();
-            this.updateDiceButtonState();
-            
-            const currentPlayer = this.players[this.currentPlayerIndex];
-            if (currentPlayer) {
-                this.logMessage(`Тепер хід гравця ${currentPlayer.name}.`, 'turn');
-            } else {
-                console.error('Поточний гравець не знайдений!', {
-                    currentPlayerIndex: this.currentPlayerIndex,
-                    players: this.players
-                });
-            }
+        this.socket.on('show_event_prompt', (data) => {
+            console.log('Отримано подію show_event_prompt:', data);
+            this.showEventPrompt(data);
+        });
+        
+        this.socket.on('event_result', (data) => {
+            console.log('Отримано подію event_result:', data);
+            this.handleEventResult(data);
         });
         
         this.socket.on('quest_started', (data) => {
@@ -759,24 +738,147 @@ class MultiplayerGame extends EducationalPathGame {
         this.logMessage(`${player.name} перемістився на клітинку ${data.position}.`, 'system');
     }
     
-    // Перевизначаємо movePlayer для відправки turn_completed після анімації
-    async movePlayer(player, steps) {
-        const startPos = player.position;
-        const endPos = Math.min(startPos + steps, this.BOARD_SIZE);
+    }
+    
+    handleSpecialCell(player, cellData) {
+        this.logMessage(`${player.name} потрапив на подію!`, 'event');
         
-        for (let i = startPos + 1; i <= endPos; i++) {
-            player.position = i;
+        if (this.isOnlineMode) {
+            // В онлайн режимі відправляємо подію на сервер
+            this.socket.emit('player_on_event', {
+                roomId: this.roomId,
+                playerId: player.id,
+                eventType: cellData.type,
+                eventData: cellData
+            });
+        } else {
+            // В локальному режимі використовуємо базову логіку
+            super.handleSpecialCell(player, cellData);
+        }
+    }
+    
+    handleDiceResult(data) {
+        console.log('Обробляємо результат кидання кубика:', data);
+        const player = this.players.find(p => p.id === data.playerId);
+        if (!player) {
+            console.error('Гравець не знайдений для dice_result');
+            return;
+        }
+        
+        // Оновлюємо позицію гравця
+        player.position = data.newPosition;
+        
+        // Показуємо анімацію кубика
+        this.rollDiceBtn.disabled = true;
+        
+        const rotations = {
+            1: 'rotateY(0deg)',
+            2: 'rotateY(-90deg)',
+            3: 'rotateY(-180deg)',
+            4: 'rotateY(90deg)',
+            5: 'rotateX(-90deg)',
+            6: 'rotateX(90deg)'
+        };
+        
+        this.diceInner.style.transform = `rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg)`;
+        setTimeout(() => {
+            this.diceInner.style.transform = `${rotations[data.roll]} translateZ(40px)`;
             this.updatePawnPosition(player);
-            await new Promise(res => setTimeout(res, 300));
+        }, 1000);
+        
+        this.logMessage(`${player.name}${player.class ? ' (' + player.class.name + ')' : ''} викинув ${data.roll}. Рух: ${data.move}. Позиція: ${data.newPosition}`, 'roll');
+    }
+    
+    handleTurnUpdate(data) {
+        console.log('Обробляємо оновлення черги:', data);
+        console.log('Старий currentPlayerIndex:', this.currentPlayerIndex);
+        this.currentPlayerIndex = data.currentPlayerIndex;
+        console.log('Новий currentPlayerIndex:', this.currentPlayerIndex);
+        
+        // Перевіряємо, чи я поточний гравець
+        const isMyTurn = data.currentPlayerId === this.playerId;
+        console.log('Це мій хід?', isMyTurn, 'Мій ID:', this.playerId, 'Поточний ID:', data.currentPlayerId);
+        
+        this.updatePlayerInfo();
+        this.updateDiceButtonState();
+        
+        this.logMessage(`Тепер хід гравця ${data.currentPlayerName}.`, 'turn');
+    }
+    
+    showEventPrompt(data) {
+        console.log('Показуємо подію всім гравцям:', data);
+        const isMyEvent = data.playerId === this.playerId;
+        
+        let modalContent = '';
+        let buttons = [];
+        
+        if (data.eventType === 'portal') {
+            modalContent = `
+                <h3 class="text-2xl font-bold mb-4">Таємний портал!</h3>
+                <p class="mb-4">${data.playerName} потрапив на таємний портал!</p>
+                <p class="mb-4">Ризикнути та стрибнути на клітинку ${data.eventData.target} за ${data.eventData.cost} ОО?</p>
+            `;
+            
+            if (isMyEvent) {
+                buttons = [
+                    { text: 'Так', callback: () => this.makeEventChoice('yes', data.eventType, data.eventData) },
+                    { text: 'Ні', callback: () => this.makeEventChoice('no', data.eventType, data.eventData) }
+                ];
+            } else {
+                buttons = [
+                    { text: 'Очікуємо вибору...', callback: () => {}, disabled: true }
+                ];
+            }
+        } else if (data.eventType === 'section-end') {
+            modalContent = `
+                <h3 class="text-2xl font-bold mb-4">Завершення епохи!</h3>
+                <p class="mb-4">${data.playerName} завершив епоху ${data.eventData.section}!</p>
+                <p class="mb-4">Перейти до наступної епохи та отримати ${data.eventData.points} ОО?</p>
+            `;
+            
+            if (isMyEvent) {
+                buttons = [
+                    { text: 'Так', callback: () => this.makeEventChoice('yes', data.eventType, data.eventData) },
+                    { text: 'Ні', callback: () => this.makeEventChoice('no', data.eventType, data.eventData) }
+                ];
+            } else {
+                buttons = [
+                    { text: 'Очікуємо вибору...', callback: () => {}, disabled: true }
+                ];
+            }
         }
         
-        this.checkCell(player);
+        this.showQuestModal('Подія', modalContent, buttons);
+    }
+    
+    makeEventChoice(choice, eventType, eventData) {
+        console.log('Відправляємо вибір події:', choice);
+        this.socket.emit('event_choice_made', {
+            roomId: this.roomId,
+            choice,
+            eventType,
+            eventData
+        });
+        this.questModal.classList.add('hidden');
+    }
+    
+    handleEventResult(data) {
+        console.log('Обробляємо результат події:', data);
         
-        // Після завершення анімації відправляємо подію turn_completed
-        if (this.isOnlineMode && this.roomId) {
-            console.log('Відправляємо turn_completed після завершення анімації');
-            this.socket.emit('turn_completed', { roomId: this.roomId });
+        // Оновлюємо позицію та очки гравця
+        const player = this.players.find(p => p.id === data.playerId);
+        if (player) {
+            player.position = data.newPosition;
+            player.points = data.newPoints;
+            this.updatePawnPosition(player);
         }
+        
+        // Показуємо повідомлення всім
+        this.logMessage(data.resultMessage, 'event');
+        
+        // Оновлюємо UI
+        this.updatePlayerInfo();
+        this.updateLeaderboard();
     }
     
     syncGameState(data) {

@@ -22,52 +22,52 @@ body {
     transition: transform 0.5s ease; 
 }
 
-/* Фонові області епох */
-.epoch-background { 
-    position: absolute; 
-    border-radius: 15px; 
-    filter: blur(15px); 
-    opacity: 0.3; 
+/* Острови епох */
+.epoch-island {
+    position: absolute;
+    border-radius: 30px;
+    filter: blur(20px);
+    opacity: 0.2;
     transition: all 0.3s ease;
     z-index: 1;
-    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    box-shadow: 0 0 30px rgba(0,0,0,0.3);
 }
 
-.epoch-background:hover {
-    opacity: 0.5;
-    filter: blur(10px);
+.epoch-island:hover {
+    opacity: 0.4;
+    filter: blur(15px);
     transform: scale(1.02);
 }
 
 /* Клітинки з прив'язкою до епох */
 .board-cell.epoch-1 {
-    border-color: #d4a373;
-    box-shadow: 0 0 10px rgba(212, 163, 115, 0.3);
-    background: linear-gradient(135deg, #d4a373, #c9a876);
+    border-color: #c94a45;
+    box-shadow: 0 0 10px rgba(201, 74, 69, 0.3);
+    background: linear-gradient(135deg, #c94a45, #b83e3a);
 }
 
 .board-cell.epoch-2 {
-    border-color: #8a7abf;
-    box-shadow: 0 0 10px rgba(138, 122, 191, 0.3);
-    background: linear-gradient(135deg, #8a7abf, #7a6bb8);
+    border-color: #e6c86e;
+    box-shadow: 0 0 10px rgba(230, 200, 110, 0.3);
+    background: linear-gradient(135deg, #e6c86e, #d6b85e);
 }
 
 .board-cell.epoch-3 {
-    border-color: #b0c4de;
-    box-shadow: 0 0 10px rgba(176, 196, 222, 0.3);
-    background: linear-gradient(135deg, #b0c4de, #a0b4ce);
+    border-color: #7ea4d4;
+    box-shadow: 0 0 10px rgba(126, 164, 212, 0.3);
+    background: linear-gradient(135deg, #7ea4d4, #6e94c4);
 }
 
 .board-cell.epoch-4 {
-    border-color: #90be6d;
-    box-shadow: 0 0 10px rgba(144, 190, 109, 0.3);
-    background: linear-gradient(135deg, #90be6d, #80ae5d);
+    border-color: #a34c56;
+    box-shadow: 0 0 10px rgba(163, 76, 86, 0.3);
+    background: linear-gradient(135deg, #a34c56, #933c46);
 }
 
 .board-cell.epoch-5 {
-    border-color: #f48fb1;
-    box-shadow: 0 0 10px rgba(244, 143, 177, 0.3);
-    background: linear-gradient(135deg, #f48fb1, #e47fa1);
+    border-color: #84b56d;
+    box-shadow: 0 0 10px rgba(132, 181, 109, 0.3);
+    background: linear-gradient(135deg, #84b56d, #74a55d);
 }
 
 /* Реінкарнація */

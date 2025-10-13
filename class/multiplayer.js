@@ -40,6 +40,17 @@ class MultiplayerGame extends EducationalPathGame {
         this.chatMessages = document.getElementById('chat-messages');
         this.chatInput = document.getElementById('chat-input');
         this.sendMessageBtn = document.getElementById('send-message-btn');
+        
+        // Додаємо елементи для коду кімнати
+        this.roomCodeDisplay = document.getElementById('room-code-display');
+        this.roomCodeText = document.getElementById('room-code-text');
+        this.copyRoomCodeBtn = document.getElementById('copy-room-code-btn');
+        
+        console.log('Елементи коду кімнати:', { 
+            roomCodeDisplay: this.roomCodeDisplay, 
+            roomCodeText: this.roomCodeText, 
+            copyRoomCodeBtn: this.copyRoomCodeBtn 
+        });
     }
     
     setupMultiplayerEventListeners() {
@@ -61,7 +72,7 @@ class MultiplayerGame extends EducationalPathGame {
         this.gameContainer.classList.remove('hidden');
         this.onlinePanel.classList.add('hidden');
         
-        // Показуємо правила гри
+        // Показуємо правила гри для локального режиму
         this.rulesModal.classList.remove('hidden');
     }
     
@@ -244,16 +255,14 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     showRoomCode(roomCode) {
-        const roomCodeDisplay = document.getElementById('room-code-display');
-        const roomCodeText = document.getElementById('room-code-text');
-        const copyRoomCodeBtn = document.getElementById('copy-room-code-btn');
+        console.log('Показуємо код кімнати:', roomCode);
         
-        if (roomCodeDisplay && roomCodeText) {
-            roomCodeText.textContent = roomCode;
-            roomCodeDisplay.classList.remove('hidden');
+        if (this.roomCodeDisplay && this.roomCodeText) {
+            this.roomCodeText.textContent = roomCode;
+            this.roomCodeDisplay.classList.remove('hidden');
             
-            if (copyRoomCodeBtn) {
-                copyRoomCodeBtn.addEventListener('click', () => {
+            if (this.copyRoomCodeBtn) {
+                this.copyRoomCodeBtn.addEventListener('click', () => {
                     navigator.clipboard.writeText(roomCode).then(() => {
                         if (window.gameUI) {
                             window.gameUI.showNotification('Код скопійовано!', 'success');
@@ -261,6 +270,8 @@ class MultiplayerGame extends EducationalPathGame {
                     });
                 });
             }
+        } else {
+            console.error('Не знайдено елементи для відображення коду кімнати');
         }
     }
     
@@ -418,6 +429,7 @@ class MultiplayerGame extends EducationalPathGame {
     
     // Показуємо код кімнати в модальному вікні
     showRoomCodeModal(roomCode, roomName) {
+        console.log('Показуємо модальне вікно з кодом:', roomCode);
         const modalContent = `
             <h3 class="text-2xl font-bold mb-4">Кімната створена!</h3>
             <p class="mb-4">Поділіться цим кодом з іншими гравцями:</p>
@@ -458,6 +470,8 @@ class MultiplayerGame extends EducationalPathGame {
                     });
                 }
             }, 100);
+        } else {
+            console.error('window.gameUI не знайдено');
         }
     }
 }

@@ -82,79 +82,128 @@ class EducationalPathGame {
     
     // Завантаження даних карти
     loadMapData() {
-        // Створюємо дані карти з єдиним шляхом через 5 кольорових зон
+        // Створюємо дані карти з SVG-країнами та єдиним шляхом
         this.mapData = {
             canvasSize: { width: 1920, height: 1080 },
             
-            // Опис фонових кольорових зон
+            // Опис SVG-країн з нерівними кордонами
             zones: [
-                { name: 'Стартова долина', color: '#ff1a1a', startCell: 1, endCell: 20 }, // Червона
-                { name: 'Льодовиковий каньйон', color: '#33adff', startCell: 21, endCell: 40 }, // Синя
-                { name: 'Отруйні болота', color: '#a6ff4d', startCell: 41, endCell: 60 }, // Салатова
-                { name: 'Сонячні піски', color: '#f5e68a', startCell: 61, endCell: 80 }, // Жовта
-                { name: 'Королівський замок', color: '#ff1aff', startCell: 81, endCell: 101 } // Малинова
+                { 
+                    name: 'Червона Імперія', 
+                    color: '#D9534F', 
+                    startCell: 1, 
+                    endCell: 20,
+                    svgPath: 'M 100 800 L 250 950 L 600 900 C 700 850, 800 700, 750 600 L 400 650 Z'
+                },
+                { 
+                    name: 'Синій Архіпелаг', 
+                    color: '#5BC0DE', 
+                    startCell: 21, 
+                    endCell: 40,
+                    svgPath: 'M 750 600 L 800 700 C 900 750, 1000 800, 1100 700 L 1200 600 C 1150 500, 1000 450, 850 500 Z'
+                },
+                { 
+                    name: 'Зелені Землі', 
+                    color: '#5CB85C', 
+                    startCell: 41, 
+                    endCell: 60,
+                    svgPath: 'M 850 500 L 1000 450 C 1100 400, 1200 350, 1300 400 L 1400 500 C 1350 600, 1200 650, 1050 600 Z'
+                },
+                { 
+                    name: 'Золота Долина', 
+                    color: '#F0AD4E', 
+                    startCell: 61, 
+                    endCell: 80,
+                    svgPath: 'M 1050 600 L 1200 650 C 1300 700, 1400 750, 1500 700 L 1600 600 C 1550 500, 1400 450, 1250 500 Z'
+                },
+                { 
+                    name: 'Фіолетове Королівство', 
+                    color: '#9B59B6', 
+                    startCell: 81, 
+                    endCell: 101,
+                    svgPath: 'M 1250 500 L 1400 450 C 1500 400, 1600 350, 1700 400 L 1800 500 C 1750 600, 1600 700, 1450 650 Z'
+                }
             ],
             
             // Масив для всіх 101 клітинок з їхніми координатами
             cells: []
         };
         
-        this.generateSinglePathCells();
+        this.generateSmoothPathCells();
     }
     
-    // Генерація клітинок для єдиного шляху через 5 зон
-    generateSinglePathCells() {
+    // Генерація клітинок для плавного шляху через країни
+    generateSmoothPathCells() {
         const cells = [];
         let cellId = 1;
 
-        // === Етап 1: Червона зона (клітинки 1-20) ===
-        // Шлях іде зліва направо внизу екрану з легкими хвилями
-        for (let i = 0; i < 20; i++) {
-            const x = 100 + i * 80;
-            const y = 950 + Math.sin(i * 0.3) * 30;
-            cells.push({ id: cellId++, x, y, zone: 1 });
-        }
-
-        // === Етап 2: Синя зона (клітинки 21-40) ===
-        // Шлях різко повертає вгору і йде великою дугою праворуч
-        for (let i = 0; i < 20; i++) {
-            const progress = i / 19;
-            const x = 1700 + progress * 200;
-            const y = 950 - progress * 600 + Math.sin(progress * Math.PI * 2) * 50;
-            cells.push({ id: cellId++, x, y, zone: 2 });
-        }
-
-        // === Етап 3: Салатова зона (клітинки 41-60) ===
-        // Шлях заходить у центр, робить кілька вигинів вниз і вгору
-        for (let i = 0; i < 20; i++) {
-            const progress = i / 19;
-            const x = 1900 - progress * 300;
-            const y = 400 + Math.sin(progress * Math.PI * 3) * 200;
-            cells.push({ id: cellId++, x, y, zone: 3 });
-        }
-
-        // === Етап 4: Жовта зона (клітинки 61-80) ===
-        // Шлях знову виходить у нижню частину екрану і рухається праворуч
-        for (let i = 0; i < 20; i++) {
-            const progress = i / 19;
-            const x = 1600 - progress * 200;
-            const y = 600 + progress * 200 + Math.sin(progress * Math.PI * 2) * 30;
-            cells.push({ id: cellId++, x, y, zone: 4 });
-        }
-
-        // === Етап 5: Малинова зона (клітинки 81-101) ===
-        // Шлях робить фінальний ривок вгору до правого верхнього кута
-        for (let i = 0; i < 20; i++) {
-            const progress = i / 19;
-            const x = 1400 + progress * 300;
-            const y = 800 - progress * 500 + Math.sin(progress * Math.PI) * 50;
-            cells.push({ id: cellId++, x, y, zone: 5 });
-        }
+        // Створюємо плавний звивистий шлях через всю карту
+        const pathPoints = this.generateSmoothPath();
+        
+        pathPoints.forEach(point => {
+            cells.push({ 
+                id: cellId++, 
+                x: point.x, 
+                y: point.y, 
+                zone: this.getZoneForCell(cellId - 1)
+            });
+        });
 
         // Фінішна клітинка (корона)
-        cells.push({ id: 101, x: 1700, y: 200, zone: 5, isFinish: true });
+        cells.push({ id: 101, x: 1750, y: 300, zone: 5, isFinish: true });
 
         this.mapData.cells = cells;
+    }
+    
+    // Генерація плавного шляху через всю карту
+    generateSmoothPath() {
+        const points = [];
+        
+        // Початок у нижньому лівому куті
+        let currentX = 150;
+        let currentY = 900;
+        
+        for (let i = 0; i < 100; i++) {
+            points.push({ x: currentX, y: currentY });
+            
+            // Генеруємо наступну точку з плавними переходами
+            const progress = i / 99;
+            
+            if (progress < 0.2) {
+                // Перша зона - рух вгору та праворуч
+                currentX += 30 + Math.sin(i * 0.1) * 10;
+                currentY -= 20 + Math.cos(i * 0.1) * 15;
+            } else if (progress < 0.4) {
+                // Друга зона - велика дуга вгору
+                currentX += 25 + Math.sin(i * 0.15) * 15;
+                currentY -= 30 + Math.cos(i * 0.15) * 20;
+            } else if (progress < 0.6) {
+                // Третя зона - вигини в центрі
+                currentX += 20 + Math.sin(i * 0.2) * 20;
+                currentY += Math.sin(i * 0.2) * 25;
+            } else if (progress < 0.8) {
+                // Четверта зона - рух праворуч з хвилями
+                currentX += 35 + Math.sin(i * 0.1) * 12;
+                currentY += 15 + Math.cos(i * 0.1) * 18;
+            } else {
+                // П'ята зона - фінальний ривок вгору
+                currentX += 40 + Math.sin(i * 0.05) * 8;
+                currentY -= 40 + Math.cos(i * 0.05) * 12;
+            }
+        }
+        
+        return points;
+    }
+    
+    // Визначення зони для клітинки
+    getZoneForCell(cellId) {
+        for (let i = 0; i < this.mapData.zones.length; i++) {
+            const zone = this.mapData.zones[i];
+            if (cellId >= zone.startCell && cellId <= zone.endCell) {
+                return i + 1;
+            }
+        }
+        return 1; // За замовчуванням перша зона
     }
     
     // Генерація координат для єдиного шляху
@@ -282,8 +331,11 @@ class EducationalPathGame {
     createBoard() {
         this.gameBoard.innerHTML = '';
         
-        // Створюємо фонові кольорові зони
-        this.createColorZones();
+        // Створюємо білий фон
+        this.createWhiteBackground();
+        
+        // Створюємо SVG-країни
+        this.createSVGCountries();
         
         // Стартова клітинка
         const startCell = document.createElement('div');
@@ -325,7 +377,7 @@ class EducationalPathGame {
             this.gameBoard.appendChild(cell);
         });
         
-        this.drawSinglePath();
+        this.drawSmoothPath();
         
         // Фішки гравців
         this.players.forEach(p => {
@@ -337,44 +389,61 @@ class EducationalPathGame {
         });
     }
     
-    // Створення кольорових зон
-    createColorZones() {
-        this.mapData.zones.forEach((zone) => {
-            const zoneElement = document.createElement('div');
-            zoneElement.id = `zone-${zone.name}`;
-            zoneElement.className = 'color-zone';
-            zoneElement.style.backgroundColor = zone.color;
-            zoneElement.style.opacity = '0.15';
-            zoneElement.style.borderRadius = '50px';
-            zoneElement.style.border = `3px solid ${zone.color}`;
-            
-            // Позиціонування зони (приблизне)
-            const zoneCells = this.mapData.cells.filter(cell => cell.zone === this.mapData.zones.indexOf(zone) + 1);
-            if (zoneCells.length > 0) {
-                const minX = Math.min(...zoneCells.map(c => c.x)) - 100;
-                const maxX = Math.max(...zoneCells.map(c => c.x)) + 100;
-                const minY = Math.min(...zoneCells.map(c => c.y)) - 100;
-                const maxY = Math.max(...zoneCells.map(c => c.y)) + 100;
-                
-                zoneElement.style.top = `${minY}px`;
-                zoneElement.style.left = `${minX}px`;
-                zoneElement.style.width = `${maxX - minX}px`;
-                zoneElement.style.height = `${maxY - minY}px`;
-            }
-            
-            // Додаємо назву зони
-            zoneElement.innerHTML = `
-                <div style="position: absolute; top: 10px; left: 10px; font-size: 18px; font-weight: bold; color: ${zone.color}; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
-                    ${zone.name}
-                </div>
-            `;
-            
-            this.gameBoard.appendChild(zoneElement);
-        });
+    // Створення білого фону
+    createWhiteBackground() {
+        const background = document.createElement('div');
+        background.id = 'map-background';
+        background.className = 'map-background';
+        background.style.position = 'absolute';
+        background.style.top = '0px';
+        background.style.left = '0px';
+        background.style.width = '100%';
+        background.style.height = '100%';
+        background.style.backgroundColor = '#ffffff';
+        background.style.zIndex = '0';
+        this.gameBoard.appendChild(background);
     }
     
-    // Малювання єдиного шляху
-    drawSinglePath() {
+    // Створення SVG-країн
+    createSVGCountries() {
+        const svgContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svgContainer.id = 'countries-svg';
+        svgContainer.style.position = 'absolute';
+        svgContainer.style.top = '0px';
+        svgContainer.style.left = '0px';
+        svgContainer.style.width = '100%';
+        svgContainer.style.height = '100%';
+        svgContainer.style.zIndex = '1';
+        svgContainer.setAttribute('viewBox', '0 0 1920 1080');
+        
+        this.mapData.zones.forEach((zone) => {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', zone.svgPath);
+            path.setAttribute('fill', zone.color);
+            path.setAttribute('opacity', '0.3');
+            path.setAttribute('stroke', zone.color);
+            path.setAttribute('stroke-width', '3');
+            path.setAttribute('stroke-opacity', '0.8');
+            
+            // Додаємо назву країни
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', '200');
+            text.setAttribute('y', '100');
+            text.setAttribute('fill', zone.color);
+            text.setAttribute('font-size', '24');
+            text.setAttribute('font-weight', 'bold');
+            text.setAttribute('text-anchor', 'middle');
+            text.textContent = zone.name;
+            
+            svgContainer.appendChild(path);
+            svgContainer.appendChild(text);
+        });
+        
+        this.gameBoard.appendChild(svgContainer);
+    }
+    
+    // Малювання плавного шляху
+    drawSmoothPath() {
         this.pathSvg.innerHTML = '';
         
         // Малюємо з'єднання між сусідніми клітинками
@@ -391,9 +460,9 @@ class EducationalPathGame {
             path.setAttribute('x2', p2.x);
             path.setAttribute('y2', p2.y);
             path.setAttribute('stroke', '#333');
-            path.setAttribute('stroke-width', '8');
+            path.setAttribute('stroke-width', '6');
             path.setAttribute('stroke-linecap', 'round');
-            path.setAttribute('opacity', '0.8');
+            path.setAttribute('opacity', '0.9');
             this.pathSvg.appendChild(path);
         }
     }

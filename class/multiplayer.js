@@ -208,6 +208,9 @@ class MultiplayerGame extends EducationalPathGame {
             
             // Показуємо повідомлення
             this.addChatMessage('system', 'Гра почалася! Перший хід за ' + this.players[this.currentPlayerIndex].name);
+            
+            // Показуємо клас кожному гравцю
+            this.showPlayerClassAssignment();
         });
     }
     
@@ -400,9 +403,26 @@ class MultiplayerGame extends EducationalPathGame {
         if (!this.isOnlineMode) return;
         const currentPlayer = this.players && this.players[this.currentPlayerIndex];
         const isMyTurn = currentPlayer && currentPlayer.id === this.playerId && this.gameActive;
+        
+        console.log('updateDiceButtonState:', {
+            currentPlayer: currentPlayer?.name,
+            myPlayerId: this.playerId,
+            isMyTurn,
+            gameActive: this.gameActive
+        });
+        
         if (this.rollDiceBtn) {
             this.rollDiceBtn.disabled = !isMyTurn;
-            this.rollDiceBtn.style.display = isMyTurn ? '' : 'none';
+            // Не приховуємо кнопку, а просто робимо її неактивною
+            this.rollDiceBtn.style.opacity = isMyTurn ? '1' : '0.5';
+            this.rollDiceBtn.style.cursor = isMyTurn ? 'pointer' : 'not-allowed';
+            
+            // Оновлюємо текст кнопки
+            if (isMyTurn) {
+                this.rollDiceBtn.textContent = 'Кинути кубик';
+            } else {
+                this.rollDiceBtn.textContent = `Хід: ${currentPlayer?.name || 'Невідомо'}`;
+            }
         }
     }
     
@@ -595,6 +615,57 @@ class MultiplayerGame extends EducationalPathGame {
                 voterId: this.playerId
             });
         }
+    }
+    
+    // Показуємо роздачу класів гравцям
+    showPlayerClassAssignment() {
+        const myPlayer = this.players.find(p => p.id === this.playerId);
+        if (!myPlayer || !myPlayer.class) return;
+        
+        const classInfo = myPlayer.class;
+        const modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Ваш клас!</h3>
+            <div class="text-center mb-6">
+                <div class="text-4xl mb-2">${classInfo.name}</div>
+                <div class="text-lg text-gray-300 mb-2">Стартові очки: ${classInfo.startPoints}</div>
+                <div class="text-lg text-gray-300">Модифікатор руху: ${classInfo.moveModifier > 0 ? '+' : ''}${classInfo.moveModifier}</div>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg mb-4">
+                <h4 class="font-bold mb-2">Особливості класу:</h4>
+                <ul class="text-sm text-gray-300">
+                    ${this.getClassDescription(classInfo.id)}
+                </ul>
+            </div>
+            <button id="close-class-modal-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                Зрозуміло
+            </button>
+        `;
+        
+        if (window.gameUI) {
+            window.gameUI.showQuestModal('Роздача класів', modalContent);
+            
+            // Додаємо обробник події
+            setTimeout(() => {
+                const closeBtn = document.getElementById('close-class-modal-btn');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => {
+                        if (window.gameUI) {
+                            window.gameUI.hideModal('quest');
+                        }
+                    });
+                }
+            }, 100);
+        }
+    }
+    
+    // Отримуємо опис класу
+    getClassDescription(classId) {
+        const descriptions = {
+            'aristocrat': '<li>Починаєте з 50 очками освіти</li><li>Кожен рух на +1 клітинку більше</li><li>Привілейований доступ до освіти</li>',
+            'burgher': '<li>Починаєте з 20 очками освіти</li><li>Звичайний рух без модифікаторів</li><li>Стабільний прогрес</li>',
+            'peasant': '<li>Починаєте з 0 очками освіти</li><li>Кожен рух на -1 клітинку менше</li><li>Мінімум 1 клітинка за хід</li>'
+        };
+        return descriptions[classId] || '<li>Особливості класу</li>';
     }
     
     // Показуємо код кімнати в модальному вікні

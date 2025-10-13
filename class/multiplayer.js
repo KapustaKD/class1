@@ -91,6 +91,7 @@ class MultiplayerGame extends EducationalPathGame {
         this.socket = io(socketUrl);
         
         this.socket.on('connect', () => {
+            console.log('Підключено до сервера, ID:', this.socket.id);
             this.updateConnectionStatus(true, 'Підключено');
             this.playerId = this.socket.id;
         });
@@ -108,6 +109,7 @@ class MultiplayerGame extends EducationalPathGame {
         });
         
         this.socket.on('room_created', (data) => {
+            console.log('Отримано подію room_created:', data);
             this.roomId = data.roomId;
             this.isHost = true;
             this.updatePlayersList(data.players);
@@ -187,11 +189,14 @@ class MultiplayerGame extends EducationalPathGame {
         const roomName = this.roomNameInput.value.trim();
         const playerName = this.playerNameInput.value.trim();
         
+        console.log('Створюємо кімнату:', { roomName, playerName });
+        
         if (!roomName || !playerName) {
             alert('Будь ласка, заповніть всі поля');
             return;
         }
         
+        console.log('Відправляємо подію create_room');
         this.socket.emit('create_room', {
             roomName,
             playerName,
@@ -256,6 +261,9 @@ class MultiplayerGame extends EducationalPathGame {
     
     showRoomCode(roomCode) {
         console.log('Показуємо код кімнати:', roomCode);
+        
+        // Простий спосіб - показуємо alert
+        alert(`Код кімнати: ${roomCode}`);
         
         if (this.roomCodeDisplay && this.roomCodeText) {
             this.roomCodeText.textContent = roomCode;

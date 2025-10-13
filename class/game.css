@@ -22,54 +22,55 @@ body {
     transition: transform 0.5s ease; 
 }
 
-/* Білий фон карти */
-.map-background {
+/* ОДИН великий білий контейнер карти */
+.game-map {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 1800px;
+    height: 900px;
     background-color: #ffffff;
+    border: 2px solid #333;
     z-index: 0;
 }
 
-/* SVG-країни */
-#countries-svg {
+/* SVG-країни Вороного */
+#voronoi-countries {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 1800px;
+    height: 900px;
     z-index: 1;
     pointer-events: none;
 }
 
-/* Клітинки з прив'язкою до зон */
-.board-cell.zone-1 {
+/* Клітинки з прив'язкою до країн */
+.board-cell.country-0 {
     border-color: #D9534F;
     box-shadow: 0 0 10px rgba(217, 83, 79, 0.3);
     background: linear-gradient(135deg, #D9534F, #C9302C);
 }
 
-.board-cell.zone-2 {
+.board-cell.country-1 {
     border-color: #5BC0DE;
     box-shadow: 0 0 10px rgba(91, 192, 222, 0.3);
     background: linear-gradient(135deg, #5BC0DE, #46B8DA);
 }
 
-.board-cell.zone-3 {
+.board-cell.country-2 {
     border-color: #5CB85C;
     box-shadow: 0 0 10px rgba(92, 184, 92, 0.3);
     background: linear-gradient(135deg, #5CB85C, #449D44);
 }
 
-.board-cell.zone-4 {
+.board-cell.country-3 {
     border-color: #F0AD4E;
     box-shadow: 0 0 10px rgba(240, 173, 78, 0.3);
     background: linear-gradient(135deg, #F0AD4E, #EC971F);
 }
 
-.board-cell.zone-5 {
+.board-cell.country-4 {
     border-color: #9B59B6;
     box-shadow: 0 0 10px rgba(155, 89, 182, 0.3);
     background: linear-gradient(135deg, #9B59B6, #8E44AD);

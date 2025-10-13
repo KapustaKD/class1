@@ -20,12 +20,42 @@ class EducationalPathGame {
         this.panStartX = 0;
         this.panStartY = 0;
         
+        // Координати клітинок, розділені на 5 секцій без перетинів
         this.cellCoordinates = [
-            {top: 700, left: 75}, {top: 700, left: 125}, {top: 690, left: 175}, {top: 670, left: 225}, {top: 640, left: 265}, {top: 600, left: 290}, {top: 550, left: 300}, {top: 500, left: 295}, {top: 450, left: 275}, {top: 410, left: 240}, {top: 390, left: 190}, {top: 390, left: 140}, {top: 410, left: 90}, {top: 450, left: 75}, {top: 500, left: 90}, {top: 550, left: 110}, {top: 600, left: 140}, {top: 625, left: 190}, {top: 590, left: 230}, {top: 540, left: 240}, {top: 490, left: 225}, {top: 450, left: 190}, {top: 425, left: 140}, {top: 475, left: 125}, {top: 525, left: 175},
-            {top: 400, left: 325}, {top: 350, left: 350}, {top: 300, left: 375}, {top: 250, left: 400}, {top: 200, left: 425}, {top: 150, left: 440}, {top: 100, left: 450}, {top: 75, left: 500}, {top: 90, left: 550}, {top: 125, left: 590}, {top: 175, left: 610}, {top: 225, left: 600}, {top: 275, left: 575}, {top: 325, left: 540}, {top: 360, left: 490}, {top: 325, left: 450}, {top: 275, left: 425}, {top: 225, left: 475}, {top: 190, left: 525}, {top: 240, left: 550}, {top: 290, left: 500}, {top: 240, left: 450}, {top: 175, left: 490}, {top: 125, left: 525}, {top: 100, left: 575},
-            {top: 400, left: 625}, {top: 425, left: 675}, {top: 475, left: 700}, {top: 525, left: 710}, {top: 575, left: 690}, {top: 625, left: 650}, {top: 675, left: 600}, {top: 690, left: 550}, {top: 650, left: 500}, {top: 600, left: 475}, {top: 550, left: 490}, {top: 500, left: 525}, {top: 475, left: 575}, {top: 490, left: 625}, {top: 540, left: 650}, {top: 590, left: 610}, {top: 625, left: 575}, {top: 575, left: 540}, {top: 525, left: 560}, {top: 575, left: 590}, {top: 540, left: 625}, {top: 500, left: 660}, {top: 450, left: 650}, {top: 425, left: 600}, {top: 450, left: 550},
-            {top: 350, left: 750}, {top: 300, left: 775}, {top: 250, left: 800}, {top: 200, left: 825}, {top: 150, left: 850}, {top: 100, left: 875}, {top: 75, left: 925}, {top: 100, left: 975}, {top: 150, left: 1000}, {top: 200, left: 1010}, {top: 250, left: 990}, {top: 300, left: 950}, {top: 325, left: 900}, {top: 290, left: 875}, {top: 240, left: 890}, {top: 190, left: 925}, {top: 150, left: 975}, {top: 175, left: 910}, {top: 225, left: 950}, {top: 275, left: 925}, {top: 250, left: 850}, {top: 200, left: 875}, {top: 150, left: 900}, {top: 125, left: 950}, {top: 160, left: 990},
-            {top: 400, left: 1025}, {top: 450, left: 1050}, {top: 500, left: 1075}, {top: 550, left: 1090}, {top: 600, left: 1075}, {top: 650, left: 1050}, {top: 690, left: 1000}, {top: 675, left: 950}, {top: 640, left: 925}, {top: 590, left: 940}, {top: 540, left: 975}, {top: 500, left: 1025}, {top: 525, left: 960}, {top: 575, left: 990}, {top: 625, left: 1025}, {top: 575, left: 1100}, {top: 525, left: 1125}, {top: 475, left: 1140}, {top: 425, left: 1125}, {top: 375, left: 1100}, {top: 325, left: 1125}, {top: 275, left: 1150}, {top: 225, left: 1160}, {top: 175, left: 1150}, {top: 125, left: 1125}
+            // Секція 1: Античність (1-25) - спіраль внизу ліворуч
+            {top: 700, left: 75}, {top: 700, left: 125}, {top: 690, left: 175}, {top: 670, left: 225}, {top: 640, left: 265}, 
+            {top: 600, left: 290}, {top: 550, left: 300}, {top: 500, left: 295}, {top: 450, left: 275}, {top: 410, left: 240}, 
+            {top: 390, left: 190}, {top: 390, left: 140}, {top: 410, left: 90}, {top: 450, left: 75}, {top: 500, left: 90}, 
+            {top: 550, left: 110}, {top: 600, left: 140}, {top: 625, left: 190}, {top: 590, left: 230}, {top: 540, left: 240}, 
+            {top: 490, left: 225}, {top: 450, left: 190}, {top: 425, left: 140}, {top: 475, left: 125}, {top: 525, left: 175},
+            
+            // Секція 2: Середньовіччя (26-50) - змійка вгорі ліворуч
+            {top: 400, left: 325}, {top: 350, left: 350}, {top: 300, left: 375}, {top: 250, left: 400}, {top: 200, left: 425}, 
+            {top: 150, left: 440}, {top: 100, left: 450}, {top: 75, left: 500}, {top: 90, left: 550}, {top: 125, left: 590}, 
+            {top: 175, left: 610}, {top: 225, left: 600}, {top: 275, left: 575}, {top: 325, left: 540}, {top: 360, left: 490}, 
+            {top: 325, left: 450}, {top: 275, left: 425}, {top: 225, left: 475}, {top: 190, left: 525}, {top: 240, left: 550}, 
+            {top: 290, left: 500}, {top: 240, left: 450}, {top: 175, left: 490}, {top: 125, left: 525}, {top: 100, left: 575},
+            
+            // Секція 3: Відродження (51-75) - коло в центрі
+            {top: 400, left: 625}, {top: 425, left: 675}, {top: 475, left: 700}, {top: 525, left: 710}, {top: 575, left: 690}, 
+            {top: 625, left: 650}, {top: 675, left: 600}, {top: 690, left: 550}, {top: 650, left: 500}, {top: 600, left: 475}, 
+            {top: 550, left: 490}, {top: 500, left: 525}, {top: 475, left: 575}, {top: 490, left: 625}, {top: 540, left: 650}, 
+            {top: 590, left: 610}, {top: 625, left: 575}, {top: 575, left: 540}, {top: 525, left: 560}, {top: 575, left: 590}, 
+            {top: 540, left: 625}, {top: 500, left: 660}, {top: 450, left: 650}, {top: 425, left: 600}, {top: 450, left: 550},
+            
+            // Секція 4: Просвітництво (76-100) - змійка вгорі праворуч
+            {top: 350, left: 750}, {top: 300, left: 775}, {top: 250, left: 800}, {top: 200, left: 825}, {top: 150, left: 850}, 
+            {top: 100, left: 875}, {top: 75, left: 925}, {top: 100, left: 975}, {top: 150, left: 1000}, {top: 200, left: 1010}, 
+            {top: 250, left: 990}, {top: 300, left: 950}, {top: 325, left: 900}, {top: 290, left: 875}, {top: 240, left: 890}, 
+            {top: 190, left: 925}, {top: 150, left: 975}, {top: 175, left: 910}, {top: 225, left: 950}, {top: 275, left: 925}, 
+            {top: 250, left: 850}, {top: 200, left: 875}, {top: 150, left: 900}, {top: 125, left: 950}, {top: 160, left: 990},
+            
+            // Секція 5: Сучасність (101-124) - лінія внизу праворуч
+            {top: 400, left: 1025}, {top: 450, left: 1050}, {top: 500, left: 1075}, {top: 550, left: 1090}, {top: 600, left: 1075}, 
+            {top: 650, left: 1050}, {top: 690, left: 1000}, {top: 675, left: 950}, {top: 640, left: 925}, {top: 590, left: 940}, 
+            {top: 540, left: 975}, {top: 500, left: 1025}, {top: 525, left: 960}, {top: 575, left: 990}, {top: 625, left: 1025}, 
+            {top: 575, left: 1100}, {top: 525, left: 1125}, {top: 475, left: 1140}, {top: 425, left: 1125}, {top: 375, left: 1100}, 
+            {top: 325, left: 1125}, {top: 275, left: 1150}, {top: 225, left: 1160}, {top: 175, left: 1150}
         ];
         
         this.specialCells = {
@@ -33,22 +63,22 @@ class EducationalPathGame {
             10: { type: 'pvp-quest' }, 
             15: { type: 'event-good', effect: p => this.updatePoints(p, 20, "Винайдено писемність! +20 ОО.", true) }, 
             20: { type: 'creative-quest' }, 
-            25: { type: 'reincarnation', next: 26, points: 50 },
+            25: { type: 'section-end', next: 26, points: 50, section: 'Античність', description: 'Завершено епоху Античності! Перехід до Середньовіччя.' },
             30: { type: 'quest' }, 
             35: { type: 'event-bad', effect: p => this.updatePoints(p, -20, "Втрата рукописів. -20 ОО.", true) }, 
             40: { type: 'pvp-quest' }, 
             45: { type: 'portal', target: 55, cost: 15 }, 
-            50: { type: 'reincarnation', next: 51, points: 60 },
+            50: { type: 'section-end', next: 51, points: 60, section: 'Середньовіччя', description: 'Завершено епоху Середньовіччя! Перехід до Відродження.' },
             55: { type: 'creative-quest' }, 
             60: { type: 'event-good', effect: p => this.updatePoints(p, 30, "Епоха Відродження! +30 ОО.", true) }, 
             65: { type: 'pvp-quest' }, 
             70: { type: 'event-bad', effect: p => { p.skipTurn = true; this.updatePoints(p, -10); }, description: "З'їв дивних грибів. Пропуск ходу та -10 ОО." }, 
-            75: { type: 'reincarnation', next: 76, points: 70 },
+            75: { type: 'section-end', next: 76, points: 70, section: 'Відродження', description: 'Завершено епоху Відродження! Перехід до Просвітництва.' },
             80: { type: 'quest' }, 
             85: { type: 'portal', target: 95, cost: 20 }, 
             90: { type: 'pvp-quest' }, 
             95: { type: 'event-good', effect: p => { p.extraTurn = true; }, description: "Просвітництво! Додатковий хід." }, 
-            100: { type: 'reincarnation', next: 101, points: 80 },
+            100: { type: 'section-end', next: 101, points: 80, section: 'Просвітництво', description: 'Завершено епоху Просвітництва! Перехід до Сучасності.' },
             105: { type: 'creative-quest' }, 
             110: { type: 'event-bad', effect: p => this.movePlayerTo(p, 90), description: "Світова війна. Повернення назад." }, 
             115: { type: 'pvp-quest' }, 
@@ -365,8 +395,9 @@ class EducationalPathGame {
             case 'creative-quest':
                 this.triggerCreativeQuest(player);
                 break;
-            case 'reincarnation':
-                this.updatePoints(player, cellData.points, `Реінкарнація!`);
+            case 'section-end':
+                this.updatePoints(player, cellData.points, cellData.description);
+                this.logMessage(`${player.name} завершив епоху ${cellData.section}! Перехід до наступної епохи.`, 'system');
                 this.movePlayerTo(player, cellData.next);
                 break;
             case 'machine-uprising':

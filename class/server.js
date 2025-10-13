@@ -295,6 +295,56 @@ io.on('connection', (socket) => {
         });
         
         console.log('Відправлено подію dice_rolled всім гравцям');
+        
+        // Переходимо до наступного гравця
+        room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+        
+        // Пропускаємо гравців, які вибули
+        while (room.gameData.players[room.gameData.currentPlayerIndex].hasWon || 
+               room.gameData.players[room.gameData.currentPlayerIndex].hasLost) {
+            room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+        }
+        
+        // Повідомляємо всіх про зміну черги
+        io.to(room.id).emit('turn_changed', {
+            currentPlayerIndex: room.gameData.currentPlayerIndex
+        });
+        
+        console.log('Відправлено подію turn_changed всім гравцям');
+    });
+    
+    // Гравець покидає кімнату
+    socket.on('leave_room', (data) => {
+        console.log('Гравець покидає кімнату:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+        
+        const room = rooms.get(data.roomId);
+        if (!room) return;
+        
+        // Видаляємо гравця з кімнати
+        room.players = room.players.filter(p => p.id !== player.id);
+        
+        // Якщо це хост і гра не почалася, передаємо права хоста іншому гравцю
+        if (player.isHost && room.gameState !== 'playing' && room.players.length > 0) {
+            room.players[0].isHost = true;
+        }
+        
+        // Якщо кімната порожня, видаляємо її
+        if (room.players.length === 0) {
+            rooms.delete(data.roomId);
+        } else {
+            // Повідомляємо інших гравців
+            socket.to(data.roomId).emit('player_left', {
+                player,
+                players: room.players
+            });
+        }
+        
+        // Видаляємо гравця з глобального списку
+        players.delete(socket.id);
+        
+        console.log(`Гравець ${player.name} покинув кімнату ${data.roomId}`);
     });
     
     // Гравець досяг перемоги

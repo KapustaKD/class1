@@ -228,6 +228,10 @@ class MultiplayerGame extends EducationalPathGame {
             this.currentPlayerIndex = data.currentPlayerIndex;
             this.gameActive = true;
             
+            // Перевіряємо, чи знаходимося серед гравців
+            const myPlayer = this.players.find(p => p.id === this.playerId);
+            console.log('Мій гравець в грі:', myPlayer);
+            
             // Переходимо до ігрового інтерфейсу
             this.showGameInterface();
             this.updatePlayerInfo();
@@ -298,6 +302,24 @@ class MultiplayerGame extends EducationalPathGame {
             this.isHost = false;
             this.players = [];
             this.spectators = [];
+            this.gameActive = false;
+            this.currentPlayerIndex = 0;
+            
+            // Очищуємо поля вводу
+            if (this.roomNameInput) this.roomNameInput.value = '';
+            if (this.playerNameInput) this.playerNameInput.value = '';
+            if (this.roomCodeInput) this.roomCodeInput.value = '';
+            if (this.joinPlayerNameInput) this.joinPlayerNameInput.value = '';
+            
+            // Очищуємо списки
+            if (this.playersContainer) this.playersContainer.innerHTML = '';
+            if (this.chatMessages) this.chatMessages.innerHTML = '';
+            
+            // Приховуємо панелі
+            if (this.playersList) this.playersList.classList.add('hidden');
+            if (this.chatContainer) this.chatContainer.classList.add('hidden');
+            if (this.roomCodeDisplay) this.roomCodeDisplay.classList.add('hidden');
+            if (this.startGameSection) this.startGameSection.classList.add('hidden');
         }
     }
     
@@ -630,7 +652,9 @@ class MultiplayerGame extends EducationalPathGame {
             isHost: this.isHost,
             gameActive: this.gameActive,
             currentPlayerIndex: this.currentPlayerIndex,
-            players: this.players?.length
+            players: this.players?.length,
+            myPlayerId: this.playerId,
+            currentPlayer: this.players?.[this.currentPlayerIndex]
         });
         
         if (this.isOnlineMode) {
@@ -642,7 +666,8 @@ class MultiplayerGame extends EducationalPathGame {
                 isCurrentPlayer,
                 currentPlayerId: currentPlayer?.id,
                 myPlayerId: this.playerId,
-                gameActive: this.gameActive
+                gameActive: this.gameActive,
+                currentPlayerName: currentPlayer?.name
             });
             
             if (isCurrentPlayer && this.gameActive) {
@@ -651,8 +676,14 @@ class MultiplayerGame extends EducationalPathGame {
             } else {
                 console.log('Не можна кинути кубик:', {
                     isCurrentPlayer,
-                    gameActive: this.gameActive
+                    gameActive: this.gameActive,
+                    reason: !isCurrentPlayer ? 'Не ваш хід' : 'Гра не активна'
                 });
+                
+                // Показуємо повідомлення користувачу
+                if (!isCurrentPlayer) {
+                    this.logMessage(`Зараз хід гравця ${currentPlayer?.name || 'невідомо'}`, 'system');
+                }
             }
         } else {
             // Локальний режим

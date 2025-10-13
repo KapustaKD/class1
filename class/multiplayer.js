@@ -55,6 +55,9 @@ class MultiplayerGame extends EducationalPathGame {
         // Додаємо елементи для початку гри
         this.startGameSection = document.getElementById('start-game-section');
         this.startGameBtn = document.getElementById('start-game-btn');
+        
+        // Додаємо елемент для виходу з кімнати
+        this.leaveRoomBtn = document.getElementById('leave-room-btn');
     }
     
     setupMultiplayerEventListeners() {
@@ -72,6 +75,11 @@ class MultiplayerGame extends EducationalPathGame {
         // Обробник для кнопки початку гри
         if (this.startGameBtn) {
             this.startGameBtn.addEventListener('click', () => this.startOnlineGame());
+        }
+        
+        // Обробник для кнопки виходу з кімнати
+        if (this.leaveRoomBtn) {
+            this.leaveRoomBtn.addEventListener('click', () => this.leaveRoom());
         }
     }
     
@@ -127,6 +135,9 @@ class MultiplayerGame extends EducationalPathGame {
             this.showRoomCode(data.roomId);
             this.logMessage(`Кімната "${data.roomName}" створена! Код: ${this.roomId}`, 'system');
             
+            // Показуємо кнопку виходу
+            this.leaveRoomBtn.classList.remove('hidden');
+            
             // Показуємо код кімнати в модальному вікні
             this.showRoomCodeModal(data.roomId, data.roomName);
         });
@@ -138,6 +149,9 @@ class MultiplayerGame extends EducationalPathGame {
             this.showPlayersList();
             this.showChat();
             this.logMessage(`Приєднано до кімнати "${data.roomName}"`, 'system');
+            
+            // Показуємо кнопку виходу
+            this.leaveRoomBtn.classList.remove('hidden');
         });
         
         this.socket.on('player_joined', (data) => {
@@ -174,6 +188,14 @@ class MultiplayerGame extends EducationalPathGame {
             console.log('Отримано подію player_moved:', data);
             this.handleRemotePlayerMove(data);
             this.updateDiceButtonState();
+        });
+        
+        this.socket.on('turn_changed', (data) => {
+            console.log('Отримано подію turn_changed:', data);
+            this.currentPlayerIndex = data.currentPlayerIndex;
+            this.updatePlayerInfo();
+            this.updateDiceButtonState();
+            this.logMessage(`Тепер хід гравця ${this.players[this.currentPlayerIndex].name}.`, 'turn');
         });
         
         this.socket.on('quest_started', (data) => {
@@ -260,6 +282,23 @@ class MultiplayerGame extends EducationalPathGame {
             playerName,
             playerId: this.playerId
         });
+    }
+    
+    leaveRoom() {
+        if (confirm('Ви впевнені, що хочете покинути кімнату?')) {
+            this.socket.emit('leave_room', { roomId: this.roomId });
+            
+            // Повертаємося до вибору режиму
+            this.onlinePanel.classList.add('hidden');
+            this.modeSelection.classList.remove('hidden');
+            this.leaveRoomBtn.classList.add('hidden');
+            
+            // Очищуємо дані
+            this.roomId = null;
+            this.isHost = false;
+            this.players = [];
+            this.spectators = [];
+        }
     }
     
     updatePlayersList(players) {

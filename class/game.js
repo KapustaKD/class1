@@ -82,131 +82,93 @@ class EducationalPathGame {
     
     // Завантаження даних карти
     loadMapData() {
-        // Створюємо дані карти з SVG-країнами та єдиним шляхом
+        // Створюємо дані карти з Вороного-країнами та хвилевим шляхом
         this.mapData = {
-            canvasSize: { width: 1920, height: 1080 },
+            mapWidth: 1800,  // Ширина білої карти
+            mapHeight: 900,  // Висота білої карти
             
-            // Опис SVG-країн з нерівними кордонами
-            zones: [
-                { 
-                    name: 'Червона Імперія', 
-                    color: '#D9534F', 
-                    startCell: 1, 
-                    endCell: 20,
-                    svgPath: 'M 100 800 L 250 950 L 600 900 C 700 850, 800 700, 750 600 L 400 650 Z'
-                },
-                { 
-                    name: 'Синій Архіпелаг', 
-                    color: '#5BC0DE', 
-                    startCell: 21, 
-                    endCell: 40,
-                    svgPath: 'M 750 600 L 800 700 C 900 750, 1000 800, 1100 700 L 1200 600 C 1150 500, 1000 450, 850 500 Z'
-                },
-                { 
-                    name: 'Зелені Землі', 
-                    color: '#5CB85C', 
-                    startCell: 41, 
-                    endCell: 60,
-                    svgPath: 'M 850 500 L 1000 450 C 1100 400, 1200 350, 1300 400 L 1400 500 C 1350 600, 1200 650, 1050 600 Z'
-                },
-                { 
-                    name: 'Золота Долина', 
-                    color: '#F0AD4E', 
-                    startCell: 61, 
-                    endCell: 80,
-                    svgPath: 'M 1050 600 L 1200 650 C 1300 700, 1400 750, 1500 700 L 1600 600 C 1550 500, 1400 450, 1250 500 Z'
-                },
-                { 
-                    name: 'Фіолетове Королівство', 
-                    color: '#9B59B6', 
-                    startCell: 81, 
-                    endCell: 101,
-                    svgPath: 'M 1250 500 L 1400 450 C 1500 400, 1600 350, 1700 400 L 1800 500 C 1750 600, 1600 700, 1450 650 Z'
-                }
+            // 5 країн з кольорами
+            countries: [
+                { name: 'Червона Імперія', color: '#D9534F' },
+                { name: 'Синій Архіпелаг', color: '#5BC0DE' },
+                { name: 'Зелені Землі', color: '#5CB85C' },
+                { name: 'Золота Долина', color: '#F0AD4E' },
+                { name: 'Фіолетове Королівство', color: '#9B59B6' }
             ],
             
-            // Масив для всіх 101 клітинок з їхніми координатами
+            // Масив для всіх 101 клітинок
             cells: []
         };
         
-        this.generateSmoothPathCells();
+        this.generateVoronoiCountries();
+        this.generateWavePath();
     }
     
-    // Генерація клітинок для плавного шляху через країни
-    generateSmoothPathCells() {
-        const cells = [];
-        let cellId = 1;
-
-        // Створюємо плавний звивистий шлях через всю карту
-        const pathPoints = this.generateSmoothPath();
-        
-        pathPoints.forEach(point => {
-            cells.push({ 
-                id: cellId++, 
-                x: point.x, 
-                y: point.y, 
-                zone: this.getZoneForCell(cellId - 1)
+    // Генерація країн методом Вороного
+    generateVoronoiCountries() {
+        // Генеруємо 5 випадкових точок на карті
+        const points = [];
+        for (let i = 0; i < 5; i++) {
+            points.push({
+                x: Math.random() * this.mapData.mapWidth,
+                y: Math.random() * this.mapData.mapHeight,
+                country: this.mapData.countries[i]
             });
-        });
-
-        // Фінішна клітинка (корона)
-        cells.push({ id: 101, x: 1750, y: 300, zone: 5, isFinish: true });
-
+        }
+        
+        this.mapData.voronoiPoints = points;
+    }
+    
+    // Генерація хвилевого шляху
+    generateWavePath() {
+        const cells = [];
+        const mapWidth = this.mapData.mapWidth;
+        const mapHeight = this.mapData.mapHeight;
+        const numCells = 101;
+        
+        // Параметри хвилі
+        const amplitude = 350;  // Амплітуда хвилі
+        const frequency = 3;    // Кількість повних коливань
+        const yOffset = 450;    // Вертикальний зсув
+        
+        for (let i = 0; i < numCells; i++) {
+            // Розраховуємо X лінійно від краю до краю
+            const x = (mapWidth / numCells) * i + 50; // +50px відступ від краю
+            
+            // Розраховуємо Y за формулою синусоїди
+            const y = yOffset + amplitude * Math.sin((i / numCells) * frequency * 2 * Math.PI);
+            
+            // Визначаємо країну для цієї клітинки
+            const countryIndex = this.getCountryForPoint(x, y);
+            
+            cells.push({ 
+                id: i + 1, 
+                x: x, 
+                y: y, 
+                country: countryIndex
+            });
+        }
+        
         this.mapData.cells = cells;
     }
     
-    // Генерація плавного шляху через всю карту
-    generateSmoothPath() {
-        const points = [];
+    // Визначення країни для точки
+    getCountryForPoint(x, y) {
+        let closestCountry = 0;
+        let minDistance = Infinity;
         
-        // Початок у нижньому лівому куті
-        let currentX = 150;
-        let currentY = 900;
-        
-        for (let i = 0; i < 100; i++) {
-            points.push({ x: currentX, y: currentY });
-            
-            // Генеруємо наступну точку з плавними переходами
-            const progress = i / 99;
-            
-            if (progress < 0.2) {
-                // Перша зона - рух вгору та праворуч
-                currentX += 30 + Math.sin(i * 0.1) * 10;
-                currentY -= 20 + Math.cos(i * 0.1) * 15;
-            } else if (progress < 0.4) {
-                // Друга зона - велика дуга вгору
-                currentX += 25 + Math.sin(i * 0.15) * 15;
-                currentY -= 30 + Math.cos(i * 0.15) * 20;
-            } else if (progress < 0.6) {
-                // Третя зона - вигини в центрі
-                currentX += 20 + Math.sin(i * 0.2) * 20;
-                currentY += Math.sin(i * 0.2) * 25;
-            } else if (progress < 0.8) {
-                // Четверта зона - рух праворуч з хвилями
-                currentX += 35 + Math.sin(i * 0.1) * 12;
-                currentY += 15 + Math.cos(i * 0.1) * 18;
-            } else {
-                // П'ята зона - фінальний ривок вгору
-                currentX += 40 + Math.sin(i * 0.05) * 8;
-                currentY -= 40 + Math.cos(i * 0.05) * 12;
+        this.mapData.voronoiPoints.forEach((point, index) => {
+            const distance = Math.sqrt((x - point.x) ** 2 + (y - point.y) ** 2);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestCountry = index;
             }
-        }
+        });
         
-        return points;
+        return closestCountry;
     }
     
-    // Визначення зони для клітинки
-    getZoneForCell(cellId) {
-        for (let i = 0; i < this.mapData.zones.length; i++) {
-            const zone = this.mapData.zones[i];
-            if (cellId >= zone.startCell && cellId <= zone.endCell) {
-                return i + 1;
-            }
-        }
-        return 1; // За замовчуванням перша зона
-    }
-    
-    // Генерація координат для єдиного шляху
+    // Генерація координат для хвилевого шляху
     generateEpochCoordinates() {
         const coordinates = [];
         
@@ -219,9 +181,9 @@ class EducationalPathGame {
             coordinates.push({
                 top: cell.y,
                 left: cell.x,
-                zone: cell.zone,
+                country: cell.country,
                 cellId: cell.id,
-                isFinish: cell.isFinish || false
+                isFinish: cell.id === 101
             });
         });
         
@@ -331,11 +293,11 @@ class EducationalPathGame {
     createBoard() {
         this.gameBoard.innerHTML = '';
         
-        // Створюємо білий фон
-        this.createWhiteBackground();
+        // Створюємо ОДИН великий білий контейнер карти
+        this.createGameMap();
         
-        // Створюємо SVG-країни
-        this.createSVGCountries();
+        // Створюємо країни методом Вороного
+        this.createVoronoiCountries();
         
         // Стартова клітинка
         const startCell = document.createElement('div');
@@ -346,20 +308,20 @@ class EducationalPathGame {
         startCell.innerHTML = '<span>СТАРТ</span>';
         this.gameBoard.appendChild(startCell);
         
-        // Створюємо клітинки для єдиного шляху
+        // Створюємо клітинки хвилевого шляху
         this.epochCoordinates.forEach((coord) => {
             const cellNum = coord.cellId;
             const cell = document.createElement('div');
             cell.id = `cell-${cellNum}`;
             
-            // Визначаємо зону для клітинки
-            const zone = this.mapData.zones.find(z => z.startCell <= cellNum && z.endCell >= cellNum);
+            // Визначаємо країну для клітинки
+            const country = this.mapData.countries[coord.country];
             const special = this.specialCells[cellNum];
             
             let cellClass = special ? special.type : 'empty';
             if (coord.isFinish) cellClass = 'finish';
             
-            cell.className = `board-cell ${cellClass} zone-${coord.zone}`;
+            cell.className = `board-cell ${cellClass} country-${coord.country}`;
             cell.style.top = `${coord.top}px`;
             cell.style.left = `${coord.left}px`;
             
@@ -369,15 +331,13 @@ class EducationalPathGame {
                 cell.innerHTML = `<span>${cellNum}</span>`;
             }
             
-            // Додаємо підказку з зоною
-            if (zone) {
-                cell.title = `${zone.name}`;
-            }
+            // Додаємо підказку з країною
+            cell.title = `${country.name}`;
             
             this.gameBoard.appendChild(cell);
         });
         
-        this.drawSmoothPath();
+        this.drawWavePath();
         
         // Фішки гравців
         this.players.forEach(p => {
@@ -389,61 +349,83 @@ class EducationalPathGame {
         });
     }
     
-    // Створення білого фону
-    createWhiteBackground() {
-        const background = document.createElement('div');
-        background.id = 'map-background';
-        background.className = 'map-background';
-        background.style.position = 'absolute';
-        background.style.top = '0px';
-        background.style.left = '0px';
-        background.style.width = '100%';
-        background.style.height = '100%';
-        background.style.backgroundColor = '#ffffff';
-        background.style.zIndex = '0';
-        this.gameBoard.appendChild(background);
+    // Створення ОДНОГО великого білого контейнера карти
+    createGameMap() {
+        const gameMap = document.createElement('div');
+        gameMap.id = 'game-map';
+        gameMap.className = 'game-map';
+        gameMap.style.position = 'absolute';
+        gameMap.style.top = '0px';
+        gameMap.style.left = '0px';
+        gameMap.style.width = `${this.mapData.mapWidth}px`;
+        gameMap.style.height = `${this.mapData.mapHeight}px`;
+        gameMap.style.backgroundColor = '#ffffff';
+        gameMap.style.border = '2px solid #333';
+        gameMap.style.zIndex = '0';
+        this.gameBoard.appendChild(gameMap);
     }
     
-    // Створення SVG-країн
-    createSVGCountries() {
+    // Створення країн методом Вороного
+    createVoronoiCountries() {
         const svgContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svgContainer.id = 'countries-svg';
+        svgContainer.id = 'voronoi-countries';
         svgContainer.style.position = 'absolute';
         svgContainer.style.top = '0px';
         svgContainer.style.left = '0px';
-        svgContainer.style.width = '100%';
-        svgContainer.style.height = '100%';
+        svgContainer.style.width = `${this.mapData.mapWidth}px`;
+        svgContainer.style.height = `${this.mapData.mapHeight}px`;
         svgContainer.style.zIndex = '1';
-        svgContainer.setAttribute('viewBox', '0 0 1920 1080');
+        svgContainer.setAttribute('viewBox', `0 0 ${this.mapData.mapWidth} ${this.mapData.mapHeight}`);
         
-        this.mapData.zones.forEach((zone) => {
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', zone.svgPath);
-            path.setAttribute('fill', zone.color);
-            path.setAttribute('opacity', '0.3');
-            path.setAttribute('stroke', zone.color);
-            path.setAttribute('stroke-width', '3');
-            path.setAttribute('stroke-opacity', '0.8');
-            
-            // Додаємо назву країни
-            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', '200');
-            text.setAttribute('y', '100');
-            text.setAttribute('fill', zone.color);
-            text.setAttribute('font-size', '24');
-            text.setAttribute('font-weight', 'bold');
-            text.setAttribute('text-anchor', 'middle');
-            text.textContent = zone.name;
-            
-            svgContainer.appendChild(path);
-            svgContainer.appendChild(text);
-        });
+        // Створюємо діаграму Вороного
+        this.createVoronoiDiagram(svgContainer);
         
         this.gameBoard.appendChild(svgContainer);
     }
     
-    // Малювання плавного шляху
-    drawSmoothPath() {
+    // Створення діаграми Вороного
+    createVoronoiDiagram(svgContainer) {
+        const width = this.mapData.mapWidth;
+        const height = this.mapData.mapHeight;
+        
+        // Для кожного пікселя визначаємо найближчу країну
+        for (let y = 0; y < height; y += 10) { // Крок 10px для продуктивності
+            for (let x = 0; x < width; x += 10) {
+                const countryIndex = this.getCountryForPoint(x, y);
+                const country = this.mapData.countries[countryIndex];
+                
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', x);
+                rect.setAttribute('y', y);
+                rect.setAttribute('width', '10');
+                rect.setAttribute('height', '10');
+                rect.setAttribute('fill', country.color);
+                rect.setAttribute('opacity', '0.3');
+                
+                svgContainer.appendChild(rect);
+            }
+        }
+        
+        // Додаємо назви країн
+        this.mapData.voronoiPoints.forEach((point, index) => {
+            const country = this.mapData.countries[index];
+            
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', point.x);
+            text.setAttribute('y', point.y);
+            text.setAttribute('fill', country.color);
+            text.setAttribute('font-size', '20');
+            text.setAttribute('font-weight', 'bold');
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('dominant-baseline', 'middle');
+            text.textContent = country.name;
+            
+            svgContainer.appendChild(text);
+        });
+    }
+    
+    // Малювання хвилевого шляху
+    drawWavePath() {
         this.pathSvg.innerHTML = '';
         
         // Малюємо з'єднання між сусідніми клітинками

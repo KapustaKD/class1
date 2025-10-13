@@ -91,9 +91,14 @@
     <div id="online-panel" class="hidden w-full max-w-screen-2xl bg-gray-700 p-6 rounded-2xl shadow-2xl">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-2xl font-bold">Онлайн гра</h2>
-            <div id="connection-status" class="flex items-center gap-2">
-                <div id="status-indicator" class="w-3 h-3 rounded-full bg-red-500"></div>
-                <span id="status-text">Не підключено</span>
+            <div class="flex items-center gap-4">
+                <div id="connection-status" class="flex items-center gap-2">
+                    <div id="status-indicator" class="w-3 h-3 rounded-full bg-red-500"></div>
+                    <span id="status-text">Не підключено</span>
+                </div>
+                <button id="leave-room-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden">
+                    🚪 Покинути кімнату
+                </button>
             </div>
         </div>
         

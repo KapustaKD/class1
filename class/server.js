@@ -267,7 +267,10 @@ io.on('connection', (socket) => {
         }
         
         const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
-        if (currentPlayer.id !== socket.id) {
+        console.log('Поточний гравець:', currentPlayer.name, 'ID:', currentPlayer.id);
+        console.log('Гравець, який кидає:', player.name, 'ID:', player.id);
+        
+        if (currentPlayer.id !== player.id) {
             console.log('Не хід цього гравця');
             return;
         }

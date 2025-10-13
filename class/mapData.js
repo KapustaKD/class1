@@ -1,147 +1,87 @@
-// Структура даних для карти з островами епох
+// mapData.js - Нова версія
+// Цей файл описує одну велику карту з 5 зонами та 101 клітинкою.
+
 export const mapData = {
-    // Загальні налаштування карти
-    canvasSize: { width: 1600, height: 900 },
-
-    // Опис кожної епохи (острова)
-    epochs: [
-        {
-            id: 1,
-            name: 'Античність',
-            color: '#c94a45', // Червоний колір
-            position: { x: 50, y: 50 },
-            cells: []
-        },
-        {
-            id: 2,
-            name: 'Середньовіччя',
-            color: '#e6c86e', // Жовтий
-            position: { x: 500, y: 100 },
-            cells: []
-        },
-        {
-            id: 3,
-            name: 'Індустріальна епоха',
-            color: '#7ea4d4', // Синій
-            position: { x: 950, y: 150 },
-            cells: []
-        },
-        {
-            id: 4,
-            name: 'Сучасність',
-            color: '#a34c56', // Темно-червоний
-            position: { x: 150, y: 450 },
-            cells: []
-        },
-        {
-            id: 5,
-            name: 'Майбутнє',
-            color: '#84b56d', // Зелений
-            position: { x: 650, y: 500 },
-            cells: []
-        }
+    // Розмір всієї ігрової області
+    canvasSize: { width: 1920, height: 1080 },
+  
+    // Опис 5 кольорових зон, які заповнюють всю карту.
+    // 'svgPath' - це інструкція для малювання складної форми, як кордону країни.
+    zones: [
+      { 
+        name: 'Сірі Землі', 
+        color: 'rgba(179, 179, 179, 0.7)', // Сірий
+        svgPath: 'M 0 1080 L 0 500 Q 300 550, 650 700 L 700 1080 Z' 
+      },
+      { 
+        name: 'Рожева Долина', 
+        color: 'rgba(255, 179, 209, 0.7)', // Рожевий
+        svgPath: 'M 700 1080 L 650 700 Q 850 650, 1100 750 L 1200 1080 Z' 
+      },
+      { 
+        name: 'Зелений Ліс', 
+        color: 'rgba(51, 204, 51, 0.7)', // Зелений
+        svgPath: 'M 1200 1080 L 1100 750 Q 1400 700, 1600 600 L 1920 800 L 1920 1080 Z' 
+      },
+      { 
+        name: 'Синя Ріка', 
+        color: 'rgba(51, 153, 255, 0.7)', // Синій
+        svgPath: 'M 1920 800 L 1600 600 Q 1200 400, 800 300 L 900 0 L 1920 0 Z'
+      },
+      { 
+        name: 'Жовті Пустелі', 
+        color: 'rgba(255, 255, 77, 0.7)', // Жовтий
+        svgPath: 'M 900 0 L 800 300 Q 400 350, 0 500 L 0 0 Z' 
+      }
     ],
-
-    // Масив усіх клітинок для зручності доступу
-    allCells: []
-};
-
-// Генерація координат для кожної епохи
-function generateEpochCells() {
-    let cellCounter = 1;
-
-    // Епоха 1: Античність (клітинки 1-25) - звивистий шлях
-    const ancientEpoch = mapData.epochs.find(e => e.id === 1);
-    const ancientPath = [
-        { x: 50, y: 250 }, { x: 120, y: 280 }, { x: 200, y: 260 }, { x: 250, y: 200 }, { x: 210, y: 130 },
-        { x: 140, y: 100 }, { x: 60, y: 120 }, { x: 40, y: 50 }, { x: 100, y: 30 }, { x: 180, y: 60 },
-        { x: 220, y: 120 }, { x: 180, y: 180 }, { x: 120, y: 200 }, { x: 80, y: 160 }, { x: 100, y: 220 },
-        { x: 160, y: 240 }, { x: 200, y: 280 }, { x: 240, y: 320 }, { x: 280, y: 280 }, { x: 320, y: 240 },
-        { x: 300, y: 180 }, { x: 260, y: 140 }, { x: 220, y: 100 }, { x: 180, y: 80 }, { x: 140, y: 120 }
+  
+    // Масив з усіма 101 клітинками, згенерований вздовж плавного шляху.
+    cells: generateCells()
+  };
+  
+  // Функція для генерації шляху з 101 клітинки
+  function generateCells() {
+    const cells = [];
+    const numCells = 101;
+    const pathPoints = [ // Опорні точки для побудови шляху
+      { x: 100,  y: 950 },  // Старт в Сірих Землях
+      { x: 650,  y: 800 },  // Перехід в Рожеву Долину
+      { x: 1150, y: 900 },  // Перехід в Зелений Ліс
+      { x: 1600, y: 400 },  // Підйом в Синю Ріку
+      { x: 1000, y: 200 },  // Перехід в Жовті Пустелі
+      { x: 200,  y: 150 }   // Фініш
     ];
-    
-    ancientPath.forEach(pos => {
-        ancientEpoch.cells.push({ id: cellCounter++, x: pos.x, y: pos.y });
-    });
-
-    // Епоха 2: Середньовіччя (клітинки 26-50) - спіральний шлях
-    const medievalEpoch = mapData.epochs.find(e => e.id === 2);
-    const medievalPath = [
-        { x: 50, y: 200 }, { x: 100, y: 180 }, { x: 150, y: 160 }, { x: 200, y: 180 }, { x: 250, y: 200 },
-        { x: 280, y: 250 }, { x: 250, y: 300 }, { x: 200, y: 320 }, { x: 150, y: 300 }, { x: 100, y: 280 },
-        { x: 80, y: 230 }, { x: 120, y: 200 }, { x: 160, y: 220 }, { x: 200, y: 240 }, { x: 180, y: 280 },
-        { x: 140, y: 300 }, { x: 100, y: 320 }, { x: 60, y: 300 }, { x: 40, y: 250 }, { x: 70, y: 200 },
-        { x: 110, y: 180 }, { x: 150, y: 200 }, { x: 190, y: 220 }, { x: 220, y: 260 }, { x: 200, y: 300 }
-    ];
-    
-    medievalPath.forEach(pos => {
-        medievalEpoch.cells.push({ id: cellCounter++, x: pos.x, y: pos.y });
-    });
-
-    // Епоха 3: Індустріальна епоха (клітинки 51-75) - прямокутний шлях
-    const industrialEpoch = mapData.epochs.find(e => e.id === 3);
-    const industrialPath = [
-        { x: 50, y: 150 }, { x: 100, y: 150 }, { x: 150, y: 150 }, { x: 200, y: 150 }, { x: 250, y: 150 },
-        { x: 250, y: 200 }, { x: 200, y: 200 }, { x: 150, y: 200 }, { x: 100, y: 200 }, { x: 50, y: 200 },
-        { x: 50, y: 250 }, { x: 100, y: 250 }, { x: 150, y: 250 }, { x: 200, y: 250 }, { x: 250, y: 250 },
-        { x: 250, y: 300 }, { x: 200, y: 300 }, { x: 150, y: 300 }, { x: 100, y: 300 }, { x: 50, y: 300 },
-        { x: 50, y: 350 }, { x: 100, y: 350 }, { x: 150, y: 350 }, { x: 200, y: 350 }, { x: 250, y: 350 }
-    ];
-    
-    industrialPath.forEach(pos => {
-        industrialEpoch.cells.push({ id: cellCounter++, x: pos.x, y: pos.y });
-    });
-
-    // Епоха 4: Сучасність (клітинки 76-100) - змійковий шлях
-    const modernEpoch = mapData.epochs.find(e => e.id === 4);
-    const modernPath = [
-        { x: 50, y: 200 }, { x: 100, y: 200 }, { x: 150, y: 200 }, { x: 200, y: 200 }, { x: 250, y: 200 },
-        { x: 250, y: 150 }, { x: 200, y: 150 }, { x: 150, y: 150 }, { x: 100, y: 150 }, { x: 50, y: 150 },
-        { x: 50, y: 100 }, { x: 100, y: 100 }, { x: 150, y: 100 }, { x: 200, y: 100 }, { x: 250, y: 100 },
-        { x: 250, y: 50 }, { x: 200, y: 50 }, { x: 150, y: 50 }, { x: 100, y: 50 }, { x: 50, y: 50 },
-        { x: 50, y: 0 }, { x: 100, y: 0 }, { x: 150, y: 0 }, { x: 200, y: 0 }, { x: 250, y: 0 }
-    ];
-    
-    modernPath.forEach(pos => {
-        modernEpoch.cells.push({ id: cellCounter++, x: pos.x, y: pos.y });
-    });
-
-    // Епоха 5: Майбутнє (клітинки 101-125) - круговий шлях
-    const futureEpoch = mapData.epochs.find(e => e.id === 5);
-    const futurePath = [];
-    
-    // Генеруємо круговий шлях
-    const centerX = 150;
-    const centerY = 150;
-    const radius = 100;
-    
-    for (let i = 0; i < 25; i++) {
-        const angle = (i / 25) * 2 * Math.PI;
-        const x = centerX + Math.cos(angle) * radius;
-        const y = centerY + Math.sin(angle) * radius;
-        futurePath.push({ x: Math.round(x), y: Math.round(y) });
-    }
-    
-    futurePath.forEach(pos => {
-        futureEpoch.cells.push({ id: cellCounter++, x: pos.x, y: pos.y });
-    });
-
-    // Заповнюємо масив усіх клітинок
-    mapData.allCells = [];
-    mapData.epochs.forEach(epoch => {
-        epoch.cells.forEach(cell => {
-            mapData.allCells.push({
-                ...cell,
-                epochId: epoch.id,
-                absoluteX: epoch.position.x + cell.x,
-                absoluteY: epoch.position.y + cell.y
-            });
+  
+    let cellIndex = 1;
+    for (let i = 0; i < pathPoints.length - 1; i++) {
+      const startPoint = pathPoints[i];
+      const endPoint = pathPoints[i+1];
+      
+      // Визначаємо, скільки клітинок буде на цьому відрізку шляху
+      const cellsOnSegment = (i === pathPoints.length - 2) ? (numCells - cellIndex + 1) : Math.floor(numCells / (pathPoints.length - 1));
+  
+      for (let j = 0; j < cellsOnSegment; j++) {
+        if (cellIndex > numCells) break;
+  
+        const t = j / cellsOnSegment;
+        // Інтерполяція для створення плавного шляху
+        const x = startPoint.x + (endPoint.x - startPoint.x) * t;
+        const y = startPoint.y + (endPoint.y - startPoint.y) * t;
+  
+        // Додаємо трохи "шуму", щоб шлях не був ідеально прямим
+        const noiseX = (Math.random() - 0.5) * 50;
+        const noiseY = (Math.random() - 0.5) * 80;
+        
+        cells.push({
+          id: cellIndex++,
+          x: Math.floor(x + noiseX),
+          y: Math.floor(y + noiseY)
         });
-    });
-}
-
-// Ініціалізуємо координати
-generateEpochCells();
-
-// Експортуємо дані
-export default mapData;
+      }
+    }
+  
+    return cells;
+  }
+  
+  // Експортуємо готові дані
+  export default mapData;

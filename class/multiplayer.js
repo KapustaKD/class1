@@ -739,8 +739,7 @@ class MultiplayerGame extends EducationalPathGame {
         
         this.logMessage(`${player.name}${player.class ? ' (' + player.class.name + ')' : ''} викинув ${data.roll}. Рух: ${data.move}.`, 'roll');
         
-        // Оновлюємо стан кнопки кубика для всіх
-        this.updateDiceButtonState();
+        // Не оновлюємо кнопку тут - оновимо після turn_changed
     }
     
     handleRemotePlayerMove(data) {

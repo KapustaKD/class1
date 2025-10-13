@@ -309,11 +309,18 @@ io.on('connection', (socket) => {
         }
         
         // Повідомляємо всіх про зміну черги
+        const nextPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+        console.log('Наступний гравець:', nextPlayer.name, 'ID:', nextPlayer.id);
+        
         io.to(room.id).emit('turn_changed', {
-            currentPlayerIndex: room.gameData.currentPlayerIndex
+            currentPlayerIndex: room.gameData.currentPlayerIndex,
+            currentPlayer: nextPlayer
         });
         
-        console.log('Відправлено подію turn_changed всім гравцям');
+        console.log('Відправлено подію turn_changed всім гравцям:', {
+            currentPlayerIndex: room.gameData.currentPlayerIndex,
+            currentPlayerName: nextPlayer.name
+        });
     });
     
     // Гравець покидає кімнату

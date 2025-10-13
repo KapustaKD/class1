@@ -290,33 +290,22 @@ io.on('connection', (socket) => {
         
         console.log('Кубик показав:', roll, 'Рух:', move);
         
-        // Повідомляємо всіх про кидання кубика
-        io.to(room.id).emit('dice_rolled', {
+        // Оновлюємо позицію гравця
+        const newPosition = Math.min(currentPlayer.position + move, 124);
+        currentPlayer.position = newPosition;
+        
+        console.log(`${currentPlayer.name} перемістився на позицію ${newPosition}`);
+        
+        // Повідомляємо всіх про кидання кубика та нову позицію
+        io.to(room.id).emit('dice_result', {
             playerId: currentPlayer.id,
             roll,
-            move
+            move,
+            newPosition,
+            currentPlayerIndex: room.gameData.currentPlayerIndex
         });
         
-        console.log('Відправлено подію dice_rolled всім гравцям');
-        
-        // НЕ змінюємо currentPlayerIndex одразу - чекаємо завершення анімації
-        // Клієнт повідомить сервер про завершення ходу через подію 'turn_completed'
-    });
-    
-    // Обробляємо завершення ходу гравця
-    socket.on('turn_completed', (data) => {
-        console.log('Хід завершено:', data);
-        const player = players.get(socket.id);
-        if (!player) return;
-        
-        const room = rooms.get(data.roomId);
-        if (!room || room.gameState !== 'playing') return;
-        
-        const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
-        if (currentPlayer.id !== player.id) {
-            console.log('Не хід цього гравця для завершення');
-            return;
-        }
+        console.log('Відправлено подію dice_result всім гравцям');
         
         // Переходимо до наступного гравця
         console.log('Старий currentPlayerIndex:', room.gameData.currentPlayerIndex);
@@ -334,15 +323,128 @@ io.on('connection', (socket) => {
         const nextPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
         console.log('Наступний гравець:', nextPlayer.name, 'ID:', nextPlayer.id);
         
-        io.to(room.id).emit('turn_changed', {
+        io.to(room.id).emit('turn_update', {
             currentPlayerIndex: room.gameData.currentPlayerIndex,
-            currentPlayer: nextPlayer
-        });
-        
-        console.log('Відправлено подію turn_changed всім гравцям:', {
-            currentPlayerIndex: room.gameData.currentPlayerIndex,
+            currentPlayerId: nextPlayer.id,
             currentPlayerName: nextPlayer.name
         });
+        
+        console.log('Відправлено подію turn_update всім гравцям:', {
+            currentPlayerIndex: room.gameData.currentPlayerIndex,
+            currentPlayerId: nextPlayer.id,
+            currentPlayerName: nextPlayer.name
+        });
+    });
+    
+    // Обробляємо подію гравця
+    socket.on('player_on_event', (data) => {
+        console.log('Гравець потрапив на подію:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+        
+        const room = rooms.get(data.roomId);
+        if (!room || room.gameState !== 'playing') return;
+        
+        // Перевіряємо, чи це справді поточний гравець
+        const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+        if (currentPlayer.id !== player.id) {
+            console.log('Не той гравець намагається активувати подію');
+            return;
+        }
+        
+        // Зберігаємо інформацію про поточну подію
+        room.currentEventPlayerId = player.id;
+        room.currentEventData = data.eventData;
+        
+        console.log(`${player.name} потрапив на подію ${data.eventType}`);
+        
+        // Відправляємо подію всім гравцям
+        io.to(room.id).emit('show_event_prompt', {
+            playerId: player.id,
+            playerName: player.name,
+            eventType: data.eventType,
+            eventData: data.eventData
+        });
+        
+        console.log('Відправлено подію show_event_prompt всім гравцям');
+    });
+    
+    // Обробляємо вибір гравця в події
+    socket.on('event_choice_made', (data) => {
+        console.log('Отримано вибір події:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+        
+        const room = rooms.get(data.roomId);
+        if (!room || room.gameState !== 'playing') return;
+        
+        // Перевіряємо, чи це справді гравець, який потрапив на подію
+        if (room.currentEventPlayerId !== player.id) {
+            console.log('Не той гравець намагається зробити вибір');
+            return;
+        }
+        
+        console.log(`${player.name} зробив вибір: ${data.choice}`);
+        
+        // Обробляємо вибір залежно від типу події
+        let resultMessage = '';
+        let shouldContinue = true;
+        
+        if (data.eventType === 'portal') {
+            if (data.choice === 'yes') {
+                // Переміщуємо гравця на цільову позицію
+                player.position = data.targetPosition;
+                player.points -= data.cost;
+                resultMessage = `${player.name} скористався порталом! Переміщено на клітинку ${data.targetPosition}, втрачено ${data.cost} ОО.`;
+            } else {
+                resultMessage = `${player.name} відмовився від порталу.`;
+            }
+        } else if (data.eventType === 'reincarnation') {
+            if (data.choice === 'yes') {
+                // Переміщуємо гравця на наступну секцію
+                player.position = data.nextPosition;
+                player.points += data.points;
+                resultMessage = `${player.name} завершив епоху ${data.section}! Перехід до наступної епохи, отримано ${data.points} ОО.`;
+            } else {
+                resultMessage = `${player.name} відмовився від переходу між епохами.`;
+            }
+        }
+        
+        // Очищуємо поточну подію
+        room.currentEventPlayerId = null;
+        room.currentEventData = null;
+        
+        // Повідомляємо всіх про результат
+        io.to(room.id).emit('event_result', {
+            playerId: player.id,
+            playerName: player.name,
+            choice: data.choice,
+            resultMessage,
+            newPosition: player.position,
+            newPoints: player.points
+        });
+        
+        console.log('Відправлено результат події всім гравцям');
+        
+        // Якщо це був перехід між секціями, продовжуємо гру
+        if (shouldContinue) {
+            // Переходимо до наступного гравця
+            room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+            
+            // Пропускаємо гравців, які вибули
+            while (room.gameData.players[room.gameData.currentPlayerIndex].hasWon || 
+                   room.gameData.players[room.gameData.currentPlayerIndex].hasLost) {
+                room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+            }
+            
+            // Повідомляємо всіх про зміну черги
+            const nextPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+            io.to(room.id).emit('turn_update', {
+                currentPlayerIndex: room.gameData.currentPlayerIndex,
+                currentPlayerId: nextPlayer.id,
+                currentPlayerName: nextPlayer.name
+            });
+        }
     });
     
     // Гравець покидає кімнату

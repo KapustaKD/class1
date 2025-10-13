@@ -297,6 +297,46 @@ io.on('connection', (socket) => {
         console.log('Відправлено подію dice_rolled всім гравцям');
     });
     
+    // Гравець досяг перемоги
+    socket.on('player_won', (data) => {
+        console.log('Гравець досяг перемоги:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+        
+        const room = rooms.get(data.roomId);
+        if (!room || room.gameState !== 'playing') return;
+        
+        const winningPlayer = room.gameData.players.find(p => p.id === data.playerId);
+        if (!winningPlayer) return;
+        
+        // Позначаємо гравця як переможця
+        winningPlayer.hasWon = true;
+        winningPlayer.finalPosition = room.gameData.finalPositions ? room.gameData.finalPositions.length + 1 : 1;
+        
+        if (!room.gameData.finalPositions) {
+            room.gameData.finalPositions = [];
+        }
+        room.gameData.finalPositions.push(winningPlayer);
+        
+        // Перевіряємо, чи залишилися активні гравці
+        const activePlayers = room.gameData.players.filter(p => !p.hasWon && !p.hasLost);
+        
+        if (activePlayers.length <= 1) {
+            // Турнір закінчений
+            room.gameState = 'finished';
+            io.to(room.id).emit('tournament_ended', {
+                finalPositions: room.gameData.finalPositions
+            });
+        } else {
+            // Відправляємо інформацію про вибування
+            io.to(room.id).emit('player_eliminated', {
+                playerId: winningPlayer.id,
+                position: winningPlayer.finalPosition,
+                remainingPlayers: activePlayers.length
+            });
+        }
+    });
+    
     // Переміщення гравця
     socket.on('player_moved', (data) => {
         const player = players.get(socket.id);

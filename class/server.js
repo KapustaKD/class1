@@ -217,12 +217,23 @@ io.on('connection', (socket) => {
         
         console.log('Починаємо гру в кімнаті:', room.id);
         
-        // Ініціалізуємо гру
+        // Доступні класи
+        const availableClasses = [
+            { id: 'aristocrat', name: '⚜️ Аристократ', startPoints: 50, moveModifier: 1 },
+            { id: 'burgher', name: '⚖️ Міщанин', startPoints: 20, moveModifier: 0 },
+            { id: 'peasant', name: '🌱 Селянин', startPoints: 0, moveModifier: -1 },
+        ];
+        
+        // Перемішуємо класи для випадкової роздачі
+        const shuffledClasses = [...availableClasses].sort(() => Math.random() - 0.5);
+        
+        // Ініціалізуємо гру з роздачею класів
         room.gameState = 'playing';
         room.gameData.gameActive = true;
-        room.gameData.players = room.players.map(p => ({
+        room.gameData.players = room.players.map((p, index) => ({
             ...p,
-            points: 0,
+            class: shuffledClasses[index % shuffledClasses.length],
+            points: shuffledClasses[index % shuffledClasses.length].startPoints,
             position: 0,
             skipTurn: false,
             extraTurn: false,

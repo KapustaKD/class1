@@ -299,6 +299,25 @@ io.on('connection', (socket) => {
         
         console.log('Відправлено подію dice_rolled всім гравцям');
         
+        // НЕ змінюємо currentPlayerIndex одразу - чекаємо завершення анімації
+        // Клієнт повідомить сервер про завершення ходу через подію 'turn_completed'
+    });
+    
+    // Обробляємо завершення ходу гравця
+    socket.on('turn_completed', (data) => {
+        console.log('Хід завершено:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+        
+        const room = rooms.get(data.roomId);
+        if (!room || room.gameState !== 'playing') return;
+        
+        const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+        if (currentPlayer.id !== player.id) {
+            console.log('Не хід цього гравця для завершення');
+            return;
+        }
+        
         // Переходимо до наступного гравця
         console.log('Старий currentPlayerIndex:', room.gameData.currentPlayerIndex);
         room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;

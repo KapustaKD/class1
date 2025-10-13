@@ -251,25 +251,37 @@ class EducationalPathGame {
     }
     
     drawPath() {
-        let pathData = '';
-        const allCoords = [{top: 700, left: 25}, ...this.cellCoordinates];
-        for(let i = 0; i < allCoords.length - 1; i++) {
-            const p1 = { x: allCoords[i].left, y: allCoords[i].top };
-            const p2 = { x: allCoords[i+1].left, y: allCoords[i+1].top };
-            if (i === 0) pathData += `M ${p1.x} ${p1.y} `;
-            pathData += `L ${p2.x} ${p2.y} `;
-        }
-        
-        let path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', pathData);
-        path.setAttribute('fill', 'none');
-        path.setAttribute('stroke', 'rgba(255, 255, 255, 0.4)');
-        path.setAttribute('stroke-width', '10');
-        path.setAttribute('stroke-dasharray', '20 10');
-        path.setAttribute('stroke-linecap', 'round');
-        
         this.pathSvg.innerHTML = '';
-        this.pathSvg.appendChild(path);
+        
+        // Малюємо лінії тільки всередині кожної секції
+        const sectionBoundaries = [0, 25, 50, 75, 100, 124]; // Межі секцій
+        const allCoords = [{top: 700, left: 25}, ...this.cellCoordinates];
+        
+        for (let section = 0; section < sectionBoundaries.length - 1; section++) {
+            const startIdx = sectionBoundaries[section];
+            const endIdx = sectionBoundaries[section + 1];
+            
+            if (startIdx >= allCoords.length) break;
+            
+            let pathData = '';
+            for (let i = startIdx; i < endIdx && i < allCoords.length - 1; i++) {
+                const p1 = { x: allCoords[i].left, y: allCoords[i].top };
+                const p2 = { x: allCoords[i+1].left, y: allCoords[i+1].top };
+                if (i === startIdx) pathData += `M ${p1.x} ${p1.y} `;
+                pathData += `L ${p2.x} ${p2.y} `;
+            }
+            
+            if (pathData) {
+                let path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', pathData);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', 'rgba(255, 255, 255, 0.4)');
+                path.setAttribute('stroke-width', '10');
+                path.setAttribute('stroke-dasharray', '20 10');
+                path.setAttribute('stroke-linecap', 'round');
+                this.pathSvg.appendChild(path);
+            }
+        }
     }
     
     // Зум і панорама

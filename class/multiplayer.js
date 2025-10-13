@@ -181,7 +181,7 @@ class MultiplayerGame extends EducationalPathGame {
         this.socket.on('dice_rolled', (data) => {
             console.log('Отримано подію dice_rolled:', data);
             this.handleRemoteDiceRoll(data);
-            this.updateDiceButtonState();
+            // Не оновлюємо кнопку тут, оновимо після turn_changed
         });
         
         this.socket.on('player_moved', (data) => {
@@ -192,7 +192,9 @@ class MultiplayerGame extends EducationalPathGame {
         
         this.socket.on('turn_changed', (data) => {
             console.log('Отримано подію turn_changed:', data);
+            console.log('Старий currentPlayerIndex:', this.currentPlayerIndex);
             this.currentPlayerIndex = data.currentPlayerIndex;
+            console.log('Новий currentPlayerIndex:', this.currentPlayerIndex);
             
             // Оновлюємо інформацію про поточного гравця
             if (data.currentPlayer) {

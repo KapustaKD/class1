@@ -51,6 +51,10 @@ class MultiplayerGame extends EducationalPathGame {
             roomCodeText: this.roomCodeText, 
             copyRoomCodeBtn: this.copyRoomCodeBtn 
         });
+        
+        // Додаємо елементи для початку гри
+        this.startGameSection = document.getElementById('start-game-section');
+        this.startGameBtn = document.getElementById('start-game-btn');
     }
     
     setupMultiplayerEventListeners() {
@@ -64,6 +68,11 @@ class MultiplayerGame extends EducationalPathGame {
         this.chatInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.sendMessage();
         });
+        
+        // Обробник для кнопки початку гри
+        if (this.startGameBtn) {
+            this.startGameBtn.addEventListener('click', () => this.startOnlineGame());
+        }
     }
     
     startLocalMode() {
@@ -178,6 +187,23 @@ class MultiplayerGame extends EducationalPathGame {
         this.socket.on('game_ended', (data) => {
             this.handleRemoteGameEnd(data);
         });
+        
+        this.socket.on('game_started', (data) => {
+            console.log('Гра почалася:', data);
+            this.players = data.players;
+            this.currentPlayerIndex = data.currentPlayerIndex;
+            this.gameActive = true;
+            
+            // Переходимо до ігрового інтерфейсу
+            this.showGameContainer();
+            this.updateUI();
+            
+            // Приховуємо онлайн панель
+            this.onlinePanel.classList.add('hidden');
+            
+            // Показуємо повідомлення
+            this.addChatMessage('system', 'Гра почалася! Перший хід за ' + this.players[this.currentPlayerIndex].name);
+        });
     }
     
     updateConnectionStatus(connected, text) {
@@ -249,6 +275,13 @@ class MultiplayerGame extends EducationalPathGame {
             `;
             this.playersContainer.appendChild(spectatorCard);
         });
+        
+        // Показуємо кнопку "Почати гру" якщо є хоча б 2 гравці і ми хост
+        if (players.length >= 2 && this.isHost && this.startGameSection) {
+            this.startGameSection.classList.remove('hidden');
+        } else if (this.startGameSection) {
+            this.startGameSection.classList.add('hidden');
+        }
     }
     
     showPlayersList() {
@@ -322,6 +355,14 @@ class MultiplayerGame extends EducationalPathGame {
         } else {
             // Локальний режим
             super.initializeGame();
+        }
+    }
+    
+    // Початок онлайн гри
+    startOnlineGame() {
+        if (this.isHost && this.roomId) {
+            console.log('Починаємо онлайн гру');
+            this.socket.emit('start_game', { roomId: this.roomId });
         }
     }
     

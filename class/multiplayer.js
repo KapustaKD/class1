@@ -167,11 +167,13 @@ class MultiplayerGame extends EducationalPathGame {
         this.socket.on('dice_rolled', (data) => {
             console.log('Отримано подію dice_rolled:', data);
             this.handleRemoteDiceRoll(data);
+            this.updateDiceButtonState();
         });
         
         this.socket.on('player_moved', (data) => {
             console.log('Отримано подію player_moved:', data);
             this.handleRemotePlayerMove(data);
+            this.updateDiceButtonState();
         });
         
         this.socket.on('quest_started', (data) => {
@@ -199,6 +201,7 @@ class MultiplayerGame extends EducationalPathGame {
             // Переходимо до ігрового інтерфейсу
             this.showGameInterface();
             this.updatePlayerInfo();
+            this.updateDiceButtonState();
             
             // Приховуємо онлайн панель
             this.onlinePanel.classList.add('hidden');
@@ -389,6 +392,18 @@ class MultiplayerGame extends EducationalPathGame {
         this.createBoard();
         
         console.log('Ігровий інтерфейс показано');
+        this.updateDiceButtonState();
+    }
+
+    // Вмикаємо/вимикаємо кнопку кидка кубика залежно від черги
+    updateDiceButtonState() {
+        if (!this.isOnlineMode) return;
+        const currentPlayer = this.players && this.players[this.currentPlayerIndex];
+        const isMyTurn = currentPlayer && currentPlayer.id === this.playerId && this.gameActive;
+        if (this.rollDiceBtn) {
+            this.rollDiceBtn.disabled = !isMyTurn;
+            this.rollDiceBtn.style.display = isMyTurn ? '' : 'none';
+        }
     }
     
     // Оновлюємо інформацію про гравця
@@ -502,7 +517,10 @@ class MultiplayerGame extends EducationalPathGame {
             this.movePlayer(player, data.move);
         }, 1000);
         
-        this.logMessage(`${player.name} (${player.class.name}) викинув ${data.roll}. Рух: ${data.move}.`, 'roll');
+        this.logMessage(`${player.name}${player.class ? ' (' + player.class.name + ')' : ''} викинув ${data.roll}. Рух: ${data.move}.`, 'roll');
+        
+        // Оновлюємо стан кнопки кубика для всіх
+        this.updateDiceButtonState();
     }
     
     handleRemotePlayerMove(data) {

@@ -30,7 +30,7 @@ class EducationalPathGame {
     
             this.BOARD_SIZE = 101; // Загальна кількість клітинок (включаючи фініш)
     
-            this.scale = 0.5;
+            this.scale = 1.0; // Буде встановлено правильно в setupEventListeners
     
             this.translateX = 0;
     
@@ -376,15 +376,36 @@ class EducationalPathGame {
     
            
     
-            this.setupPlayerInputs();
+        this.setupPlayerInputs();
+        
+        // Встановлюємо правильний початковий масштаб
+        this.setInitialScale();
+        
+        this.applyTransform();
     
-            this.applyTransform();
+    }
     
-        }
+    // Встановлення правильного початкового масштабу
+    setInitialScale() {
+        const rect = this.gameViewport.getBoundingClientRect();
+        const viewportWidth = rect.width;
+        const viewportHeight = rect.height;
+        const mapWidth = 1920; // Ширина оригінальної карти
+        const mapHeight = 1080; // Висота оригінальної карти
+        
+        // Мінімальний зум = найбільший з коефіцієнтів по ширині та висоті
+        const minScaleX = viewportWidth / mapWidth;
+        const minScaleY = viewportHeight / mapHeight;
+        this.scale = Math.max(minScaleX, minScaleY);
+        
+        // Центруємо карту
+        this.translateX = (viewportWidth - mapWidth * this.scale) / 2;
+        this.translateY = (viewportHeight - mapHeight * this.scale) / 2;
+    }
     
-       
     
-        setupPlayerInputs() {
+    
+    setupPlayerInputs() {
     
             const count = this.playerCountSelect.value;
     
@@ -588,7 +609,7 @@ class EducationalPathGame {
     
            
     
-            this.drawSequentialPath();
+            // ВИДАЛЕНО: this.drawSequentialPath(); - тепер шлях намальований на картинці
     
            
     
@@ -616,53 +637,7 @@ class EducationalPathGame {
     
        
     
-        // Малювання послідовного шляху з mapData.js
-    
-        drawSequentialPath() {
-    
-            this.pathSvg.innerHTML = '';
-    
-           
-    
-            // Малюємо з'єднання між сусідніми клітинками з mapData.js
-    
-            for (let i = 0; i < this.mapData.cells.length - 1; i++) {
-    
-                const currentCell = this.mapData.cells[i];
-    
-                const nextCell = this.mapData.cells[i + 1];
-    
-               
-    
-                const p1 = { x: currentCell.x + 50, y: currentCell.y + 50 };
-    
-                const p2 = { x: nextCell.x + 50, y: nextCell.y + 50 };
-    
-               
-    
-                let path = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    
-                path.setAttribute('x1', p1.x);
-    
-                path.setAttribute('y1', p1.y);
-    
-                path.setAttribute('x2', p2.x);
-    
-                path.setAttribute('y2', p2.y);
-    
-                path.setAttribute('stroke', '#333');
-    
-                path.setAttribute('stroke-width', '6');
-    
-                path.setAttribute('stroke-linecap', 'round');
-    
-                path.setAttribute('opacity', '0.9');
-    
-                this.pathSvg.appendChild(path);
-    
-            }
-    
-        }
+    // ВИДАЛЕНО: drawSequentialPath() - тепер шлях намальований на картинці
     
        
     
@@ -744,29 +719,30 @@ class EducationalPathGame {
     
        
     
-        handleZoom(e) {
-    
-            e.preventDefault();
-    
-            const rect = this.gameViewport.getBoundingClientRect();
-    
-            const mouseX = e.clientX - rect.left;
-    
-            const mouseY = e.clientY - rect.top;
-    
-            const oldScale = this.scale;
-    
-            const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    
-            this.scale = Math.max(0.3, Math.min(2, this.scale * delta));
-    
-            this.translateX = mouseX - (mouseX - this.translateX) * (this.scale / oldScale);
-    
-            this.translateY = mouseY - (mouseY - this.translateY) * (this.scale / oldScale);
-    
-            this.applyTransform();
-    
-        }
+    handleZoom(e) {
+        e.preventDefault();
+        const rect = this.gameViewport.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const oldScale = this.scale;
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        
+        // Розраховуємо мінімальний зум щоб карта завжди заповнювала контейнер
+        const viewportWidth = rect.width;
+        const viewportHeight = rect.height;
+        const mapWidth = 1920; // Ширина оригінальної карти
+        const mapHeight = 1080; // Висота оригінальної карти
+        
+        // Мінімальний зум = найбільший з коефіцієнтів по ширині та висоті
+        const minScaleX = viewportWidth / mapWidth;
+        const minScaleY = viewportHeight / mapHeight;
+        const minScale = Math.max(minScaleX, minScaleY);
+        
+        this.scale = Math.max(minScale, Math.min(2, this.scale * delta));
+        this.translateX = mouseX - (mouseX - this.translateX) * (this.scale / oldScale);
+        this.translateY = mouseY - (mouseY - this.translateY) * (this.scale / oldScale);
+        this.applyTransform();
+    }
     
        
     

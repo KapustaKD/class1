@@ -21,7 +21,7 @@ body {
     position: relative; 
     border-radius: 1rem; 
     background-color: #2d3748; 
-    overflow: hidden; 
+    /* overflow: hidden; ВИДАЛЕНО - щоб карта не обрізалася */
     cursor: grab; 
 }
 

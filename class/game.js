@@ -500,15 +500,11 @@ class EducationalPathGame {
     
            
     
-            // Створюємо ОДИН великий білий контейнер карти
-    
-            this.createGameMap();
-    
-           
-    
-            // Створюємо статичні SVG-зони з mapData.js
-    
-            this.createStaticZones();
+        // Створюємо ОДИН великий білий контейнер карти
+        // this.createGameMap(); // ВИДАЛЕНО - тепер використовуємо статичне зображення
+        
+        // Створюємо статичні SVG-зони з mapData.js
+        // this.createStaticZones(); // ВИДАЛЕНО - тепер використовуємо статичне зображення
     
            
     
@@ -616,113 +612,7 @@ class EducationalPathGame {
     
        
     
-        // Створення ОДНОГО великого білого контейнера карти
-    
-        createGameMap() {
-    
-            const gameMap = document.createElement('div');
-    
-            gameMap.id = 'game-map';
-    
-            gameMap.className = 'game-map';
-    
-            gameMap.style.position = 'absolute';
-    
-            gameMap.style.top = '0px';
-    
-            gameMap.style.left = '0px';
-    
-            gameMap.style.width = `${this.mapData.canvasSize.width}px`;
-    
-            gameMap.style.height = `${this.mapData.canvasSize.height}px`;
-    
-            gameMap.style.backgroundColor = '#ffffff';
-    
-            gameMap.style.border = '2px solid #333';
-    
-            gameMap.style.zIndex = '0';
-    
-            this.gameBoard.appendChild(gameMap);
-    
-        }
-    
-       
-    
-        // Створення статичних SVG-зон з mapData.js
-    
-        createStaticZones() {
-    
-            const svgContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    
-            svgContainer.id = 'static-zones';
-    
-            svgContainer.style.position = 'absolute';
-    
-            svgContainer.style.top = '0px';
-    
-            svgContainer.style.left = '0px';
-    
-            svgContainer.style.width = `${this.mapData.canvasSize.width}px`;
-    
-            svgContainer.style.height = `${this.mapData.canvasSize.height}px`;
-    
-            svgContainer.style.zIndex = '1';
-    
-            svgContainer.setAttribute('viewBox', `0 0 ${this.mapData.canvasSize.width} ${this.mapData.canvasSize.height}`);
-    
-           
-    
-            // Створюємо статичні зони з mapData.js
-    
-            this.mapData.zones.forEach((zone, index) => {
-    
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    
-                path.setAttribute('d', zone.svgPath);
-    
-                path.setAttribute('fill', zone.color);
-    
-                path.setAttribute('stroke', zone.color.replace('0.7', '1.0')); // Повна непрозорість для контуру
-    
-                path.setAttribute('stroke-width', '2');
-    
-                path.setAttribute('stroke-opacity', '0.8');
-    
-               
-    
-                svgContainer.appendChild(path);
-    
-               
-    
-                // Додаємо назву зони
-    
-                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    
-                text.setAttribute('x', '50');
-    
-                text.setAttribute('y', '30');
-    
-                text.setAttribute('fill', zone.color.replace('0.7', '1.0'));
-    
-                text.setAttribute('font-size', '16');
-    
-                text.setAttribute('font-weight', 'bold');
-    
-                text.setAttribute('text-anchor', 'start');
-    
-                text.textContent = zone.name;
-    
-               
-    
-                svgContainer.appendChild(text);
-    
-            });
-    
-           
-    
-            this.gameBoard.appendChild(svgContainer);
-    
-        }
+    // ВИДАЛЕНО: createGameMap() та createStaticZones() - тепер використовуємо статичне зображення map_background.png
     
        
     

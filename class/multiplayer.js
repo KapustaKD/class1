@@ -326,28 +326,31 @@ class MultiplayerGame extends EducationalPathGame {
             console.log('Всі гравці:', this.players.map(p => ({ name: p.name, id: p.id })));
             
             // КРИТИЧНО: Створюємо карту для всіх гравців
-            this.createBoard();
-            
-            // Переходимо до ігрового інтерфейсу
-            this.showGameInterface();
-            this.updatePlayerInfo();
-            this.updateDiceButtonState();
-            
-            // Приховуємо онлайн панель
-            this.onlinePanel.classList.add('hidden');
-            
-            // Показуємо повідомлення
-            this.addChatMessage('system', 'Гра почалася! Перший хід за ' + this.players[this.currentPlayerIndex].name);
-            
-            // Показуємо клас кожному гравцю
-            this.showPlayerClassAssignment();
-            
-            // КРИТИЧНО: Фокусуємо камеру на старті для всіх гравців
+            // Чекаємо трохи щоб mapData встиг завантажитися
             setTimeout(() => {
-                const startCell = document.getElementById('cell-0');
-                if (startCell) {
-                    this.centerViewOn(startCell);
-                }
+                this.createBoard();
+                
+                // Переходимо до ігрового інтерфейсу
+                this.showGameInterface();
+                this.updatePlayerInfo();
+                this.updateDiceButtonState();
+                
+                // Приховуємо онлайн панель
+                this.onlinePanel.classList.add('hidden');
+                
+                // Показуємо повідомлення
+                this.addChatMessage('system', 'Гра почалася! Перший хід за ' + this.players[this.currentPlayerIndex].name);
+                
+                // Показуємо клас кожному гравцю
+                this.showPlayerClassAssignment();
+                
+                // KРИТИЧНО: Фокусуємо камеру на старті для всіх гравців
+                setTimeout(() => {
+                    const startCell = document.getElementById('cell-0');
+                    if (startCell) {
+                        this.centerViewOn(startCell);
+                    }
+                }, 200);
             }, 100);
         });
     }

@@ -315,43 +315,64 @@ class MultiplayerGame extends EducationalPathGame {
         
         this.socket.on('game_started', (data) => {
             console.log('Гра почалася:', data);
-            this.players = data.players;
-            this.currentPlayerIndex = data.currentPlayerIndex;
-            this.gameActive = true;
             
-            // Перевіряємо, чи знаходимося серед гравців
-            const myPlayer = this.players.find(p => p.id === this.playerId);
-            console.log('Мій гравець в грі:', myPlayer);
-            console.log('Мій playerId:', this.playerId);
-            console.log('Всі гравці:', this.players.map(p => ({ name: p.name, id: p.id })));
-            
-            // КРИТИЧНО: Створюємо карту для всіх гравців
-            // Чекаємо трохи щоб mapData встиг завантажитися
-            setTimeout(() => {
-                this.createBoard();
+            try {
+                this.players = data.players;
+                this.currentPlayerIndex = data.currentPlayerIndex;
+                this.gameActive = true;
                 
-                // Переходимо до ігрового інтерфейсу
-                this.showGameInterface();
-                this.updatePlayerInfo();
-                this.updateDiceButtonState();
+                // Перевіряємо, чи знаходимося серед гравців
+                const myPlayer = this.players.find(p => p.id === this.playerId);
+                console.log('Мій гравець в грі:', myPlayer);
+                console.log('Мій playerId:', this.playerId);
+                console.log('Всі гравці:', this.players.map(p => ({ name: p.name, id: p.id })));
                 
-                // Приховуємо онлайн панель
-                this.onlinePanel.classList.add('hidden');
-                
-                // Показуємо повідомлення
-                this.addChatMessage('system', 'Гра почалася! Перший хід за ' + this.players[this.currentPlayerIndex].name);
-                
-                // Показуємо клас кожному гравцю
-                this.showPlayerClassAssignment();
-                
-                // KРИТИЧНО: Фокусуємо камеру на старті для всіх гравців
+                // КРИТИЧНО: Створюємо карту для всіх гравців
+                // Чекаємо трохи щоб mapData встиг завантажитися
                 setTimeout(() => {
-                    const startCell = document.getElementById('cell-0');
-                    if (startCell) {
-                        this.centerViewOn(startCell);
+                    try {
+                        console.log('Створюємо карту...');
+                        this.createBoard();
+                        
+                        // Переходимо до ігрового інтерфейсу
+                        this.showGameInterface();
+                        this.updatePlayerInfo();
+                        this.updateDiceButtonState();
+                        
+                        // Приховуємо онлайн панель
+                        this.onlinePanel.classList.add('hidden');
+                        
+                        // Показуємо повідомлення
+                        this.addChatMessage('system', 'Гра почалася! Перший хід за ' + this.players[this.currentPlayerIndex].name);
+                        
+                        // Показуємо клас кожному гравцю
+                        this.showPlayerClassAssignment();
+                        
+                        // KРИТИЧНО: Фокусуємо камеру на старті для всіх гравців
+                        setTimeout(() => {
+                            try {
+                                const startCell = document.getElementById('cell-0');
+                                if (startCell) {
+                                    this.centerViewOn(startCell);
+                                    console.log('Камера сфокусована на старті');
+                                } else {
+                                    console.error('Не знайдено стартову клітинку cell-0');
+                                }
+                            } catch (error) {
+                                console.error('Помилка при фокусуванні камери:', error);
+                            }
+                        }, 200);
+                        
+                        console.log('Карта створена успішно');
+                    } catch (error) {
+                        console.error('Помилка при створенні карти:', error);
+                        alert('Помилка при створенні карти. Спробуйте перезавантажити сторінку.');
                     }
-                }, 200);
-            }, 100);
+                }, 100);
+            } catch (error) {
+                console.error('Помилка в обробнику game_started:', error);
+                alert('Помилка при запуску гри. Спробуйте перезавантажити сторінку.');
+            }
         });
     }
     
@@ -545,8 +566,23 @@ class MultiplayerGame extends EducationalPathGame {
     // Початок онлайн гри
     startOnlineGame() {
         if (this.isHost && this.roomId) {
-            console.log('Починаємо онлайн гру');
+            console.log('Починаємо онлайн гру, roomId:', this.roomId);
+            console.log('Socket connected:', this.socket?.connected);
+            console.log('Players count:', this.players?.length);
+            
+            if (!this.socket || !this.socket.connected) {
+                console.error('Socket не підключений!');
+                alert('Помилка підключення до сервера. Спробуйте перезавантажити сторінку.');
+                return;
+            }
+            
             this.socket.emit('start_game', { roomId: this.roomId });
+        } else {
+            console.error('Не можу почати гру:', {
+                isHost: this.isHost,
+                roomId: this.roomId,
+                socket: !!this.socket
+            });
         }
     }
     
@@ -1364,6 +1400,36 @@ class MultiplayerGame extends EducationalPathGame {
             this.rollDiceBtn.style.opacity = this.gameActive ? '1' : '0.5';
             this.rollDiceBtn.textContent = 'Кинути кубик';
             this.rollDiceBtn.style.backgroundColor = '#eab308'; // Жовтий колір
+        }
+    }
+    
+    // Показуємо ігровий інтерфейс
+    showGameInterface() {
+        console.log('Показуємо ігровий інтерфейс');
+        try {
+            // Показуємо ігровий контейнер
+            if (this.gameContainer) {
+                this.gameContainer.classList.remove('hidden');
+                console.log('Ігровий контейнер показано');
+            } else {
+                console.error('gameContainer не знайдено');
+            }
+            
+            // Приховуємо онлайн панель
+            if (this.onlinePanel) {
+                this.onlinePanel.classList.add('hidden');
+                console.log('Онлайн панель приховано');
+            }
+            
+            // Приховуємо вибір режиму
+            if (this.modeSelection) {
+                this.modeSelection.classList.add('hidden');
+                console.log('Вибір режиму приховано');
+            }
+            
+            console.log('Ігровий інтерфейс показано успішно');
+        } catch (error) {
+            console.error('Помилка при показі ігрового інтерфейсу:', error);
         }
     }
     

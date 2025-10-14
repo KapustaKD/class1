@@ -246,51 +246,47 @@ class EducationalPathGame {
     
        
     
-        // Визначення зони для клітинки
-    
-        getZoneForCell(cell) {
-    
-            if (!this.mapData.zones) return 0;
-    
-           
-    
-            // Перевіряємо, в якій зоні знаходиться клітинка
-    
-            for (let i = 0; i < this.mapData.zones.length; i++) {
-    
-                if (this.isPointInZone(cell.x, cell.y, this.mapData.zones[i].svgPath)) {
-    
-                    return i;
-    
-                }
-    
-            }
-    
-            return 0; // За замовчуванням перша зона
-    
-        }
+    // Визначення зони для клітинки
+    getZoneForCell(cell) {
+        if (!this.mapData || !this.mapData.zones) {
+            console.warn('mapData.zones не визначені');
+            return 0;
+        }
+        
+        // Перевіряємо, в якій зоні знаходиться клітинка
+        for (let i = 0; i < this.mapData.zones.length; i++) {
+            const zone = this.mapData.zones[i];
+            if (zone && zone.svgPath) {
+                if (this.isPointInZone(cell.x, cell.y, zone.svgPath)) {
+                    return i;
+                }
+            } else {
+                console.warn(`Зона ${i} не має svgPath:`, zone);
+            }
+        }
+        
+        return 0; // За замовчуванням перша зона
+    }
     
        
     
-        // Перевірка, чи точка знаходиться в зоні (спрощена версія)
-    
-        isPointInZone(x, y, svgPath) {
-    
-            // Спрощена перевірка на основі координат з mapData.js
-    
-            if (svgPath.includes('0 1080')) return x >= 0 && x <= 700 && y >= 500; // Сірі Землі
-    
-            if (svgPath.includes('700 1080')) return x >= 700 && x <= 1200 && y >= 650; // Рожева Долина
-    
-            if (svgPath.includes('1200 1080')) return x >= 1200 && y >= 600; // Зелений Ліс
-    
-            if (svgPath.includes('1920 800')) return x >= 800 && y >= 0 && y <= 600; // Синя Ріка
-    
-            if (svgPath.includes('900 0')) return x >= 0 && x <= 900 && y >= 0 && y <= 500; // Жовті Пустелі
-    
-            return false;
-    
-        }
+    // Перевірка, чи точка знаходиться в зоні (спрощена версія)
+    isPointInZone(x, y, svgPath) {
+        // Перевіряємо чи svgPath існує
+        if (!svgPath || typeof svgPath !== 'string') {
+            console.warn('svgPath не визначений або не є рядком:', svgPath);
+            return false;
+        }
+        
+        // Спрощена перевірка на основі координат з mapData.js
+        if (svgPath.includes('0 1080')) return x >= 0 && x <= 700 && y >= 500; // Сірі Землі
+        if (svgPath.includes('700 1080')) return x >= 700 && x <= 1200 && y >= 650; // Рожева Долина
+        if (svgPath.includes('1200 1080')) return x >= 1200 && y >= 600; // Зелений Ліс
+        if (svgPath.includes('1920 800')) return x >= 800 && y >= 0 && y <= 600; // Синя Ріка
+        if (svgPath.includes('900 0')) return x >= 0 && x <= 900 && y >= 0 && y <= 500; // Жовті Пустелі
+        
+        return false;
+    }
     
        
     
@@ -559,21 +555,20 @@ class EducationalPathGame {
     
             // Створюємо клітинки з mapData.js
     
-            this.mapData.cells.forEach((cell) => {
-    
-                const cellElement = document.createElement('div');
-    
-                cellElement.id = `cell-${cell.id}`;
-    
-               
-    
-                // Визначаємо зону для клітинки
-    
-                const zone = this.getZoneForCell(cell);
-    
-                const zoneData = this.mapData.zones[zone];
-    
-                const special = this.specialCells[cell.id];
+        // Створюємо клітинки з mapData.js
+        console.log('Створюємо клітинки, загальна кількість:', this.mapData.cells.length);
+        this.mapData.cells.forEach((cell, index) => {
+            if (index < 5) { // Логуємо тільки перші 5 клітинок
+                console.log(`Клітинка ${cell.id}: x=${cell.x}, y=${cell.y}`);
+            }
+            
+            const cellElement = document.createElement('div');
+            cellElement.id = `cell-${cell.id}`;
+            
+            // Визначаємо зону для клітинки
+            const zone = this.getZoneForCell(cell);
+            const zoneData = this.mapData.zones[zone];
+            const special = this.specialCells[cell.id];
     
                
     

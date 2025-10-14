@@ -325,6 +325,9 @@ class MultiplayerGame extends EducationalPathGame {
             console.log('Мій playerId:', this.playerId);
             console.log('Всі гравці:', this.players.map(p => ({ name: p.name, id: p.id })));
             
+            // КРИТИЧНО: Створюємо карту для всіх гравців
+            this.createBoard();
+            
             // Переходимо до ігрового інтерфейсу
             this.showGameInterface();
             this.updatePlayerInfo();
@@ -338,6 +341,14 @@ class MultiplayerGame extends EducationalPathGame {
             
             // Показуємо клас кожному гравцю
             this.showPlayerClassAssignment();
+            
+            // КРИТИЧНО: Фокусуємо камеру на старті для всіх гравців
+            setTimeout(() => {
+                const startCell = document.getElementById('cell-0');
+                if (startCell) {
+                    this.centerViewOn(startCell);
+                }
+            }, 100);
         });
     }
     

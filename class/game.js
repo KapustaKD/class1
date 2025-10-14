@@ -506,9 +506,12 @@ class EducationalPathGame {
     
            
     
-            const startCell = document.getElementById('cell-0');
+        // ТИМЧАСОВО ВИМКНЕНО - стартова клітинка прихована
+        /*
+        const startCell = document.getElementById('cell-0');
     
-            this.centerViewOn(startCell);
+        this.centerViewOn(startCell);
+        */
     
         }
     
@@ -538,27 +541,30 @@ class EducationalPathGame {
     
            
     
-            // Стартова клітинка
+        // Стартова клітинка - ТИМЧАСОВО ВИМКНЕНО
+        /*
+        const startCell = document.createElement('div');
     
-            const startCell = document.createElement('div');
+        startCell.id = 'cell-0';
     
-            startCell.id = 'cell-0';
+        startCell.className = 'board-cell start';
     
-            startCell.className = 'board-cell start';
+        startCell.style.top = '700px';
     
-            startCell.style.top = '700px';
+        startCell.style.left = '25px';
     
-            startCell.style.left = '25px';
+        startCell.innerHTML = '<span>СТАРТ</span>';
     
-            startCell.innerHTML = '<span>СТАРТ</span>';
-    
-            this.gameBoard.appendChild(startCell);
+        this.gameBoard.appendChild(startCell);
+        */
     
            
     
             // Створюємо клітинки з mapData.js
     
-        // Створюємо клітинки з mapData.js
+        // Створюємо клітинки з mapData.js - ТИМЧАСОВО ВИМКНЕНО
+        console.log('Клітинки тимчасово приховані для налаштування координат');
+        /*
         console.log('Створюємо клітинки, загальна кількість:', this.mapData.cells.length);
         this.mapData.cells.forEach((cell, index) => {
             if (index < 5) { // Логуємо тільки перші 5 клітинок
@@ -573,47 +579,48 @@ class EducationalPathGame {
             const zoneData = this.mapData.zones[zone];
             const special = this.specialCells[cell.id];
     
-               
+             
     
-                let cellClass = special ? special.type : 'empty';
+             let cellClass = special ? special.type : 'empty';
     
-                if (cell.id === 101) cellClass = 'finish';
+             if (cell.id === 101) cellClass = 'finish';
     
-               
+             
     
-                cellElement.className = `board-cell ${cellClass} zone-${zone}`;
+             cellElement.className = `board-cell ${cellClass} zone-${zone}`;
     
-                cellElement.style.top = `${cell.y}px`;
+             cellElement.style.top = `${cell.y}px`;
     
-                cellElement.style.left = `${cell.x}px`;
+             cellElement.style.left = `${cell.x}px`;
     
-               
+             
     
-                if (cell.id === 101) {
+             if (cell.id === 101) {
     
-                    cellElement.innerHTML = '<span>👑</span>'; // Корона для фінішу
+                 cellElement.innerHTML = '<span>👑</span>'; // Корона для фінішу
     
-                } else {
+             } else {
     
-                    cellElement.innerHTML = `<span>${cell.id}</span>`;
+                 cellElement.innerHTML = `<span>${cell.id}</span>`;
     
-                }
+             }
     
-               
+             
     
-                // Додаємо підказку з зоною
+             // Додаємо підказку з зоною
     
-                if (zoneData) {
+             if (zoneData) {
     
-                    cellElement.title = `${zoneData.name}`;
+                 cellElement.title = `${zoneData.name}`;
     
-                }
+             }
     
-               
+             
     
-                this.gameBoard.appendChild(cellElement);
+             this.gameBoard.appendChild(cellElement);
     
-            });
+         });
+        */
     
            
     

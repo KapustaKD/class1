@@ -162,21 +162,24 @@ class EducationalPathGame {
     
        
     
-        // Завантаження даних карти з mapData.js
+    // Завантаження даних карти з mapData.js
     
-        loadMapData() {
+    loadMapData() {
     
-            // Імпортуємо дані з mapData.js
+        // Імпортуємо дані з mapData.js
     
-            import('./mapData.js').then(module => {
+        import('./mapData.js').then(module => {
     
-                this.mapData = module.mapData;
+            this.mapData = module.mapData;
     
-                console.log('Map data loaded:', this.mapData);
+            console.log('Map data loaded:', this.mapData);
+            
+            // Створюємо карту одразу після завантаження даних
+            // this.createBoard(); // Видалено - карта створюється в loadMapData()
     
-            }).catch(error => {
+        }).catch(error => {
     
-                console.error('Error loading map data:', error);
+            console.error('Error loading map data:', error);
     
                 // Fallback дані якщо імпорт не вдався
     
@@ -487,7 +490,7 @@ class EducationalPathGame {
     
            
     
-            this.createBoard();
+            // this.createBoard(); // Видалено - карта створюється в loadMapData()
     
             this.gameActive = true;
     

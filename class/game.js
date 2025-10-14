@@ -506,12 +506,9 @@ class EducationalPathGame {
     
            
     
-        // ТИМЧАСОВО ВИМКНЕНО - стартова клітинка прихована
-        /*
         const startCell = document.getElementById('cell-0');
     
         this.centerViewOn(startCell);
-        */
     
         }
     
@@ -541,8 +538,8 @@ class EducationalPathGame {
     
            
     
-        // Стартова клітинка - ТИМЧАСОВО ВИМКНЕНО
-        /*
+        // Стартова клітинка
+    
         const startCell = document.createElement('div');
     
         startCell.id = 'cell-0';
@@ -556,15 +553,12 @@ class EducationalPathGame {
         startCell.innerHTML = '<span>СТАРТ</span>';
     
         this.gameBoard.appendChild(startCell);
-        */
     
            
     
             // Створюємо клітинки з mapData.js
     
-        // Створюємо клітинки з mapData.js - ТИМЧАСОВО ВИМКНЕНО
-        console.log('Клітинки тимчасово приховані для налаштування координат');
-        /*
+        // Створюємо клітинки з mapData.js
         console.log('Створюємо клітинки, загальна кількість:', this.mapData.cells.length);
         this.mapData.cells.forEach((cell, index) => {
             if (index < 5) { // Логуємо тільки перші 5 клітинок
@@ -620,7 +614,6 @@ class EducationalPathGame {
              this.gameBoard.appendChild(cellElement);
     
          });
-        */
     
            
     

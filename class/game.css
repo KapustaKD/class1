@@ -27,8 +27,8 @@ body {
 
 #game-board-container { 
     position: relative; 
-    width: 1920px; /* Фіксована ширина карти */
-    height: 1080px; /* Фіксована висота карти */
+    width: 100%; /* Гнучка ширина - займає весь контейнер */
+    height: 100%; /* Гнучка висота - займає весь контейнер */
     transform-origin: 0 0; 
     transition: transform 0.1s ease-out; /* Швидший перехід для плавності */
 }

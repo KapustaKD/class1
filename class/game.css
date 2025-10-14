@@ -16,33 +16,43 @@ body {
 
 #game-board-container { 
     position: relative; 
-    width: 1200px; 
-    height: 800px; 
+    width: 1920px; 
+    height: 1080px; 
     transform-origin: 0 0; 
     transition: transform 0.5s ease; 
 }
 
-/* ОДИН великий білий контейнер карти */
-.game-map {
+/* Статичне фонове зображення карти */
+#map-background {
     position: absolute;
     top: 0;
     left: 0;
-    width: 1920px;
-    height: 1080px;
-    background-color: #ffffff;
-    border: 2px solid #333;
+    width: 100%;
+    height: 100%;
     z-index: 0;
+    object-fit: cover;
+    border-radius: 0.5rem;
 }
 
-/* Статичні SVG-зони */
-#static-zones {
+/* SVG для шляху */
+#path-svg {
     position: absolute;
     top: 0;
     left: 0;
-    width: 1920px;
-    height: 1080px;
+    width: 100%;
+    height: 100%;
     z-index: 1;
     pointer-events: none;
+}
+
+/* Ігрова дошка з клітинками */
+#game-board {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
 }
 
 /* Клітинки з прив'язкою до зон */

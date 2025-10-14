@@ -517,7 +517,17 @@ class EducationalPathGame {
     
         createBoard() {
     
-            this.gameBoard.innerHTML = '';
+            this.gameBoard.innerHTML = '';
+        
+        // КРИТИЧНО: Перевіряємо чи завантажені дані карти
+        if (!this.mapData || !this.mapData.cells || this.mapData.cells.length === 0) {
+            console.error('Map data not loaded yet! Waiting...');
+            // Чекаємо завантаження даних карти
+            setTimeout(() => this.createBoard(), 100);
+            return;
+        }
+        
+        console.log('Creating board with map data:', this.mapData);
     
            
     

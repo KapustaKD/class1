@@ -892,33 +892,43 @@ class EducationalPathGame {
     
            
     
-            // Оновлюємо позицію гравця
-    
-            player.position = endPos;
-    
-           
-    
-            // Перевіряємо події на кінцевій клітинці
-    
-            this.checkCell(player);
+        // Оновлюємо позицію гравця
+        player.position = endPos;
+        
+        // Перевіряємо перемогу (досягнення останньої клітинки)
+        if (endPos >= this.BOARD_SIZE) {
+            this.logMessage(`🎉 ${player.name} досяг кінця шляху! Перемога!`, 'victory');
+            this.endGame(player, `${player.name} переміг, досягнувши кінця освітнього шляху!`);
+            return; // Не перевіряємо події на клітинці, бо гра закінчена
+        }
+        
+        // Перевіряємо події на кінцевій клітинці
+        this.checkCell(player);
     
         }
     
        
     
-        async movePlayerTo(player, position) {
+    async movePlayerTo(player, position) {
     
-            player.position = position;
+        player.position = position;
     
-            this.updatePawnPosition(player);
+        this.updatePawnPosition(player);
     
-            await new Promise(res => setTimeout(res, 300));
+        await new Promise(res => setTimeout(res, 300));
     
-            this.logMessage(`${player.name} переміщено на клітинку ${player.position}.`, 'system');
+        this.logMessage(`${player.name} переміщено на клітинку ${player.position}.`, 'system');
+        
+        // Перевіряємо перемогу (досягнення останньої клітинки)
+        if (position >= this.BOARD_SIZE) {
+            this.logMessage(`🎉 ${player.name} досяг кінця шляху! Перемога!`, 'victory');
+            this.endGame(player, `${player.name} переміг, досягнувши кінця освітнього шляху!`);
+            return; // Не перевіряємо події на клітинці, бо гра закінчена
+        }
     
-            this.checkCell(player);
+        this.checkCell(player);
     
-        }
+    }
     
        
     
@@ -992,13 +1002,27 @@ class EducationalPathGame {
     
                     break;
     
-                case 'machine-uprising':
-    
-                    player.hasLost = true;
-    
-                    this.endGame(null, `${player.name} поглинуло повстання машин!`);
-    
-                    break;
+            case 'machine-uprising':
+                // Показуємо повідомлення про повстання машин
+                this.showQuestModal('Повстання машин!', 
+                    'Машини повстали проти людства! Ви загинули в битві з роботами. Але не втрачайте надію - ви реінкарнуєтеся в попередній епосі для нової спроби!', 
+                    [
+                        { text: 'Зрозуміло', callback: () => {
+                            // Переміщуємо гравця на передостанню клітинку попередньої епохи (клітинка 75)
+                            player.position = 75;
+                            player.hasLost = false; // Відновлюємо гравця
+                            
+                            // Оновлюємо позицію фішки
+                            this.updatePawnPosition(player);
+                            
+                            this.logMessage(`${player.name} загинув від повстання машин, але реінкарнувався на клітинці 75!`, 'system');
+                            
+                            this.questModal.classList.add('hidden');
+                            this.nextTurn();
+                        }}
+                    ]
+                );
+                break;
     
                 case 'portal':
     
@@ -1024,13 +1048,23 @@ class EducationalPathGame {
     
                     break;
     
-                default:
-    
-                    if (cellData.effect) cellData.effect(player);
-    
-                    setTimeout(() => this.nextTurn(), 1000);
-    
-                    break;
+            default:
+                // Якщо є ефект - виконуємо його
+                if (cellData.effect) {
+                    cellData.effect(player);
+                } else {
+                    // Якщо немає ефекту - показуємо повідомлення про розробку
+                    this.showQuestModal('Подія', 'Подія у розробці. Скоро буде цікаво!', [
+                        { text: 'Зрозуміло', callback: () => {
+                            this.questModal.classList.add('hidden');
+                            this.nextTurn();
+                        }}
+                    ]);
+                    return; // Не передаємо хід автоматично
+                }
+                
+                setTimeout(() => this.nextTurn(), 1000);
+                break;
     
             }
     

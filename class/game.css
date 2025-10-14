@@ -21,16 +21,16 @@ body {
     position: relative; 
     border-radius: 1rem; 
     background-color: #2d3748; 
-    /* overflow: hidden; ВИДАЛЕНО - щоб карта не обрізалася */
+    overflow: hidden; /* Додаємо назад для обмеження меж */
     cursor: grab; 
 }
 
 #game-board-container { 
     position: relative; 
-    width: 100%; 
-    height: 100%; 
+    width: 1920px; /* Фіксована ширина карти */
+    height: 1080px; /* Фіксована висота карти */
     transform-origin: 0 0; 
-    transition: transform 0.5s ease; 
+    transition: transform 0.1s ease-out; /* Швидший перехід для плавності */
 }
 
 /* Статичне фонове зображення карти */
@@ -41,7 +41,7 @@ body {
     width: 100%;
     height: 100%;
     z-index: 0;
-    object-fit: contain; /* Змінимо з cover на contain щоб карта не обрізалася */
+    object-fit: cover; /* Повертаємо cover для правильного відображення */
     border-radius: 0.5rem;
 }
 

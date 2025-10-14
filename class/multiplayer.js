@@ -292,6 +292,14 @@ class MultiplayerGame extends EducationalPathGame {
                     console.log('Кінець вікторини:', data);
                     this.endQuiz(data);
                 });
+                
+                // Обмін місцями
+                this.socket.on('positions_swapped', (data) => {
+                    console.log('Обмін місцями:', data);
+                    this.logMessage(data.message, 'system');
+                    this.updatePawnPosition({ id: data.player1.id, position: data.player1.position });
+                    this.updatePawnPosition({ id: data.player2.id, position: data.player2.position });
+                });
         
         this.socket.on('quest_vote', (data) => {
             this.handleQuestVote(data);
@@ -1035,6 +1043,9 @@ class MultiplayerGame extends EducationalPathGame {
         // Показуємо повідомлення всім
         this.logMessage(data.resultMessage, 'event');
         
+        // Закриваємо модальне вікно для всіх гравців
+        this.questModal.classList.add('hidden');
+        
         // Оновлюємо UI
         this.updatePlayerInfo();
         this.updateLeaderboard();
@@ -1215,25 +1226,18 @@ class MultiplayerGame extends EducationalPathGame {
     answerQuiz(answerIndex) {
         this.socket.emit('quiz_answer', {
             roomId: this.roomId,
-            answer: answerIndex,
-            correctAnswer: this.currentQuizCorrectAnswer
+            answer: answerIndex
+            // Видаляємо correctAnswer - сервер сам знає правильну відповідь
         });
     }
 
     swapPositions(targetPlayerId) {
-        // Логіка обміну місцями
-        const targetPlayer = this.players.find(p => p.id === targetPlayerId);
-        const currentPlayer = this.players.find(p => p.id === this.playerId);
-        
-        if (targetPlayer && currentPlayer) {
-            const tempPosition = currentPlayer.position;
-            currentPlayer.position = targetPlayer.position;
-            targetPlayer.position = tempPosition;
-            
-            this.logMessage(`${currentPlayer.name} обмінявся місцями з ${targetPlayer.name}!`, 'system');
-            this.updatePawnPosition(currentPlayer);
-            this.updatePawnPosition(targetPlayer);
-        }
+        // Відправляємо запит на обмін місцями на сервер
+        this.socket.emit('swap_positions', {
+            roomId: this.roomId,
+            targetPlayerId: targetPlayerId,
+            playerId: this.playerId
+        });
         
         this.closeMiniGame();
     }

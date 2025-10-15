@@ -717,6 +717,13 @@ class MultiplayerGame extends EducationalPathGame {
         // Створюємо ігрову дошку
         this.createBoard();
         
+        // Встановлюємо правильний масштаб карти
+        setTimeout(() => {
+            this.setInitialScale();
+            this.applyTransform();
+            console.log('Масштаб карти встановлено');
+        }, 100);
+        
         console.log('Ігровий інтерфейс показано');
         this.updateDiceButtonState();
     }
@@ -1430,6 +1437,13 @@ class MultiplayerGame extends EducationalPathGame {
                 this.modeSelection.classList.add('hidden');
                 console.log('Вибір режиму приховано');
             }
+            
+            // Встановлюємо правильний масштаб карти
+            setTimeout(() => {
+                this.setInitialScale();
+                this.applyTransform();
+                console.log('Масштаб карти встановлено (друга функція)');
+            }, 100);
             
             console.log('Ігровий інтерфейс показано успішно');
         } catch (error) {

@@ -40,7 +40,7 @@
         <!-- Ігрове поле -->
         <div class="bg-gray-700 p-2 rounded-2xl shadow-2xl flex" style="width: 876.75px; height: 812.59px;">
             <div class="game-viewport" id="game-viewport">
-                <div id="game-board-container" style="position: relative; width: 100%; aspect-ratio: 3840 / 2160; cursor: crosshair; transform: scale(1);">
+                <div id="game-board-container" style="position: relative; width: 100%; aspect-ratio: 3840 / 2160; cursor: crosshair; transform: scale(1) !important; transform-origin: top left !important;">
                     <img src="map_background.png" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;">
                     
                     <svg id="path-svg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;"></svg>
@@ -212,6 +212,82 @@
                 cellCounter++;
             });
         });
+
+        // Скрипт для виділення прямокутної зони
+        let isSelecting = false;
+        let startX, startY, endX, endY;
+        let selectionBox = null;
+
+        document.addEventListener('mousedown', (e) => {
+            if (e.ctrlKey) { // Виділення тільки з натиснутим Ctrl
+                isSelecting = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                
+                // Створюємо елемент виділення
+                selectionBox = document.createElement('div');
+                selectionBox.style.cssText = `
+                    position: fixed;
+                    border: 2px dashed #ff0000;
+                    background: rgba(255, 0, 0, 0.1);
+                    pointer-events: none;
+                    z-index: 10000;
+                    left: ${startX}px;
+                    top: ${startY}px;
+                    width: 0px;
+                    height: 0px;
+                `;
+                document.body.appendChild(selectionBox);
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isSelecting && selectionBox) {
+                endX = e.clientX;
+                endY = e.clientY;
+                
+                const left = Math.min(startX, endX);
+                const top = Math.min(startY, endY);
+                const width = Math.abs(endX - startX);
+                const height = Math.abs(endY - startY);
+                
+                selectionBox.style.left = left + 'px';
+                selectionBox.style.top = top + 'px';
+                selectionBox.style.width = width + 'px';
+                selectionBox.style.height = height + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (isSelecting && selectionBox) {
+                isSelecting = false;
+                
+                const left = Math.min(startX, endX);
+                const top = Math.min(startY, endY);
+                const width = Math.abs(endX - startX);
+                const height = Math.abs(endY - startY);
+                
+                // Виводимо координати в консоль
+                console.log('=== КООРДИНАТИ ВИДІЛЕНОЇ ЗОНИ ===');
+                console.log(`Лівий верхній кут: (${left}, ${top})`);
+                console.log(`Правий верхній кут: (${left + width}, ${top})`);
+                console.log(`Лівий нижній кут: (${left}, ${top + height})`);
+                console.log(`Правий нижній кут: (${left + width}, ${top + height})`);
+                console.log(`Розмір: ${width}px × ${height}px`);
+                console.log('================================');
+                
+                // Видаляємо елемент виділення через 3 секунди
+                setTimeout(() => {
+                    if (selectionBox) {
+                        document.body.removeChild(selectionBox);
+                        selectionBox = null;
+                    }
+                }, 3000);
+            }
+        });
+
+        // Інструкція для користувача
+        console.log('🎯 ІНСТРУКЦІЯ: Утримуйте Ctrl і тягніть мишею для виділення зони');
     </script>
 </body>
 </html>

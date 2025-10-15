@@ -388,7 +388,7 @@ class EducationalPathGame {
         // ВИМКНЕНО: Автоматичне масштабування - використовуємо фіксований розмір
         this.scale = 1; // Фіксований масштаб 1:1
         this.translateX = 0; // Без зміщення
-        this.translateY = 0; // Без зміщення
+        this.translateY = 50; // Опускаємо карту вниз на 50px
         
         console.log('📊 Фіксований масштаб встановлено:', {
             scale: this.scale,
@@ -1540,25 +1540,11 @@ class EducationalPathGame {
     
         // Центрування камери на епосі
     
-        centerViewOnEpoch(epochId) {
-    
-            const epoch = this.epochs.find(e => e.id === epochId);
-    
-            if (!epoch) return;
-    
-           
-    
-            // Знаходимо першу клітинку епохи
-    
-            const firstCell = document.getElementById(`cell-${epoch.startCell}`);
-    
-            if (firstCell) {
-    
-                this.centerViewOn(firstCell);
-    
-            }
-    
-        }
+    centerViewOnEpoch(epochId) {
+        // ВИМКНЕНО: Фокусування камери заблоковано - карта статична
+        console.log('🚫 centerViewOnEpoch() вимкнено - карта статична');
+        return; // Не робимо нічого
+    }
     
        
     
@@ -1779,7 +1765,7 @@ class EducationalPathGame {
         // ВИМКНЕНО: Автоматичне масштабування - використовуємо фіксований розмір
         this.scale = 1; // Фіксований масштаб 1:1
         this.translateX = 0; // Без зміщення
-        this.translateY = 0; // Без зміщення
+        this.translateY = 50; // Опускаємо карту вниз на 50px
         
         console.log('📊 Фіксований масштаб встановлено (друга функція):', {
             scale: this.scale,
@@ -1807,25 +1793,9 @@ class EducationalPathGame {
     
     // Центрування на клітинці
     centerViewOn(cell) {
-        if (!cell || !this.gameViewport) return;
-        
-        const rect = this.gameViewport.getBoundingClientRect();
-        const viewportWidth = rect.width;
-        const viewportHeight = rect.height;
-        
-        // Отримуємо позицію клітинки
-        const cellRect = cell.getBoundingClientRect();
-        const cellX = cellRect.left - rect.left;
-        const cellY = cellRect.top - rect.top;
-        
-        // Центруємо на клітинці
-        this.translateX = viewportWidth / 2 - cellX;
-        this.translateY = viewportHeight / 2 - cellY;
-        
-        // Обмежуємо переміщення
-        this.constrainTranslation();
-        
-        this.applyTransform();
+        // ВИМКНЕНО: Фокусування камери заблоковано - карта статична
+        console.log('🚫 centerViewOn() вимкнено - карта статична');
+        return; // Не робимо нічого
     }
     
     // Початок переміщення карти

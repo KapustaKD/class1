@@ -722,11 +722,19 @@ class EducationalPathGame {
     
         // Зум і панорама
     
-        applyTransform() {
-    
-            this.gameBoardContainer.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
-    
-        }
+    applyTransform() {
+        console.log('🎯 applyTransform() викликано (перша функція)');
+        if (this.gameBoardContainer) {
+            const transformString = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
+            console.log('🔄 Застосовуємо transform (перша функція):', transformString);
+            this.gameBoardContainer.style.transform = transformString;
+            console.log('📋 СТАН ПІСЛЯ ЗАСТОСУВАННЯ (перша функція):', {
+                element: this.gameBoardContainer.id,
+                currentStyle: this.gameBoardContainer.style.cssText,
+                computedTransform: window.getComputedStyle(this.gameBoardContainer).transform
+            });
+        }
+    }
     
        
     
@@ -1776,14 +1784,14 @@ class EducationalPathGame {
     
     // Застосування трансформації
     applyTransform() {
-        console.log('🎯 applyTransform() викликано');
+        console.log('🎯 applyTransform() викликано (друга функція)');
         if (this.gameBoardContainer) {
             const transformString = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
-            console.log('🔄 Застосовуємо transform:', transformString);
+            console.log('🔄 Застосовуємо transform (друга функція):', transformString);
             this.gameBoardContainer.style.transform = transformString;
             
             // Логуємо поточний стан після застосування
-            console.log('📋 СТАН ПІСЛЯ ЗАСТОСУВАННЯ:', {
+            console.log('📋 СТАН ПІСЛЯ ЗАСТОСУВАННЯ (друга функція):', {
                 element: this.gameBoardContainer.id,
                 currentStyle: this.gameBoardContainer.style.cssText,
                 computedTransform: window.getComputedStyle(this.gameBoardContainer).transform

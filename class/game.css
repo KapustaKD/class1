@@ -30,7 +30,7 @@ body {
     width: 100%; /* Гнучка ширина - займає весь контейнер */
     height: 100%; /* Гнучка висота - займає весь контейнер */
     transform-origin: 0 0; 
-    transition: transform 0.1s ease-out; /* Швидший перехід для плавності */
+    /* ВИДАЛЕНО: transition: transform 0.1s ease-out; - конфліктує з JavaScript */
 }
 
 /* Статичне фонове зображення карти */

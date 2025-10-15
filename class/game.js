@@ -622,23 +622,30 @@ class EducationalPathGame {
     
            
     
-            // Фішки гравців
+        // Фішки гравців
     
-            this.players.forEach(p => {
+        this.players.forEach(p => {
     
-                const pawn = document.createElement('div');
+            const pawn = document.createElement('div');
     
-                pawn.id = `pawn-${p.id}`;
+            pawn.id = `pawn-${p.id}`;
     
-                pawn.className = 'player-pawn';
+            pawn.className = 'player-pawn';
     
-                pawn.style.backgroundColor = p.color;
+            pawn.style.backgroundColor = p.color;
     
-                startCell.appendChild(pawn);
+            startCell.appendChild(pawn);
     
-            });
+        });
+        
+        // Встановлюємо правильний масштаб карти після створення
+        setTimeout(() => {
+            this.setInitialScale();
+            this.applyTransform();
+            console.log('Масштаб карти встановлено після створення дошки');
+        }, 100);
     
-        }
+    }
     
        
     

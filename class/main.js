@@ -3,8 +3,41 @@ document.addEventListener('DOMContentLoaded', () => {
     // Ініціалізуємо UI
     window.gameUI = new GameUI();
     
-    // Ініціалізуємо гру
-    window.game = new MultiplayerGame();
+    // Перевіряємо, чи є збережений стан гри
+    const savedGameState = localStorage.getItem('educationalPathGameState');
+    if (savedGameState) {
+        try {
+            const gameState = JSON.parse(savedGameState);
+            console.log('🔄 Відновлюємо збережений стан гри:', gameState);
+            
+            // Ініціалізуємо гру з збереженим станом
+            window.game = new MultiplayerGame();
+            
+            // Відновлюємо стан гри
+            if (gameState.isOnlineMode && gameState.roomId) {
+                // Відновлюємо онлайн гру
+                window.game.isOnlineMode = true;
+                window.game.roomId = gameState.roomId;
+                window.game.playerName = gameState.playerName;
+                window.game.playerId = gameState.playerId;
+                
+                // Підключаємося до кімнати
+                setTimeout(() => {
+                    window.game.connectToRoom(gameState.roomId, gameState.playerName);
+                }, 1000);
+            } else if (gameState.isLocalMode) {
+                // Відновлюємо локальну гру
+                window.game.startLocalMode();
+            }
+        } catch (error) {
+            console.error('❌ Помилка відновлення стану гри:', error);
+            // Якщо не вдалося відновити, створюємо нову гру
+            window.game = new MultiplayerGame();
+        }
+    } else {
+        // Ініціалізуємо нову гру
+        window.game = new MultiplayerGame();
+    }
     
     // Додаємо глобальні обробники подій
     setupGlobalEventListeners();
@@ -99,6 +132,47 @@ window.joinRoomByCode = function(code) {
     const roomCodeInput = document.getElementById('room-code');
     if (roomCodeInput) {
         roomCodeInput.value = code;
+    }
+};
+
+// Функції для збереження стану гри
+window.saveGameState = function(gameState) {
+    try {
+        localStorage.setItem('educationalPathGameState', JSON.stringify(gameState));
+        console.log('💾 Стан гри збережено:', gameState);
+    } catch (error) {
+        console.error('❌ Помилка збереження стану гри:', error);
+    }
+};
+
+window.clearGameState = function() {
+    try {
+        localStorage.removeItem('educationalPathGameState');
+        console.log('🗑️ Стан гри очищено');
+    } catch (error) {
+        console.error('❌ Помилка очищення стану гри:', error);
+    }
+};
+
+window.exitGame = function() {
+    if (window.game) {
+        // Очищаємо стан гри
+        window.clearGameState();
+        
+        // Відключаємося від кімнати якщо онлайн
+        if (window.game.isOnlineMode && window.game.socket) {
+            window.game.socket.disconnect();
+        }
+        
+        // Скидаємо гру
+        window.game = new MultiplayerGame();
+        
+        // Показуємо головне меню
+        if (window.gameUI) {
+            window.gameUI.showMainMenu();
+        }
+        
+        console.log('🚪 Гра завершена, повертаємося до головного меню');
     }
 };
 

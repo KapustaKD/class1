@@ -375,39 +375,23 @@ class EducationalPathGame {
     
         this.setupPlayerInputs();
         
-        // Встановлюємо правильний початковий масштаб
-        this.setInitialScale();
-        
-        this.applyTransform();
+        // ВИДАЛЕНО: Масштабування тепер встановлюється в createBoard()
+        // this.setInitialScale();
+        // this.applyTransform();
     
     }
     
     // Встановлення правильного початкового масштабу
     setInitialScale() {
         console.log('🔧 setInitialScale() викликано');
-        const rect = this.gameViewport.getBoundingClientRect();
-        const viewportWidth = rect.width;
-        const viewportHeight = rect.height;
-        const mapWidth = 1920; // Ширина оригінальної карти
-        const mapHeight = 1080; // Висота оригінальної карти
         
-        // Мінімальний зум = найбільший з коефіцієнтів по ширині та висоті
-        const minScaleX = viewportWidth / mapWidth;
-        const minScaleY = viewportHeight / mapHeight;
-        this.scale = Math.max(minScaleX, minScaleY);
+        // ВИМКНЕНО: Автоматичне масштабування - використовуємо фіксований розмір
+        this.scale = 1; // Фіксований масштаб 1:1
+        this.translateX = 0; // Без зміщення
+        this.translateY = 0; // Без зміщення
         
-        // Центруємо карту
-        this.translateX = (viewportWidth - mapWidth * this.scale) / 2;
-        this.translateY = (viewportHeight - mapHeight * this.scale) / 2;
-        
-        console.log('📊 Розрахунки масштабу:', {
-            viewportWidth,
-            viewportHeight,
-            mapWidth,
-            mapHeight,
-            minScaleX,
-            minScaleY,
-            finalScale: this.scale,
+        console.log('📊 Фіксований масштаб встановлено:', {
+            scale: this.scale,
             translateX: this.translateX,
             translateY: this.translateY
         });
@@ -1790,18 +1774,18 @@ class EducationalPathGame {
     
     // Встановлення початкового масштабу
     setInitialScale() {
-        const rect = this.gameViewport.getBoundingClientRect();
-        const viewportWidth = rect.width;
-        const viewportHeight = rect.height;
-        const mapWidth = 1920; // Ширина оригінальної карти
-        const mapHeight = 1080; // Висота оригінальної карти
+        console.log('🔧 setInitialScale() викликано (друга функція)');
         
-        const minScaleX = viewportWidth / mapWidth;
-        const minScaleY = viewportHeight / mapHeight;
-        this.scale = Math.max(minScaleX, minScaleY);
+        // ВИМКНЕНО: Автоматичне масштабування - використовуємо фіксований розмір
+        this.scale = 1; // Фіксований масштаб 1:1
+        this.translateX = 0; // Без зміщення
+        this.translateY = 0; // Без зміщення
         
-        this.translateX = (viewportWidth - mapWidth * this.scale) / 2;
-        this.translateY = (viewportHeight - mapHeight * this.scale) / 2;
+        console.log('📊 Фіксований масштаб встановлено (друга функція):', {
+            scale: this.scale,
+            translateX: this.translateX,
+            translateY: this.translateY
+        });
     }
     
     // Застосування трансформації

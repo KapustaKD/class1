@@ -137,6 +137,17 @@ class MultiplayerGame extends EducationalPathGame {
         console.log('Запускаємо локальний режим');
         this.isOnlineMode = false;
         
+        // Зберігаємо стан гри
+        if (window.saveGameState) {
+            window.saveGameState({
+                isOnlineMode: false,
+                isLocalMode: true,
+                roomId: null,
+                playerName: null,
+                playerId: null
+            });
+        }
+        
         // Приховуємо вибір режиму та онлайн панель
         this.modeSelection.classList.add('hidden');
         this.onlinePanel.classList.add('hidden');
@@ -153,6 +164,17 @@ class MultiplayerGame extends EducationalPathGame {
     startOnlineMode() {
         console.log('Запускаємо онлайн режим');
         this.isOnlineMode = true;
+        
+        // Зберігаємо стан гри
+        if (window.saveGameState) {
+            window.saveGameState({
+                isOnlineMode: true,
+                isLocalMode: false,
+                roomId: this.roomId,
+                playerName: this.playerName,
+                playerId: this.playerId
+            });
+        }
         
         // Приховуємо вибір режиму та ігровий контейнер
         this.modeSelection.classList.add('hidden');

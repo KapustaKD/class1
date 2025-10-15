@@ -383,12 +383,15 @@ class EducationalPathGame {
     
     // Встановлення правильного початкового масштабу
     setInitialScale() {
-        console.log('🔧 setInitialScale() викликано');
+        console.log('🔧 setInitialScale() викликано (перша функція)');
+        console.log('🔍 ПЕРЕД встановленням translateY:', this.translateY);
         
         // ВИМКНЕНО: Автоматичне масштабування - використовуємо фіксований розмір
         this.scale = 1; // Фіксований масштаб 1:1
         this.translateX = 0; // Без зміщення
-        this.translateY = 50; // Опускаємо карту вниз на 50px
+        this.translateY = 0; // Без зміщення по вертикалі
+        
+        console.log('🔍 ПІСЛЯ встановлення translateY:', this.translateY);
         
         console.log('📊 Фіксований масштаб встановлено:', {
             scale: this.scale,
@@ -742,25 +745,12 @@ class EducationalPathGame {
     
        
     
-        handlePanning(e) {
-    
-            if (!this.isPanning) return;
-    
-            const dx = e.clientX - this.panStartX;
-    
-            const dy = e.clientY - this.panStartY;
-    
-            this.translateX += dx;
-    
-            this.translateY += dy;
-    
-        this.panStartX = e.clientX;
-
-        this.panStartY = e.clientY;
-
-        // ВИДАЛЕНО: applyTransform() - переміщення заблоковано
-    
-        }
+    handlePanning(e) {
+        // ВИМКНЕНО: Переміщення заблоковано - карта статична
+        console.log('🚫 handlePanning() вимкнено - карта статична');
+        e.preventDefault();
+        return; // Не робимо нічого
+    }
     
        
     
@@ -1725,43 +1715,22 @@ class EducationalPathGame {
     
     // Обмеження переміщення карти
     constrainTranslation() {
-        const rect = this.gameViewport.getBoundingClientRect();
-        const viewportWidth = rect.width;
-        const viewportHeight = rect.height;
-        const mapWidth = 1920 * this.scale;
-        const mapHeight = 1080 * this.scale;
-        
-        // Обмежуємо переміщення по X
-        if (mapWidth <= viewportWidth) {
-            // Карта менша за контейнер - центруємо
-            this.translateX = (viewportWidth - mapWidth) / 2;
-        } else {
-            // Карта більша за контейнер - обмежуємо переміщення
-            const maxTranslateX = 0;
-            const minTranslateX = viewportWidth - mapWidth;
-            this.translateX = Math.max(minTranslateX, Math.min(maxTranslateX, this.translateX));
-        }
-        
-        // Обмежуємо переміщення по Y
-        if (mapHeight <= viewportHeight) {
-            // Карта менша за контейнер - центруємо
-            this.translateY = (viewportHeight - mapHeight) / 2;
-        } else {
-            // Карта більша за контейнер - обмежуємо переміщення
-            const maxTranslateY = 0;
-            const minTranslateY = viewportHeight - mapHeight;
-            this.translateY = Math.max(minTranslateY, Math.min(maxTranslateY, this.translateY));
-        }
+        // ВИМКНЕНО: Обмеження переміщення заблоковано - використовуємо фіксований розмір
+        console.log('🚫 constrainTranslation() вимкнено - карта статична');
+        return; // Не робимо нічого
     }
     
     // Встановлення початкового масштабу
     setInitialScale() {
         console.log('🔧 setInitialScale() викликано (друга функція)');
+        console.log('🔍 ПЕРЕД встановленням translateY:', this.translateY);
         
         // ВИМКНЕНО: Автоматичне масштабування - використовуємо фіксований розмір
         this.scale = 1; // Фіксований масштаб 1:1
         this.translateX = 0; // Без зміщення
-        this.translateY = 50; // Опускаємо карту вниз на 50px
+        this.translateY = 0; // Без зміщення по вертикалі
+        
+        console.log('🔍 ПІСЛЯ встановлення translateY:', this.translateY);
         
         console.log('📊 Фіксований масштаб встановлено (друга функція):', {
             scale: this.scale,

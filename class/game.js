@@ -365,8 +365,7 @@ class EducationalPathGame {
     
         // Зум і панорама
         
-        // ВИМКНЕНО: Зум заблокований
-        // this.gameViewport.addEventListener('wheel', (e) => this.handleZoom(e));
+        this.gameViewport.addEventListener('wheel', (e) => this.handleZoom(e));
     
             this.gameViewport.addEventListener('mousedown', (e) => this.startPanning(e));
     
@@ -378,29 +377,26 @@ class EducationalPathGame {
     
         this.setupPlayerInputs();
         
-        // Встановлюємо правильний початковий масштаб
-        this.setInitialScale();
-        
-        this.applyTransform();
+        // ВИДАЛЕНО: Зайві виклики масштабування - тепер вони в createBoard()
+        // this.setInitialScale();
+        // this.applyTransform();
     
     }
     
     // Встановлення правильного початкового масштабу
     setInitialScale() {
         const rect = this.gameViewport.getBoundingClientRect();
-        const viewportWidth = rect.width;
-        const viewportHeight = rect.height;
-        const mapWidth = 1920; // Ширина оригінальної карти
-        const mapHeight = 1080; // Висота оригінальної карти
-        
-        // Мінімальний зум = найбільший з коефіцієнтів по ширині та висоті
-        const minScaleX = viewportWidth / mapWidth;
-        const minScaleY = viewportHeight / mapHeight;
-        this.scale = Math.max(minScaleX, minScaleY);
-        
-        // Центруємо карту
-        this.translateX = (viewportWidth - mapWidth * this.scale) / 2;
-        this.translateY = (viewportHeight - mapHeight * this.scale) / 2;
+        const mapWidth = 3840; // FIX: Встановлюємо новий правильний розмір
+        const mapHeight = 2160; // FIX: Встановлюємо новий правильний розмір
+
+        const scaleX = rect.width / mapWidth;
+        const scaleY = rect.height / mapHeight;
+
+        // Використовуємо Math.max, щоб карта "покривала" контейнер, а не вписувалася
+        this.scale = Math.max(scaleX, scaleY);
+
+        this.translateX = (rect.width - mapWidth * this.scale) / 2;
+        this.translateY = (rect.height - mapHeight * this.scale) / 2;
     }
     
     
@@ -736,9 +732,25 @@ class EducationalPathGame {
        
     
     handleZoom(e) {
-        // ВИМКНЕНО: Зум заблокований - карта завжди залишається в мінімальному розмірі
         e.preventDefault();
-        return; // Не робимо нічого
+        const rect = this.gameViewport.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const oldScale = this.scale;
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+
+        const mapWidth = 3840; // FIX: Встановлюємо новий правильний розмір
+        const mapHeight = 2160; // FIX: Встановлюємо новий правильний розмір
+
+        const minScaleX = rect.width / mapWidth;
+        const minScaleY = rect.height / mapHeight;
+        const minScale = Math.max(minScaleX, minScaleY);
+
+        this.scale = Math.max(minScale, Math.min(2, this.scale * delta)); // Обмежуємо мінімальний зум
+
+        this.translateX = mouseX - (mouseX - this.translateX) * (this.scale / oldScale);
+        this.translateY = mouseY - (mouseY - this.translateY) * (this.scale / oldScale);
+        this.applyTransform();
     }
     
        
@@ -1749,9 +1761,25 @@ class EducationalPathGame {
     
     // Масштабування та переміщення карти
     handleZoom(e) {
-        // ВИМКНЕНО: Зум заблокований - карта завжди залишається в мінімальному розмірі
         e.preventDefault();
-        return; // Не робимо нічого
+        const rect = this.gameViewport.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const oldScale = this.scale;
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+
+        const mapWidth = 3840; // FIX: Встановлюємо новий правильний розмір
+        const mapHeight = 2160; // FIX: Встановлюємо новий правильний розмір
+
+        const minScaleX = rect.width / mapWidth;
+        const minScaleY = rect.height / mapHeight;
+        const minScale = Math.max(minScaleX, minScaleY);
+
+        this.scale = Math.max(minScale, Math.min(2, this.scale * delta)); // Обмежуємо мінімальний зум
+
+        this.translateX = mouseX - (mouseX - this.translateX) * (this.scale / oldScale);
+        this.translateY = mouseY - (mouseY - this.translateY) * (this.scale / oldScale);
+        this.applyTransform();
     }
     
     // Обмеження переміщення карти
@@ -1788,17 +1816,17 @@ class EducationalPathGame {
     // Встановлення початкового масштабу
     setInitialScale() {
         const rect = this.gameViewport.getBoundingClientRect();
-        const viewportWidth = rect.width;
-        const viewportHeight = rect.height;
-        const mapWidth = 1920; // Ширина оригінальної карти
-        const mapHeight = 1080; // Висота оригінальної карти
-        
-        const minScaleX = viewportWidth / mapWidth;
-        const minScaleY = viewportHeight / mapHeight;
-        this.scale = Math.max(minScaleX, minScaleY);
-        
-        this.translateX = (viewportWidth - mapWidth * this.scale) / 2;
-        this.translateY = (viewportHeight - mapHeight * this.scale) / 2;
+        const mapWidth = 3840; // FIX: Встановлюємо новий правильний розмір
+        const mapHeight = 2160; // FIX: Встановлюємо новий правильний розмір
+
+        const scaleX = rect.width / mapWidth;
+        const scaleY = rect.height / mapHeight;
+
+        // Використовуємо Math.max, щоб карта "покривала" контейнер, а не вписувалася
+        this.scale = Math.max(scaleX, scaleY);
+
+        this.translateX = (rect.width - mapWidth * this.scale) / 2;
+        this.translateY = (rect.height - mapHeight * this.scale) / 2;
     }
     
     // Застосування трансформації

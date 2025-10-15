@@ -384,6 +384,7 @@ class EducationalPathGame {
     
     // Встановлення правильного початкового масштабу
     setInitialScale() {
+        console.log('🔧 setInitialScale() викликано');
         const rect = this.gameViewport.getBoundingClientRect();
         const viewportWidth = rect.width;
         const viewportHeight = rect.height;
@@ -398,6 +399,18 @@ class EducationalPathGame {
         // Центруємо карту
         this.translateX = (viewportWidth - mapWidth * this.scale) / 2;
         this.translateY = (viewportHeight - mapHeight * this.scale) / 2;
+        
+        console.log('📊 Розрахунки масштабу:', {
+            viewportWidth,
+            viewportHeight,
+            mapWidth,
+            mapHeight,
+            minScaleX,
+            minScaleY,
+            finalScale: this.scale,
+            translateX: this.translateX,
+            translateY: this.translateY
+        });
     }
     
     
@@ -637,9 +650,10 @@ class EducationalPathGame {
         
         // Встановлюємо правильний масштаб карти після створення
         setTimeout(() => {
+            console.log('⏰ createBoard() - встановлюємо масштаб через setTimeout');
             this.setInitialScale();
             this.applyTransform();
-            console.log('Масштаб карти встановлено після створення дошки');
+            console.log('✅ createBoard() - масштаб встановлено після створення дошки');
         }, 100);
     
     }
@@ -1792,8 +1806,18 @@ class EducationalPathGame {
     
     // Застосування трансформації
     applyTransform() {
+        console.log('🎯 applyTransform() викликано');
         if (this.gameBoardContainer) {
-            this.gameBoardContainer.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
+            const transformString = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
+            console.log('🔄 Застосовуємо transform:', transformString);
+            this.gameBoardContainer.style.transform = transformString;
+            
+            // Логуємо поточний стан після застосування
+            console.log('📋 СТАН ПІСЛЯ ЗАСТОСУВАННЯ:', {
+                element: this.gameBoardContainer.id,
+                currentStyle: this.gameBoardContainer.style.cssText,
+                computedTransform: window.getComputedStyle(this.gameBoardContainer).transform
+            });
         }
     }
     

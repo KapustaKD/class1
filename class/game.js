@@ -720,21 +720,9 @@ class EducationalPathGame {
     
        
     
-        // Зум і панорама
+        // Зум і панорама
     
-    applyTransform() {
-        console.log('🎯 applyTransform() викликано (перша функція)');
-        if (this.gameBoardContainer) {
-            const transformString = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
-            console.log('🔄 Застосовуємо transform (перша функція):', transformString);
-            this.gameBoardContainer.style.transform = transformString;
-            console.log('📋 СТАН ПІСЛЯ ЗАСТОСУВАННЯ (перша функція):', {
-                element: this.gameBoardContainer.id,
-                currentStyle: this.gameBoardContainer.style.cssText,
-                computedTransform: window.getComputedStyle(this.gameBoardContainer).transform
-            });
-        }
-    }
+    // ВИДАЛЕНО: Дублююча функція applyTransform() - використовуємо тільки другу
     
        
     
@@ -766,11 +754,11 @@ class EducationalPathGame {
     
             this.translateY += dy;
     
-            this.panStartX = e.clientX;
-    
-            this.panStartY = e.clientY;
-    
-            this.applyTransform();
+        this.panStartX = e.clientX;
+
+        this.panStartY = e.clientY;
+
+        // ВИДАЛЕНО: applyTransform() - переміщення заблоковано
     
         }
     
@@ -800,11 +788,11 @@ class EducationalPathGame {
     
             const elementY = element.offsetTop + element.offsetHeight / 2;
     
-            this.translateX = targetX - (elementX * this.scale);
-    
-            this.translateY = targetY - (elementY * this.scale);
-    
-            this.applyTransform();
+        this.translateX = targetX - (elementX * this.scale);
+
+        this.translateY = targetY - (elementY * this.scale);
+
+        // ВИДАЛЕНО: applyTransform() - фокусування заблоковано
     
         }
     

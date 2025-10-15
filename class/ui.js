@@ -26,6 +26,33 @@ class GameUI {
         }
     }
     
+    showMainMenu() {
+        // Показуємо вибір режиму гри
+        const modeSelection = document.getElementById('mode-selection');
+        if (modeSelection) {
+            modeSelection.classList.remove('hidden');
+        }
+        
+        // Приховуємо ігровий контейнер
+        const gameContainer = document.getElementById('game-container');
+        if (gameContainer) {
+            gameContainer.classList.add('hidden');
+        }
+        
+        // Приховуємо онлайн панель
+        const onlinePanel = document.getElementById('online-panel');
+        if (onlinePanel) {
+            onlinePanel.classList.add('hidden');
+        }
+        
+        // Приховуємо всі модальні вікна
+        Object.keys(this.modals).forEach(modalName => {
+            this.hideModal(modalName);
+        });
+        
+        console.log('🏠 Показано головне меню');
+    }
+    
     showQuestModal(title, content, buttons = []) {
         const modalContent = document.getElementById('quest-modal-content');
         const buttonsHTML = buttons.map((btn, index) => 

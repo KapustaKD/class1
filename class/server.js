@@ -8,6 +8,18 @@ if (typeof EducationalPathGame !== 'undefined') {
     console.warn('EducationalPathGame is defined but should not be used in server.js');
 }
 
+// Межі епох для системи реінкарнації
+const EPOCH_BOUNDARIES = { 1: 12, 2: 22, 3: 42, 4: 75, 5: 97, 6: 101 };
+
+function getEpochForPosition(position) {
+    if (position <= EPOCH_BOUNDARIES[1]) return 1;
+    if (position <= EPOCH_BOUNDARIES[2]) return 2;
+    if (position <= EPOCH_BOUNDARIES[3]) return 3;
+    if (position <= EPOCH_BOUNDARIES[4]) return 4;
+    if (position <= EPOCH_BOUNDARIES[5]) return 5;
+    return 6;
+}
+
 const app = express();
 const server = http.createServer(app);
 
@@ -296,10 +308,41 @@ io.on('connection', (socket) => {
         console.log('Кубик показав:', roll, 'Рух:', move);
         
         // Оновлюємо позицію гравця
+        const oldPosition = currentPlayer.position;
         const newPosition = Math.min(currentPlayer.position + move, 124);
         currentPlayer.position = newPosition;
         
-        console.log(`${currentPlayer.name} перемістився на позицію ${newPosition}`);
+        console.log(`${currentPlayer.name} перемістився з позиції ${oldPosition} на позицію ${newPosition}`);
+        
+        // Перевіряємо зміну епохи (реінкарнація)
+        const oldEpoch = getEpochForPosition(oldPosition);
+        const newEpoch = getEpochForPosition(newPosition);
+        
+        if (newEpoch > oldEpoch) {
+            console.log(`${currentPlayer.name} перейшов з епохи ${oldEpoch} в епоху ${newEpoch} - реінкарнація!`);
+            
+            // Нараховуємо бонусні очки
+            currentPlayer.points += 50;
+            
+            // Змінюємо клас
+            const occupiedClasses = room.gameData.players
+                .filter(p => p.id !== currentPlayer.id && p.class && p.class.epoch === newEpoch)
+                .map(p => p.class.id);
+            
+            const availableClasses = [
+                { id: 'peasant', name: 'Селянин', epoch: newEpoch, moveModifier: 0, description: 'Простий народ' },
+                { id: 'merchant', name: 'Купець', epoch: newEpoch, moveModifier: 1, description: 'Торговець' },
+                { id: 'noble', name: 'Дворянин', epoch: newEpoch, moveModifier: 2, description: 'Аристократ' },
+                { id: 'scholar', name: 'Вчений', epoch: newEpoch, moveModifier: 1, description: 'Дослідник' },
+                { id: 'artist', name: 'Митець', epoch: newEpoch, moveModifier: 1, description: 'Творець' }
+            ].filter(cls => !occupiedClasses.includes(cls.id));
+            
+            if (availableClasses.length > 0) {
+                const randomClass = availableClasses[Math.floor(Math.random() * availableClasses.length)];
+                currentPlayer.class = randomClass;
+                console.log(`${currentPlayer.name} отримав новий клас: ${randomClass.name}`);
+            }
+        }
         
         // Повідомляємо всіх про кидання кубика та нову позицію
         io.to(room.id).emit('dice_result', {
@@ -403,7 +446,7 @@ io.on('connection', (socket) => {
                     {
                         question: "Яка столиця України?",
                         options: ["Київ", "Львів", "Харків", "Одеса"],
-                        correctAnswer: 0
+                        correctAnswer: 1
                     },
                     {
                         question: "Хто написав 'Кобзар'?",
@@ -844,8 +887,8 @@ io.on('connection', (socket) => {
         const room = rooms.get(data.roomId);
         if (!room) return;
         
-        const currentPlayer = room.players.find(p => p.id === data.playerId);
-        const targetPlayer = room.players.find(p => p.id === data.targetPlayerId);
+        const currentPlayer = room.gameData.players.find(p => p.id === data.playerId);
+        const targetPlayer = room.gameData.players.find(p => p.id === data.targetPlayerId);
         
         if (currentPlayer && targetPlayer) {
             // Обмінюємося позиціями
@@ -859,6 +902,9 @@ io.on('connection', (socket) => {
                 player2: { id: targetPlayer.id, name: targetPlayer.name, position: targetPlayer.position },
                 message: `${currentPlayer.name} обмінявся місцями з ${targetPlayer.name}!`
             });
+            
+            // НЕ перевіряємо події на нових позиціях - це тільки обмін місцями
+            console.log(`${currentPlayer.name} обмінявся місцями з ${targetPlayer.name}`);
         }
     });
     

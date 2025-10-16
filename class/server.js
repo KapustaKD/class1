@@ -3,6 +3,9 @@ const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
 
+// Імпортуємо дані міні-ігор
+const { pvpGames, creativeGames, madLibsQuestions, webNovella } = require('./questsData.js');
+
 // Перевірка, що ми не намагаємося використовувати неіснуючі класи
 if (typeof EducationalPathGame !== 'undefined') {
     console.warn('EducationalPathGame is defined but should not be used in server.js');
@@ -12,11 +15,11 @@ if (typeof EducationalPathGame !== 'undefined') {
 const EPOCH_BOUNDARIES = { 1: 12, 2: 22, 3: 42, 4: 75, 5: 97, 6: 101 };
 
 function getEpochForPosition(position) {
-    if (position <= EPOCH_BOUNDARIES[1]) return 1;
-    if (position <= EPOCH_BOUNDARIES[2]) return 2;
-    if (position <= EPOCH_BOUNDARIES[3]) return 3;
-    if (position <= EPOCH_BOUNDARIES[4]) return 4;
-    if (position <= EPOCH_BOUNDARIES[5]) return 5;
+    if (position <= 12) return 1;
+    if (position <= 22) return 2;
+    if (position <= 42) return 3;
+    if (position <= 75) return 4;
+    if (position <= 97) return 5;
     return 6;
 }
 
@@ -330,23 +333,38 @@ io.on('connection', (socket) => {
             // Нараховуємо бонусні очки
             currentPlayer.points += 50;
             
-            // Змінюємо клас
+            // Збираємо зайняті класи тільки з гравців, які знаходяться в новій епосі
             const occupiedClasses = room.gameData.players
-                .filter(p => p.id !== currentPlayer.id && p.class)
+                .filter(p => p.id !== currentPlayer.id && p.class && getEpochForPosition(p.position) === newEpoch)
                 .map(p => p.class.id);
             
+            // Створюємо пул доступних класів
             const availableClasses = [
-                { id: 'peasant', name: 'Селянин', epoch: newEpoch, moveModifier: 0, description: 'Простий народ' },
-                { id: 'merchant', name: 'Купець', epoch: newEpoch, moveModifier: 1, description: 'Торговець' },
-                { id: 'noble', name: 'Дворянин', epoch: newEpoch, moveModifier: 2, description: 'Аристократ' },
-                { id: 'scholar', name: 'Вчений', epoch: newEpoch, moveModifier: 1, description: 'Дослідник' },
-                { id: 'artist', name: 'Митець', epoch: newEpoch, moveModifier: 1, description: 'Творець' }
+                { id: 'peasant', name: 'Селянин', moveModifier: 0, description: 'Простий народ' },
+                { id: 'merchant', name: 'Купець', moveModifier: 1, description: 'Торговець' },
+                { id: 'noble', name: 'Дворянин', moveModifier: 2, description: 'Аристократ' },
+                { id: 'scholar', name: 'Вчений', moveModifier: 1, description: 'Дослідник' },
+                { id: 'artist', name: 'Митець', moveModifier: 1, description: 'Творець' }
             ].filter(cls => !occupiedClasses.includes(cls.id));
             
             if (availableClasses.length > 0) {
+                // Присвоюємо новий клас
                 const randomClass = availableClasses[Math.floor(Math.random() * availableClasses.length)];
                 currentPlayer.class = randomClass;
                 console.log(`${currentPlayer.name} отримав новий клас: ${randomClass.name}`);
+                
+                // Повідомляємо всіх гравців про реінкарнацію
+                io.to(room.id).emit('player_reincarnated', {
+                    playerId: currentPlayer.id,
+                    playerName: currentPlayer.name,
+                    oldEpoch: oldEpoch,
+                    newEpoch: newEpoch,
+                    newClass: randomClass,
+                    bonusPoints: 50,
+                    message: `${currentPlayer.name} завершив епоху ${oldEpoch} і реінкарнувався в епоху ${newEpoch} як ${randomClass.name}! +50 ОО.`
+                });
+            } else {
+                console.log(`Немає доступних класів для епохи ${newEpoch}`);
             }
         }
         
@@ -433,50 +451,113 @@ io.on('connection', (socket) => {
 
                 const opponent = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
                 
-                // Створюємо стан гри в хрестики-нулики
-                room.ticTacToeState = {
-                    board: [null, null, null, null, null, null, null, null, null],
-                    turn: player.id,
+                // Вибираємо випадкову PvP-гру
+                const gameKeys = Object.keys(pvpGames);
+                const randomGameKey = gameKeys[Math.floor(Math.random() * gameKeys.length)];
+                const selectedGame = pvpGames[randomGameKey];
+                
+                // Створюємо стан гри на швидкість введення тексту
+                room.timedTextQuestState = {
+                    gameType: randomGameKey,
+                    gameData: selectedGame,
                     players: [player.id, opponent.id],
-                    gameType: 'tic-tac-toe'
+                    playerNames: [player.name, opponent.name],
+                    timer: selectedGame.timer,
+                    startTime: Date.now(),
+                    results: {},
+                    gameActive: true
                 };
 
                 // Відправляємо початок гри
-                io.to(room.id).emit('tic_tac_toe_start', {
-                    gameState: room.ticTacToeState,
+                io.to(room.id).emit('start_timed_text_quest', {
+                    gameState: room.timedTextQuestState,
                     player1: { id: player.id, name: player.name },
                     player2: { id: opponent.id, name: opponent.name }
                 });
 
-            } else if (data.eventType === 'quest') {
-                // Запускаємо вікторину
-                const questions = [
-                    {
-                        question: "Яка столиця України?",
-                        options: ["Київ", "Львів", "Харків", "Одеса"],
-                        correctAnswer: 1
-                    },
-                    {
-                        question: "Хто написав 'Кобзар'?",
-                        options: ["Іван Франко", "Тарас Шевченко", "Леся Українка", "Михайло Коцюбинський"],
-                        correctAnswer: 1
-                    },
-                    {
-                        question: "Який рік проголошення незалежності України?",
-                        options: ["1990", "1991", "1992", "1989"],
-                        correctAnswer: 1
-                    }
-                ];
+            } else if (data.eventType === 'creative-quest') {
+                // Вибираємо випадкову творчу гру
+                const gameKeys = Object.keys(creativeGames);
+                const randomGameKey = gameKeys[Math.floor(Math.random() * gameKeys.length)];
+                const selectedGame = creativeGames[randomGameKey];
+                
+                if (randomGameKey === 'chronicles') {
+                    // Хроніки Неіснуючого Вояжу - спільна історія
+                    room.collaborativeStoryState = {
+                        gameType: randomGameKey,
+                        gameData: selectedGame,
+                        players: room.gameData.players.filter(p => !p.hasWon && !p.hasLost),
+                        currentPlayerIndex: 0,
+                        story: [],
+                        timer: selectedGame.timer,
+                        gameActive: true,
+                        eliminatedPlayers: []
+                    };
+                    
+                    // Відправляємо першому гравцю чергу писати
+                    const firstPlayer = room.collaborativeStoryState.players[0];
+                    io.to(room.id).emit('collaborative_story_start', {
+                        gameState: room.collaborativeStoryState,
+                        currentPlayer: firstPlayer
+                    });
+                    
+                } else {
+                    // Великий Педагогічний / Я у мами педагог - один пише, інші голосують
+                    room.creativeWritingState = {
+                        gameType: randomGameKey,
+                        gameData: selectedGame,
+                        activePlayer: player.id,
+                        activePlayerName: player.name,
+                        timer: selectedGame.timer,
+                        gameActive: true,
+                        submissions: [],
+                        votes: {}
+                    };
+                    
+                    // Відправляємо активному гравцю завдання
+                    io.to(player.id).emit('creative_task_input', {
+                        gameState: room.creativeWritingState
+                    });
+                    
+                    // Відправляємо іншим гравцям інформацію про очікування
+                    socket.to(room.id).emit('creative_writing_waiting', {
+                        activePlayer: player.name,
+                        gameType: randomGameKey
+                    });
+                }
 
-                const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+            } else if (data.eventType === 'mad-libs-quest') {
+                // Гра "Хто, де, коли?"
+                room.madLibsState = {
+                    questions: [...madLibsQuestions],
+                    players: room.gameData.players.filter(p => !p.hasWon && !p.hasLost),
+                    currentPlayerIndex: 0,
+                    answers: [],
+                    gameActive: true
+                };
                 
-                // Зберігаємо правильну відповідь у стані кімнати
-                room.currentQuizCorrectAnswer = randomQuestion.correctAnswer;
+                // Відправляємо перше питання
+                const firstPlayer = room.madLibsState.players[0];
+                const firstQuestion = room.madLibsState.questions[0];
                 
-                io.to(room.id).emit('quiz_start', {
-                    question: randomQuestion,
-                    activePlayerId: player.id,
-                    activePlayerName: player.name
+                io.to(firstPlayer.id).emit('mad_libs_question', {
+                    question: firstQuestion,
+                    playerIndex: 0,
+                    gameState: room.madLibsState
+                });
+
+            } else if (data.eventType === 'webnovella-quest') {
+                // Вебновела "Халепа!"
+                room.webNovellaState = {
+                    currentEvent: 'start_event_1',
+                    playerId: player.id,
+                    gameActive: true
+                };
+                
+                // Відправляємо першу подію
+                io.to(player.id).emit('webnovella_event', {
+                    event: webNovella['start_event_1'],
+                    gameState: room.webNovellaState
                 });
 
             } else {
@@ -772,126 +853,292 @@ io.on('connection', (socket) => {
         });
     });
 
-    // Обробляємо хід в хрестики-нулики
-    socket.on('tic_tac_toe_move', (data) => {
-        console.log('Отримано хід в хрестики-нулики:', data);
+    
+    // Обробляємо результат PvP гри на швидкість введення тексту
+    socket.on('timed_text_quest_result', (data) => {
+        console.log('Отримано результат PvP гри:', data);
         const player = players.get(socket.id);
         if (!player) return;
 
         const room = rooms.get(data.roomId);
-        if (!room || !room.ticTacToeState) return;
+        if (!room || !room.timedTextQuestState) return;
 
-        // Перевіряємо, чи це хід поточного гравця
-        if (room.ticTacToeState.turn !== player.id) {
-            console.log('Не той гравець намагається зробити хід');
-            return;
-        }
+        // Зберігаємо результат гравця
+        room.timedTextQuestState.results[player.id] = {
+            wordsCount: data.wordsCount,
+            playerName: player.name
+        };
 
-        // Перевіряємо, чи клітинка вільна
-        if (room.ticTacToeState.board[data.cellIndex] !== null) {
-            console.log('Клітинка вже зайнята');
-            return;
-        }
+        // Перевіряємо, чи всі гравці відправили результати
+        const allResultsReceived = room.timedTextQuestState.players.every(playerId => 
+            room.timedTextQuestState.results[playerId]
+        );
 
-        // Робимо хід
-        const symbol = room.ticTacToeState.players[0] === player.id ? 'X' : 'O';
-        room.ticTacToeState.board[data.cellIndex] = symbol;
-
-        // Перевіряємо на перемогу
-        const winner = checkTicTacToeWinner(room.ticTacToeState.board);
-        
-        if (winner) {
-            // Гра закінчена
-            const winnerPlayer = room.gameData.players.find(p => 
-                room.ticTacToeState.players[winner === 'X' ? 0 : 1] === p.id
-            );
+        if (allResultsReceived) {
+            // Визначаємо переможця
+            const results = room.timedTextQuestState.results;
+            const player1Id = room.timedTextQuestState.players[0];
+            const player2Id = room.timedTextQuestState.players[1];
             
-            io.to(room.id).emit('tic_tac_toe_end', {
-                winner: winnerPlayer.id,
-                winnerName: winnerPlayer.name,
-                gameState: room.ticTacToeState
+            const player1Words = results[player1Id].wordsCount;
+            const player2Words = results[player2Id].wordsCount;
+            
+            let winner = null;
+            let resultMessage = '';
+            
+            if (player1Words > player2Words) {
+                winner = player1Id;
+                resultMessage = `${results[player1Id].playerName} переміг! ${player1Words} слів проти ${player2Words}.`;
+            } else if (player2Words > player1Words) {
+                winner = player2Id;
+                resultMessage = `${results[player2Id].playerName} переміг! ${player2Words} слів проти ${player1Words}.`;
+            } else {
+                resultMessage = `Нічия! Перемогла дружба! Кожному по ${player1Words} ОО!`;
+            }
+
+            // Відправляємо результат всім гравцям
+            io.to(room.id).emit('timed_text_quest_end', {
+                winner: winner,
+                results: results,
+                resultMessage: resultMessage,
+                gameState: room.timedTextQuestState
             });
 
             // Очищуємо стан гри
-            room.ticTacToeState = null;
-        } else if (room.ticTacToeState.board.every(cell => cell !== null)) {
-            // Нічия
-            io.to(room.id).emit('tic_tac_toe_end', {
-                winner: null,
-                winnerName: null,
-                gameState: room.ticTacToeState
-            });
-
-            room.ticTacToeState = null;
-        } else {
-            // Змінюємо хід
-            room.ticTacToeState.turn = room.ticTacToeState.players.find(id => id !== player.id);
-            
-            io.to(room.id).emit('tic_tac_toe_update', {
-                gameState: room.ticTacToeState
-            });
+            room.timedTextQuestState = null;
         }
     });
 
-    // Обробляємо відповідь на вікторину
-    socket.on('quiz_answer', (data) => {
-        console.log('Отримано відповідь на вікторину:', data);
+    // Обробляємо відповідь в спільній історії
+    socket.on('collaborative_story_sentence', (data) => {
+        console.log('Отримано речення для спільної історії:', data);
         const player = players.get(socket.id);
         if (!player) return;
 
         const room = rooms.get(data.roomId);
-        if (!room) return;
+        if (!room || !room.collaborativeStoryState) return;
 
-        // Перевіряємо, чи це правильний гравець
-        if (room.currentEventPlayerId !== player.id) {
-            console.log('Не той гравець намагається відповісти');
-            return;
-        }
-
-        const isCorrect = data.answer === room.currentQuizCorrectAnswer;
-        let resultMessage = '';
-        let pointsChange = 0;
-
-        if (isCorrect) {
-            pointsChange = 30;
-            resultMessage = `${player.name} правильно відповів на питання! +${pointsChange} ОО.`;
-        } else {
-            pointsChange = -10;
-            resultMessage = `${player.name} неправильно відповів. ${pointsChange} ОО.`;
-        }
-
-        player.points += pointsChange;
-
-        io.to(room.id).emit('quiz_end', {
-            playerId: player.id,
+        // Додаємо речення до історії
+        room.collaborativeStoryState.story.push({
+            sentence: data.sentence,
             playerName: player.name,
-            wasCorrect: isCorrect,
-            correctAnswer: room.currentEventData.correctAnswer,
-            pointsChange: pointsChange,
-            resultMessage: resultMessage
+            playerId: player.id
         });
 
-        // Очищуємо поточну подію
-        room.currentEventPlayerId = null;
-        room.currentEventData = null;
+        // Переходимо до наступного гравця
+        room.collaborativeStoryState.currentPlayerIndex = 
+            (room.collaborativeStoryState.currentPlayerIndex + 1) % room.collaborativeStoryState.players.length;
+
+        const nextPlayer = room.collaborativeStoryState.players[room.collaborativeStoryState.currentPlayerIndex];
+
+        // Відправляємо оновлену історію та чергу наступного гравця
+        io.to(room.id).emit('collaborative_story_update', {
+            gameState: room.collaborativeStoryState,
+            currentPlayer: nextPlayer
+        });
     });
 
-    // Функція перевірки переможця в хрестики-нулики
-    function checkTicTacToeWinner(board) {
-        const winningCombinations = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8], // горизонтальні
-            [0, 3, 6], [1, 4, 7], [2, 5, 8], // вертикальні
-            [0, 4, 8], [2, 4, 6] // діагональні
-        ];
+    // Обробляємо пропуск ходу в спільній історії
+    socket.on('collaborative_story_skip', (data) => {
+        console.log('Гравець пропустив хід в спільній історії:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
 
-        for (let combination of winningCombinations) {
-            const [a, b, c] = combination;
-            if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-                return board[a];
-            }
+        const room = rooms.get(data.roomId);
+        if (!room || !room.collaborativeStoryState) return;
+
+        // Виключаємо гравця з гри
+        room.collaborativeStoryState.eliminatedPlayers.push(player.id);
+        room.collaborativeStoryState.players = room.collaborativeStoryState.players.filter(p => p.id !== player.id);
+
+        // Перевіряємо, чи залишилися гравці
+        if (room.collaborativeStoryState.players.length <= 1) {
+            // Гра закінчена
+            const winner = room.collaborativeStoryState.players[0];
+            io.to(room.id).emit('collaborative_story_end', {
+                winner: winner,
+                story: room.collaborativeStoryState.story,
+                resultMessage: `Вітаю, ${winner.name} здобув перемогу!`
+            });
+            room.collaborativeStoryState = null;
+        } else {
+            // Переходимо до наступного гравця
+            room.collaborativeStoryState.currentPlayerIndex = 
+                room.collaborativeStoryState.currentPlayerIndex % room.collaborativeStoryState.players.length;
+
+            const nextPlayer = room.collaborativeStoryState.players[room.collaborativeStoryState.currentPlayerIndex];
+
+            io.to(room.id).emit('collaborative_story_update', {
+                gameState: room.collaborativeStoryState,
+                currentPlayer: nextPlayer
+            });
         }
-        return null;
-    }
+    });
+
+    // Обробляємо творче завдання
+    socket.on('creative_task_submission', (data) => {
+        console.log('Отримано творче завдання:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+
+        const room = rooms.get(data.roomId);
+        if (!room || !room.creativeWritingState) return;
+
+        // Зберігаємо відповідь
+        room.creativeWritingState.submissions.push({
+            text: data.text,
+            playerName: player.name,
+            playerId: player.id
+        });
+
+        // Відправляємо всім гравцям для голосування
+        io.to(room.id).emit('start_voting', {
+            submissions: room.creativeWritingState.submissions,
+            gameState: room.creativeWritingState
+        });
+    });
+
+    // Обробляємо голосування в творчій грі
+    socket.on('creative_vote', (data) => {
+        console.log('Отримано голос:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+
+        const room = rooms.get(data.roomId);
+        if (!room || !room.creativeWritingState) return;
+
+        // Зберігаємо голос
+        room.creativeWritingState.votes[player.id] = data.submissionIndex;
+
+        // Перевіряємо, чи всі проголосували
+        const totalVoters = room.gameData.players.filter(p => p.id !== room.creativeWritingState.activePlayer).length;
+        const votesCount = Object.keys(room.creativeWritingState.votes).length;
+
+        if (votesCount >= totalVoters) {
+            // Підраховуємо голоси
+            const voteCounts = {};
+            Object.values(room.creativeWritingState.votes).forEach(index => {
+                voteCounts[index] = (voteCounts[index] || 0) + 1;
+            });
+
+            // Знаходимо переможця
+            let winnerIndex = 0;
+            let maxVotes = 0;
+            Object.entries(voteCounts).forEach(([index, votes]) => {
+                if (votes > maxVotes) {
+                    maxVotes = votes;
+                    winnerIndex = parseInt(index);
+                }
+            });
+
+            const winner = room.creativeWritingState.submissions[winnerIndex];
+            
+            io.to(room.id).emit('creative_voting_end', {
+                winner: winner,
+                voteCounts: voteCounts,
+                resultMessage: `Переможець: ${winner.playerName}!`
+            });
+
+            room.creativeWritingState = null;
+        }
+    });
+
+    // Обробляємо відповідь в грі "Хто, де, коли?"
+    socket.on('mad_libs_answer', (data) => {
+        console.log('Отримано відповідь для "Хто, де, коли?":', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+
+        const room = rooms.get(data.roomId);
+        if (!room || !room.madLibsState) return;
+
+        // Додаємо відповідь
+        room.madLibsState.answers.push({
+            answer: data.answer,
+            playerName: player.name,
+            questionIndex: room.madLibsState.currentPlayerIndex
+        });
+
+        // Переходимо до наступного гравця
+        room.madLibsState.currentPlayerIndex++;
+        
+        if (room.madLibsState.currentPlayerIndex < room.madLibsState.players.length) {
+            // Відправляємо наступне питання
+            const nextPlayer = room.madLibsState.players[room.madLibsState.currentPlayerIndex];
+            const questionIndex = room.madLibsState.currentPlayerIndex % room.madLibsState.questions.length;
+            const question = room.madLibsState.questions[questionIndex];
+            
+            io.to(nextPlayer.id).emit('mad_libs_question', {
+                question: question,
+                playerIndex: room.madLibsState.currentPlayerIndex,
+                gameState: room.madLibsState
+            });
+        } else {
+            // Всі відповіли, формуємо фінальну історію
+            const story = room.madLibsState.answers
+                .sort((a, b) => a.questionIndex - b.questionIndex)
+                .map(answer => answer.answer)
+                .join(' ');
+
+            io.to(room.id).emit('mad_libs_result', {
+                story: story,
+                answers: room.madLibsState.answers,
+                resultMessage: `Ось ваша історія: ${story}`
+            });
+
+            room.madLibsState = null;
+        }
+    });
+
+    // Обробляємо вибір в вебновели
+    socket.on('webnovella_choice', (data) => {
+        console.log('Отримано вибір для вебновели:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+
+        const room = rooms.get(data.roomId);
+        if (!room || !room.webNovellaState) return;
+
+        // Знаходимо наступну подію
+        const currentEvent = webNovella[room.webNovellaState.currentEvent];
+        const choice = currentEvent.choices[data.choiceIndex];
+        
+        if (choice.target) {
+            room.webNovellaState.currentEvent = choice.target;
+            const nextEvent = webNovella[choice.target];
+            
+            if (nextEvent.consequence) {
+                // Якщо є наслідок, переходимо до нього
+                room.webNovellaState.currentEvent = nextEvent.consequence;
+                const consequenceEvent = webNovella[nextEvent.consequence];
+                
+                io.to(player.id).emit('webnovella_event', {
+                    event: consequenceEvent,
+                    gameState: room.webNovellaState
+                });
+            } else {
+                // Звичайна подія
+                io.to(player.id).emit('webnovella_event', {
+                    event: nextEvent,
+                    gameState: room.webNovellaState
+                });
+            }
+        } else {
+            // Кінець історії
+            io.to(player.id).emit('webnovella_end', {
+                finalEvent: currentEvent,
+                resultMessage: `Історія завершена! Отримано ${currentEvent.points || 0} ОО.`
+            });
+            
+            // Нараховуємо очки
+            const gamePlayer = room.gameData.players.find(p => p.id === player.id);
+            if (gamePlayer) {
+                gamePlayer.points += (currentEvent.points || 0);
+            }
+            
+            room.webNovellaState = null;
+        }
+    });
     
     // Обмін місцями після перемоги в міні-грі
     socket.on('swap_positions', (data) => {

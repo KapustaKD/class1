@@ -75,7 +75,7 @@ function createRoom(roomName, hostPlayer) {
         gameState: 'waiting', // waiting, playing, finished
         currentPlayerIndex: 0,
         settings: {
-            maxPlayers: 3,
+            maxPlayers: 6,
             winPoints: 300,
             allowSpectators: true
         },
@@ -234,23 +234,29 @@ io.on('connection', (socket) => {
         
         console.log('Починаємо гру в кімнаті:', room.id);
         
-        // Доступні класи
+        // ЗАМІНИТИ СТАРИЙ БЛОК РОЗПОДІЛУ КЛАСІВ НА ЦЕЙ:
         const availableClasses = [
             { id: 'aristocrat', name: '⚜️ Аристократ', startPoints: 50, moveModifier: 1 },
             { id: 'burgher', name: '⚖️ Міщанин', startPoints: 20, moveModifier: 0 },
             { id: 'peasant', name: '🌱 Селянин', startPoints: 0, moveModifier: -1 },
         ];
-        
-        // Перемішуємо класи для випадкової роздачі
-        const shuffledClasses = [...availableClasses].sort(() => Math.random() - 0.5);
-        
+
+        let classPool = [];
+        if (room.players.length <= 3) {
+            // Якщо гравців 3 або менше, класи не повторюються
+            classPool = [...availableClasses].sort(() => 0.5 - Math.random());
+        } else {
+            // Якщо гравців більше 3, створюємо подвійний набір класів
+            classPool = [...availableClasses, ...availableClasses].sort(() => 0.5 - Math.random());
+        }
+
         // Ініціалізуємо гру з роздачею класів
         room.gameState = 'playing';
         room.gameData.gameActive = true;
         room.gameData.players = room.players.map((p, index) => ({
             ...p,
-            class: shuffledClasses[index % shuffledClasses.length],
-            points: shuffledClasses[index % shuffledClasses.length].startPoints,
+            class: classPool[index],
+            points: classPool[index].startPoints,
             position: 0,
             skipTurn: false,
             extraTurn: false,
@@ -326,7 +332,7 @@ io.on('connection', (socket) => {
             
             // Змінюємо клас
             const occupiedClasses = room.gameData.players
-                .filter(p => p.id !== currentPlayer.id && p.class && p.class.epoch === newEpoch)
+                .filter(p => p.id !== currentPlayer.id && p.class)
                 .map(p => p.class.id);
             
             const availableClasses = [
@@ -350,6 +356,8 @@ io.on('connection', (socket) => {
             roll,
             move,
             newPosition,
+            newPoints: currentPlayer.points,
+            newClass: currentPlayer.class,
             currentPlayerIndex: room.gameData.currentPlayerIndex
         });
         
@@ -461,6 +469,9 @@ io.on('connection', (socket) => {
                 ];
 
                 const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+                
+                // Зберігаємо правильну відповідь у стані кімнати
+                room.currentQuizCorrectAnswer = randomQuestion.correctAnswer;
                 
                 io.to(room.id).emit('quiz_start', {
                     question: randomQuestion,
@@ -837,7 +848,7 @@ io.on('connection', (socket) => {
             return;
         }
 
-        const isCorrect = data.answer === room.currentEventData.correctAnswer;
+        const isCorrect = data.answer === room.currentQuizCorrectAnswer;
         let resultMessage = '';
         let pointsChange = 0;
 

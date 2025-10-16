@@ -66,9 +66,7 @@ class EducationalPathGame {
     
                 15: { type: 'event-good', effect: p => this.updatePoints(p, 20, "Винайдено писемність! +20 ОО.", true) },
     
-                20: { type: 'creative-quest' },
-    
-                25: { type: 'reincarnation', nextEpoch: 2, points: 50, description: 'Реінкарнація! Перехід до наступної епохи.' },
+            20: { type: 'creative-quest' },
     
                 30: { type: 'quest' },
     
@@ -76,9 +74,7 @@ class EducationalPathGame {
     
                 40: { type: 'pvp-quest' },
     
-                45: { type: 'alternative-path', target: 55, cost: 15, description: 'Обхідна дорога! Скористатися?' },
-    
-                50: { type: 'reincarnation', nextEpoch: 3, points: 60, description: 'Реінкарнація! Перехід до наступної епохи.' },
+            45: { type: 'alternative-path', target: 55, cost: 15, description: 'Обхідна дорога! Скористатися?' },
     
                 55: { type: 'creative-quest' },
     
@@ -86,9 +82,7 @@ class EducationalPathGame {
     
                 65: { type: 'pvp-quest' },
     
-                70: { type: 'event-bad', effect: p => { p.skipTurn = true; this.updatePoints(p, -10); }, description: "З'їв дивних грибів. Пропуск ходу та -10 ОО." },
-    
-                75: { type: 'reincarnation', nextEpoch: 4, points: 70, description: 'Реінкарнація! Перехід до наступної епохи.' },
+            70: { type: 'event-bad', effect: p => { p.skipTurn = true; this.updatePoints(p, -10); }, description: "З'їв дивних грибів. Пропуск ходу та -10 ОО." },
     
                 80: { type: 'quest' },
     
@@ -96,9 +90,7 @@ class EducationalPathGame {
     
                 90: { type: 'pvp-quest' },
     
-                95: { type: 'event-good', effect: p => { p.extraTurn = true; }, description: "Просвітництво! Додатковий хід." },
-    
-                100: { type: 'reincarnation', nextEpoch: 5, points: 80, description: 'Реінкарнація! Перехід до наступної епохи.' },
+            95: { type: 'event-good', effect: p => { p.extraTurn = true; }, description: "Просвітництво! Додатковий хід." },
     
                 105: { type: 'creative-quest' },
     
@@ -935,32 +927,6 @@ class EducationalPathGame {
                 case 'creative-quest':
     
                     this.triggerCreativeQuest(player);
-    
-                    break;
-    
-                case 'reincarnation':
-    
-                            this.showQuestModal('Реінкарнація!', `${cellData.description} Перейти до наступної епохи?`, [
-    
-                                { text: 'Так', callback: () => {
-    
-                                    this.updatePoints(player, cellData.points, cellData.description);
-    
-                                    this.teleportToNextEpoch(player, cellData.nextEpoch);
-    
-                                    this.questModal.classList.add('hidden');
-    
-                                }},
-    
-                                { text: 'Ні', callback: () => {
-    
-                                    this.questModal.classList.add('hidden');
-    
-                                    this.nextTurn();
-    
-                                }}
-    
-                            ]);
     
                     break;
     

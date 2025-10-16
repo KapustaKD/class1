@@ -356,7 +356,11 @@ body {
     color: white; 
 }
 
-.board-cell.alternative-path { 
+.board-cell.mad-libs-quest { 
+    color: white; 
+}
+
+.board-cell.webnovella-quest { 
     color: white; 
 }
 

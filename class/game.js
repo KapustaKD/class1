@@ -4,7 +4,7 @@ class EducationalPathGame {
 
         constructor() {
     
-            this.BOARD_SIZE = 125;
+            this.BOARD_SIZE = 101;
     
             this.WIN_CONDITION_POINTS = 300;
     
@@ -59,89 +59,37 @@ class EducationalPathGame {
            
     
             this.specialCells = {
-    
-                5: { type: 'quest' },
-    
-                10: { type: 'pvp-quest' },
-    
-                15: { type: 'event-good', effect: p => this.updatePoints(p, 20, "Винайдено писемність! +20 ОО.", true) },
-    
-            20: { type: 'creative-quest' },
-    
-                30: { type: 'quest' },
-    
-                35: { type: 'event-bad', effect: p => this.updatePoints(p, -20, "Втрата рукописів. -20 ОО.", true) },
-    
-                40: { type: 'pvp-quest' },
-    
-            45: { type: 'alternative-path', target: 55, cost: 15, description: 'Обхідна дорога! Скористатися?' },
-    
-                55: { type: 'creative-quest' },
-    
-                60: { type: 'event-good', effect: p => this.updatePoints(p, 30, "Епоха Відродження! +30 ОО.", true) },
-    
-                65: { type: 'pvp-quest' },
-    
-            70: { type: 'event-bad', effect: p => { p.skipTurn = true; this.updatePoints(p, -10); }, description: "З'їв дивних грибів. Пропуск ходу та -10 ОО." },
-    
-                80: { type: 'quest' },
-    
-                85: { type: 'alternative-path', target: 95, cost: 20, description: 'Обхідна дорога! Скористатися?' },
-    
+            // Нові міні-ігри на клітинках: 3, 10, 14, 21, 32, 40, 55, 61, 69, 81, 90, 96, 99
+            3: { type: 'pvp-quest' },
+            10: { type: 'creative-quest' },
+            14: { type: 'mad-libs-quest' },
+            21: { type: 'pvp-quest' },
+            32: { type: 'webnovella-quest' },
+            40: { type: 'creative-quest' },
+            55: { type: 'pvp-quest' },
+            61: { type: 'mad-libs-quest' },
+            69: { type: 'creative-quest' },
+            81: { type: 'webnovella-quest' },
                 90: { type: 'pvp-quest' },
-    
-            95: { type: 'event-good', effect: p => { p.extraTurn = true; }, description: "Просвітництво! Додатковий хід." },
-    
-                105: { type: 'creative-quest' },
-    
-                110: { type: 'event-bad', effect: p => this.movePlayerTo(p, 90), description: "Світова війна. Повернення назад." },
-    
-                115: { type: 'pvp-quest' },
-    
-                120: { type: 'event-good', effect: p => this.updatePoints(p, 50), description: "Цифрова революція! +50 ОО." },
-    
-                124: { type: 'machine-uprising' },
-    
-                // Нові альтернативні шляхи
-    
-                12: { type: 'alternative-path', target: 18, cost: 5, description: "Обхідний шлях до клітинки 18 за 5 ОО" },
-    
-                32: { type: 'alternative-path', target: 38, cost: 8, description: "Обхідний шлях до клітинки 38 за 8 ОО" },
-    
-                52: { type: 'alternative-path', target: 58, cost: 10, description: "Обхідний шлях до клітинки 58 за 10 ОО" },
-    
-                72: { type: 'alternative-path', target: 78, cost: 12, description: "Обхідний шлях до клітинки 78 за 12 ОО" },
-    
-                92: { type: 'alternative-path', target: 98, cost: 15, description: "Обхідний шлях до клітинки 98 за 15 ОО" },
-    
-                112: { type: 'alternative-path', target: 118, cost: 18, description: "Обхідний шлях до клітинки 118 за 18 ОО" },
-    
-                // Додаткові події
-    
-                8: { type: 'event-bad', effect: p => { p.moveModifier = -1; setTimeout(() => p.moveModifier = 0, 1); }, description: "Булінг від мислителя. Наступний хід на 1 менше." },
-    
-                18: { type: 'event-good', effect: p => { p.moveModifier = 1; setTimeout(() => p.moveModifier = 0, 1); }, description: "Дружба з мудрецем. Наступний хід на 1 більше." },
-    
-                28: { type: 'event-bad', effect: p => this.movePlayerTo(p, Math.max(0, p.position - 3)), description: "Втрата пам'яті. Повернення на 3 клітинки назад." },
-    
-                38: { type: 'event-good', effect: p => this.updatePoints(p, 25), description: "Знайшов древній манускрипт! +25 ОО." },
-    
-                48: { type: 'event-bad', effect: p => { p.skipTurn = true; }, description: "Захворів на чуму. Пропуск ходу." },
-    
-                58: { type: 'event-good', effect: p => { p.extraTurn = true; }, description: "Відкриття нового методу навчання! Додатковий хід." },
-    
-                68: { type: 'event-bad', effect: p => this.updatePoints(p, -15), description: "Спалили бібліотеку. -15 ОО." },
-    
-                78: { type: 'event-good', effect: p => this.updatePoints(p, 40), description: "Створено університет! +40 ОО." },
-    
-                88: { type: 'event-bad', effect: p => this.movePlayerTo(p, Math.max(0, p.position - 5)), description: "Інквізиція. Повернення на 5 клітинок назад." },
-    
-                98: { type: 'event-good', effect: p => this.updatePoints(p, 35), description: "Наукова революція! +35 ОО." },
-    
-                108: { type: 'event-bad', effect: p => { p.skipTurn = true; this.updatePoints(p, -25); }, description: "Цензура. Пропуск ходу та -25 ОО." },
-    
-                118: { type: 'event-good', effect: p => { p.extraTurn = true; this.updatePoints(p, 30); }, description: "Інтернет! Додатковий хід та +30 ОО." }
-    
+            96: { type: 'mad-libs-quest' },
+            99: { type: 'webnovella-quest' },
+
+            // Обхідні шляхи: 5→11, 14→18, 26→33, 46→57, 80→91
+            5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
+            14: { type: 'alternative-path', target: 18, cost: 8, description: 'Обхідний шлях до клітинки 18 за 8 ОО' },
+            26: { type: 'alternative-path', target: 33, cost: 12, description: 'Обхідний шлях до клітинки 33 за 12 ОО' },
+            46: { type: 'alternative-path', target: 57, cost: 15, description: 'Обхідний шлях до клітинки 57 за 15 ОО' },
+            80: { type: 'alternative-path', target: 91, cost: 18, description: 'Обхідний шлях до клітинки 91 за 18 ОО' },
+
+            // Реінкарнація та випадкова зміна класу: 12, 22, 43, 75, 97
+            12: { type: 'reincarnation', nextEpoch: 2, points: 30 },
+            22: { type: 'reincarnation', nextEpoch: 3, points: 40 },
+            43: { type: 'reincarnation', nextEpoch: 4, points: 50 },
+            75: { type: 'reincarnation', nextEpoch: 5, points: 60 },
+            97: { type: 'reincarnation', nextEpoch: 6, points: 70 },
+
+            // Фінальна подія
+            100: { type: 'machine-uprising' }
             };
     
            
@@ -924,10 +872,16 @@ class EducationalPathGame {
     
                     break;
     
-                case 'creative-quest':
+            case 'mad-libs-quest':
+                this.triggerMadLibsQuest(player);
+                break;
     
-                    this.triggerCreativeQuest(player);
+            case 'webnovella-quest':
+                this.triggerWebNovellaQuest(player);
+                break;
     
+            case 'reincarnation':
+                this.triggerReincarnation(player, cellData);
                     break;
     
             case 'machine-uprising':
@@ -1512,7 +1466,8 @@ class EducationalPathGame {
     
             else if (type === 'turn') typeClass = 'text-green-300 font-semibold';
     
-            else if (type === 'system') typeClass = 'text-gray-400 italic';
+            else if (type === 'system') typeClass = 'text-gray-400 italic';
+        else if (type === 'reincarnation') typeClass = 'text-blue-300 font-bold';
     
            
     
@@ -1670,6 +1625,22 @@ class EducationalPathGame {
     
         this.nextTurn();
     
+    }
+
+    triggerMadLibsQuest(player) {
+        this.logMessage("Гра 'Хто, де, коли?' буде реалізована в мультиплеєрі", 'system');
+        this.nextTurn();
+    }
+
+    triggerWebNovellaQuest(player) {
+        this.logMessage("Вебновела 'Халепа!' буде реалізована в мультиплеєрі", 'system');
+        this.nextTurn();
+    }
+
+    triggerReincarnation(player, cellData) {
+        this.logMessage(`Реінкарнація на епоху ${cellData.nextEpoch} за ${cellData.points} ОО`, 'system');
+        this.updatePoints(player, cellData.points, `Реінкарнація! +${cellData.points} ОО.`, true);
+        this.nextTurn();
     }
     
     // Масштабування та переміщення карти

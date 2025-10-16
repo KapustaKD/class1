@@ -319,8 +319,20 @@ class MultiplayerGame extends EducationalPathGame {
                 this.socket.on('positions_swapped', (data) => {
                     console.log('Обмін місцями:', data);
                     this.logMessage(data.message, 'system');
-                    this.updatePawnPosition({ id: data.player1.id, position: data.player1.position });
-                    this.updatePawnPosition({ id: data.player2.id, position: data.player2.position });
+                    
+                    // Знаходимо гравців в локальному масиві
+                    const player1 = this.players.find(p => p.id === data.player1.id);
+                    const player2 = this.players.find(p => p.id === data.player2.id);
+                    
+                    if (player1) {
+                        player1.position = data.player1.position;
+                        this.updatePawnPosition(player1);
+                    }
+                    
+                    if (player2) {
+                        player2.position = data.player2.position;
+                        this.updatePawnPosition(player2);
+                    }
                 });
         
         this.socket.on('quest_vote', (data) => {

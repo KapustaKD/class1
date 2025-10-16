@@ -975,6 +975,14 @@ class MultiplayerGame extends EducationalPathGame {
             // Оновлюємо позицію гравця
             player.position = data.newPosition;
             
+            // Оновлюємо очки та клас гравця (якщо є)
+            if (data.newPoints !== undefined) {
+                player.points = data.newPoints;
+            }
+            if (data.newClass !== undefined) {
+                player.class = data.newClass;
+            }
+            
             this.logMessage(`${player.name}${player.class ? ' (' + player.class.name + ')' : ''} викинув ${data.roll}. Рух: ${data.move}. Позиція: ${data.newPosition}`, 'roll');
         }, 1000);
     }

@@ -340,32 +340,46 @@ io.on('connection', (socket) => {
             
             // Створюємо пул доступних класів
             const availableClasses = [
-                { id: 'peasant', name: 'Селянин', moveModifier: 0, description: 'Простий народ' },
-                { id: 'merchant', name: 'Купець', moveModifier: 1, description: 'Торговець' },
-                { id: 'noble', name: 'Дворянин', moveModifier: 2, description: 'Аристократ' },
-                { id: 'scholar', name: 'Вчений', moveModifier: 1, description: 'Дослідник' },
-                { id: 'artist', name: 'Митець', moveModifier: 1, description: 'Творець' }
-            ].filter(cls => !occupiedClasses.includes(cls.id));
+                { id: 'aristocrat', name: 'Аристократ', moveModifier: 1, description: 'Аристократ' },
+                { id: 'burgher', name: 'Міщанин', moveModifier: 0, description: 'Міщанин' },
+                { id: 'peasant', name: 'Селянин', moveModifier: -1, description: 'Селянин' }
+            ];
             
-            if (availableClasses.length > 0) {
-                // Присвоюємо новий клас
-                const randomClass = availableClasses[Math.floor(Math.random() * availableClasses.length)];
-                currentPlayer.class = randomClass;
-                console.log(`${currentPlayer.name} отримав новий клас: ${randomClass.name}`);
-                
-                // Повідомляємо всіх гравців про реінкарнацію
-                io.to(room.id).emit('player_reincarnated', {
-                    playerId: currentPlayer.id,
-                    playerName: currentPlayer.name,
-                    oldEpoch: oldEpoch,
-                    newEpoch: newEpoch,
-                    newClass: randomClass,
-                    bonusPoints: 50,
-                    message: `${currentPlayer.name} завершив епоху ${oldEpoch} і реінкарнувався в епоху ${newEpoch} як ${randomClass.name}! +50 ОО.`
-                });
-            } else {
-                console.log(`Немає доступних класів для епохи ${newEpoch}`);
+            // ЗАМІНИТИ СТАРУ ЛОГІКУ ВИБОРУ КЛАСУ НА ЦЮ:
+            
+            // 1. Збираємо класи, які вже зайняті в новій епосі
+            const occupiedClassesInNewEpoch = room.gameData.players
+                .filter(p => p.id !== currentPlayer.id && getEpochForPosition(p.position) === newEpoch)
+                .map(p => p.class.id);
+
+            // 2. Створюємо лічильник класів
+            const classCounts = {};
+            for (const classId of occupiedClassesInNewEpoch) {
+                classCounts[classId] = (classCounts[classId] || 0) + 1;
             }
+
+            // 3. Визначаємо, які класи доступні
+            let availableClassPool = availableClasses.filter(cls => {
+                const count = classCounts[cls.id] || 0;
+                if (room.gameData.players.length <= 3) {
+                    return count < 1; // Якщо гравців мало, класи не повторюються
+                } else {
+                    return count < 2; // Якщо багато, можуть повторюватися до 2 разів
+                }
+            });
+
+            // Якщо всі класи зайняті, дозволяємо будь-який
+            if (availableClassPool.length === 0) {
+                availableClassPool = availableClasses;
+            }
+
+            // 4. Присвоюємо випадковий клас з доступних
+            currentPlayer.class = availableClassPool[Math.floor(Math.random() * availableClassPool.length)];
+            
+            console.log(`${currentPlayer.name} отримав новий клас: ${currentPlayer.class.name}`);
+            
+            // Повідомлення про зміну класу
+            io.to(room.id).emit('chat_message', { type: 'system', message: `${currentPlayer.name} реінкарнував і став ${currentPlayer.class.name}!` });
         }
         
         // Повідомляємо всіх про кидання кубика та нову позицію
@@ -472,7 +486,8 @@ io.on('connection', (socket) => {
                 io.to(room.id).emit('start_timed_text_quest', {
                     gameState: room.timedTextQuestState,
                     player1: { id: player.id, name: player.name },
-                    player2: { id: opponent.id, name: opponent.name }
+                    player2: { id: opponent.id, name: opponent.name },
+                    activePlayerId: player.id
                 });
 
             } else if (data.eventType === 'creative-quest') {
@@ -498,31 +513,27 @@ io.on('connection', (socket) => {
                     const firstPlayer = room.collaborativeStoryState.players[0];
                     io.to(room.id).emit('collaborative_story_start', {
                         gameState: room.collaborativeStoryState,
-                        currentPlayer: firstPlayer
+                        currentPlayer: firstPlayer,
+                        activePlayerId: firstPlayer.id
                     });
                     
                 } else {
-                    // Великий Педагогічний / Я у мами педагог - один пише, інші голосують
+                    // Великий Педагогічний / Я у мами педагог - всі пишуть, потім голосують
                     room.creativeWritingState = {
                         gameType: randomGameKey,
                         gameData: selectedGame,
-                        activePlayer: player.id,
-                        activePlayerName: player.name,
                         timer: selectedGame.timer,
                         gameActive: true,
                         submissions: [],
-                        votes: {}
+                        votes: {},
+                        players: room.gameData.players.map(p => ({ id: p.id, name: p.name }))
                     };
                     
-                    // Відправляємо активному гравцю завдання
-                    io.to(player.id).emit('creative_task_input', {
-                        gameState: room.creativeWritingState
-                    });
-                    
-                    // Відправляємо іншим гравцям інформацію про очікування
-                    socket.to(room.id).emit('creative_writing_waiting', {
-                        activePlayer: player.name,
-                        gameType: randomGameKey
+                    // Відправляємо всім гравцям завдання
+                    io.to(room.id).emit('start_creative_submission', {
+                        gameState: room.creativeWritingState,
+                        task: selectedGame.description,
+                        timer: selectedGame.timer
                     });
                 }
 
@@ -543,7 +554,8 @@ io.on('connection', (socket) => {
                 io.to(firstPlayer.id).emit('mad_libs_question', {
                     question: firstQuestion,
                     playerIndex: 0,
-                    gameState: room.madLibsState
+                    gameState: room.madLibsState,
+                    activePlayerId: firstPlayer.id
                 });
 
             } else if (data.eventType === 'webnovella-quest') {
@@ -557,7 +569,8 @@ io.on('connection', (socket) => {
                 // Відправляємо першу подію
                 io.to(player.id).emit('webnovella_event', {
                     event: webNovella['start_event_1'],
-                    gameState: room.webNovellaState
+                    gameState: room.webNovellaState,
+                    activePlayerId: player.id
                 });
 
             } else {
@@ -598,7 +611,7 @@ io.on('connection', (socket) => {
             if (data.choice === 'yes') {
                 // Переміщуємо гравця на цільову позицію
                 player.position = data.targetPosition;
-                player.points -= data.cost;
+                player.points = Math.max(0, player.points - data.cost);
                 resultMessage = `${player.name} скористався порталом! Переміщено на клітинку ${data.targetPosition}, втрачено ${data.cost} ОО.`;
             } else {
                 resultMessage = `${player.name} відмовився від порталу.`;
@@ -615,9 +628,15 @@ io.on('connection', (socket) => {
             }
         } else if (data.eventType === 'alternative-path') {
             if (data.choice === 'yes') {
+                // Перевіряємо, чи вистачає очок
+                if (player.points < data.eventData.cost) {
+                    socket.emit('error_message', 'Вам не вистачає очок, щоб скоротити шлях!');
+                    return; // Зупиняємо виконання
+                }
+                
                 // Переміщуємо гравця на цільову позицію
                 player.position = data.eventData.target;
-                player.points -= data.eventData.cost;
+                player.points = Math.max(0, player.points - data.eventData.cost);
                 resultMessage = `${player.name} скористався обхідною дорогою! Переміщено на клітинку ${data.eventData.target}, втрачено ${data.eventData.cost} ОО.`;
             } else {
                 resultMessage = `${player.name} відмовився від обхідної дороги.`;
@@ -637,6 +656,9 @@ io.on('connection', (socket) => {
             newPosition: player.position,
             newPoints: player.points
         });
+        
+        // Відправляємо оновлений стан гри всім гравцям
+        io.to(room.id).emit('game_state_update', room.gameData);
         
         console.log('Відправлено результат події всім гравцям');
         
@@ -998,6 +1020,34 @@ io.on('connection', (socket) => {
         });
     });
 
+    // Обробляємо відправку творчої роботи (всі гравці пишуть)
+    socket.on('submit_creative_entry', (data) => {
+        console.log('Отримано творчу роботу:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+
+        const room = rooms.get(data.roomId);
+        if (!room || !room.creativeWritingState) return;
+
+        // Зберігаємо відповідь
+        room.creativeWritingState.submissions.push({
+            text: data.text,
+            playerName: player.name,
+            playerId: player.id
+        });
+
+        console.log(`Гравець ${player.name} відправив творчу роботу. Всього: ${room.creativeWritingState.submissions.length}/${room.gameData.players.length}`);
+
+        // Перевіряємо, чи всі гравці відправили роботи
+        if (room.creativeWritingState.submissions.length >= room.gameData.players.length) {
+            // Всі відправили, починаємо голосування
+            io.to(room.id).emit('start_voting', {
+                submissions: room.creativeWritingState.submissions,
+                gameState: room.creativeWritingState
+            });
+        }
+    });
+
     // Обробляємо голосування в творчій грі
     socket.on('creative_vote', (data) => {
         console.log('Отримано голос:', data);
@@ -1071,7 +1121,8 @@ io.on('connection', (socket) => {
             io.to(nextPlayer.id).emit('mad_libs_question', {
                 question: question,
                 playerIndex: room.madLibsState.currentPlayerIndex,
-                gameState: room.madLibsState
+                gameState: room.madLibsState,
+                activePlayerId: nextPlayer.id
             });
         } else {
             // Всі відповіли, формуємо фінальну історію
@@ -1114,13 +1165,15 @@ io.on('connection', (socket) => {
                 
                 io.to(player.id).emit('webnovella_event', {
                     event: consequenceEvent,
-                    gameState: room.webNovellaState
+                    gameState: room.webNovellaState,
+                    activePlayerId: player.id
                 });
             } else {
                 // Звичайна подія
                 io.to(player.id).emit('webnovella_event', {
                     event: nextEvent,
-                    gameState: room.webNovellaState
+                    gameState: room.webNovellaState,
+                    activePlayerId: player.id
                 });
             }
         } else {

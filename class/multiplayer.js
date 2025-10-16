@@ -289,31 +289,6 @@ class MultiplayerGame extends EducationalPathGame {
                     this.handleRemoteQuest(data);
                 });
 
-                // Обробники міні-ігор
-                this.socket.on('tic_tac_toe_start', (data) => {
-                    console.log('Початок гри в хрестики-нулики:', data);
-                    this.showTicTacToeGame(data);
-                });
-
-                this.socket.on('tic_tac_toe_update', (data) => {
-                    console.log('Оновлення гри в хрестики-нулики:', data);
-                    this.updateTicTacToeGame(data);
-                });
-
-                this.socket.on('tic_tac_toe_end', (data) => {
-                    console.log('Кінець гри в хрестики-нулики:', data);
-                    this.endTicTacToeGame(data);
-                });
-
-                this.socket.on('quiz_start', (data) => {
-                    console.log('Початок вікторини:', data);
-                    this.showQuiz(data);
-                });
-
-                this.socket.on('quiz_end', (data) => {
-                    console.log('Кінець вікторини:', data);
-                    this.endQuiz(data);
-                });
                 
                 // Обмін місцями
                 this.socket.on('positions_swapped', (data) => {
@@ -334,6 +309,92 @@ class MultiplayerGame extends EducationalPathGame {
                         this.updatePawnPosition(player2);
                     }
                 });
+
+                // Нові міні-ігри
+                this.socket.on('start_timed_text_quest', (data) => {
+                    console.log('Початок PvP гри на швидкість:', data);
+                    this.showTimedTextQuest(data);
+                });
+
+                this.socket.on('timed_text_quest_end', (data) => {
+                    console.log('Кінець PvP гри на швидкість:', data);
+                    this.endTimedTextQuest(data);
+                });
+
+                this.socket.on('collaborative_story_start', (data) => {
+                    console.log('Початок спільної історії:', data);
+                    this.showCollaborativeStory(data);
+                });
+
+                this.socket.on('collaborative_story_update', (data) => {
+                    console.log('Оновлення спільної історії:', data);
+                    this.updateCollaborativeStory(data);
+                });
+
+                this.socket.on('collaborative_story_end', (data) => {
+                    console.log('Кінець спільної історії:', data);
+                    this.endCollaborativeStory(data);
+                });
+
+                this.socket.on('creative_task_input', (data) => {
+                    console.log('Творче завдання:', data);
+                    this.showCreativeTaskInput(data);
+                });
+
+                this.socket.on('creative_writing_waiting', (data) => {
+                    console.log('Очікування творчого завдання:', data);
+                    this.showCreativeWritingWaiting(data);
+                });
+
+                this.socket.on('start_voting', (data) => {
+                    console.log('Початок голосування:', data);
+                    this.showVoting(data);
+                });
+
+                this.socket.on('creative_voting_end', (data) => {
+                    console.log('Кінець голосування:', data);
+                    this.endCreativeVoting(data);
+                });
+
+                this.socket.on('mad_libs_question', (data) => {
+                    console.log('Питання для "Хто, де, коли?":', data);
+                    this.showMadLibsQuestion(data);
+                });
+
+                this.socket.on('mad_libs_result', (data) => {
+                    console.log('Результат "Хто, де, коли?":', data);
+                    this.showMadLibsResult(data);
+                });
+
+                this.socket.on('webnovella_event', (data) => {
+                    console.log('Подія вебновели:', data);
+                    this.showWebNovellaEvent(data);
+                });
+
+                this.socket.on('webnovella_end', (data) => {
+                    console.log('Кінець вебновели:', data);
+                    this.endWebNovella(data);
+                });
+        
+        // Реінкарнація гравця
+        this.socket.on('player_reincarnated', (data) => {
+            console.log('Реінкарнація гравця:', data);
+            this.logMessage(data.message, 'reincarnation');
+            
+            // Знаходимо гравця в локальному масиві
+            const player = this.players.find(p => p.id === data.playerId);
+            if (player) {
+                // Оновлюємо клас гравця та очки
+                player.class = data.newClass;
+                player.points += data.bonusPoints;
+                
+                // Оновлюємо інформацію про гравця
+                this.updatePlayerInfo();
+                this.updateLeaderboard();
+                
+                console.log(`${player.name} реінкарнувався в епоху ${data.newEpoch} як ${data.newClass.name}`);
+            }
+        });
         
         this.socket.on('quest_vote', (data) => {
             this.handleQuestVote(data);
@@ -1100,185 +1161,6 @@ class MultiplayerGame extends EducationalPathGame {
         this.updateLeaderboard();
     }
 
-    // Міні-ігри
-    showTicTacToeGame(data) {
-        const isPlayer1 = data.player1.id === this.playerId;
-        const isPlayer2 = data.player2.id === this.playerId;
-        const isParticipant = isPlayer1 || isPlayer2;
-        const isMyTurn = data.gameState.turn === this.playerId;
-
-        let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Хрестики-нулики!</h3>
-            <p class="mb-4">${data.player1.name} проти ${data.player2.name}</p>
-            <div class="tic-tac-toe-board grid grid-cols-3 gap-2 mb-4">
-        `;
-
-        for (let i = 0; i < 9; i++) {
-            const symbol = data.gameState.board[i] || '';
-            const isClickable = isParticipant && isMyTurn && !symbol;
-            const clickHandler = isClickable ? `onclick="game.makeTicTacToeMove(${i})"` : '';
-            const cursorClass = isClickable ? 'cursor-pointer hover:bg-gray-200' : 'cursor-not-allowed';
-            
-            modalContent += `
-                <div class="w-16 h-16 border-2 border-gray-400 flex items-center justify-center text-2xl font-bold ${cursorClass}" ${clickHandler}>
-                    ${symbol}
-                </div>
-            `;
-        }
-
-        modalContent += `
-            </div>
-            <p class="text-center">
-                ${isParticipant ? (isMyTurn ? 'Ваш хід!' : 'Хід опонента...') : 'Спостерігайте за грою'}
-            </p>
-        `;
-
-        this.showQuestModal('ПВП-квест', modalContent, []);
-    }
-
-    updateTicTacToeGame(data) {
-        const isMyTurn = data.gameState.turn === this.playerId;
-        const isParticipant = data.gameState.players.includes(this.playerId);
-
-        let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Хрестики-нулики!</h3>
-            <div class="tic-tac-toe-board grid grid-cols-3 gap-2 mb-4">
-        `;
-
-        for (let i = 0; i < 9; i++) {
-            const symbol = data.gameState.board[i] || '';
-            const isClickable = isParticipant && isMyTurn && !symbol;
-            const clickHandler = isClickable ? `onclick="game.makeTicTacToeMove(${i})"` : '';
-            const cursorClass = isClickable ? 'cursor-pointer hover:bg-gray-200' : 'cursor-not-allowed';
-            
-            modalContent += `
-                <div class="w-16 h-16 border-2 border-gray-400 flex items-center justify-center text-2xl font-bold ${cursorClass}" ${clickHandler}>
-                    ${symbol}
-                </div>
-            `;
-        }
-
-        modalContent += `
-            </div>
-            <p class="text-center">
-                ${isParticipant ? (isMyTurn ? 'Ваш хід!' : 'Хід опонента...') : 'Спостерігайте за грою'}
-            </p>
-        `;
-
-        this.showQuestModal('ПВП-квест', modalContent, []);
-    }
-
-    endTicTacToeGame(data) {
-        let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Хрестики-нулики завершено!</h3>
-            <div class="tic-tac-toe-board grid grid-cols-3 gap-2 mb-4">
-        `;
-
-        for (let i = 0; i < 9; i++) {
-            const symbol = data.gameState.board[i] || '';
-            modalContent += `
-                <div class="w-16 h-16 border-2 border-gray-400 flex items-center justify-center text-2xl font-bold">
-                    ${symbol}
-                </div>
-            `;
-        }
-
-        modalContent += `</div>`;
-
-        if (data.winner) {
-            modalContent += `<p class="text-center text-green-600 font-bold mb-4">Переможець: ${data.winnerName}!</p>`;
-            
-            if (data.winner === this.playerId) {
-                modalContent += `<p class="text-center mb-4">Ви можете обмінятися місцями з будь-яким гравцем!</p>`;
-                
-                const buttons = this.players
-                    .filter(p => p.id !== this.playerId)
-                    .map(p => ({
-                        text: `Обмінятися з ${p.name}`,
-                        callback: () => this.swapPositions(p.id)
-                    }));
-                
-                buttons.push({ text: 'Не обмінюватися', callback: () => this.closeMiniGame() });
-                
-                this.showQuestModal('ПВП-квест', modalContent, buttons);
-            } else {
-                this.showQuestModal('ПВП-квест', modalContent, [
-                    { text: 'Закрити', callback: () => this.closeMiniGame() }
-                ]);
-            }
-        } else {
-            modalContent += `<p class="text-center text-gray-600 font-bold mb-4">Нічия!</p>`;
-            this.showQuestModal('ПВП-квест', modalContent, [
-                { text: 'Закрити', callback: () => this.closeMiniGame() }
-            ]);
-        }
-    }
-
-    makeTicTacToeMove(cellIndex) {
-        this.socket.emit('tic_tac_toe_move', {
-            roomId: this.roomId,
-            cellIndex: cellIndex
-        });
-    }
-
-    showQuiz(data) {
-        const isMyQuiz = data.activePlayerId === this.playerId;
-        
-        let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Вікторина!</h3>
-            <p class="mb-4">${data.activePlayerName} відповідає на питання</p>
-            <div class="quiz-question mb-4">
-                <p class="text-lg font-semibold mb-4">${data.question.question}</p>
-                <div class="quiz-options space-y-2">
-        `;
-
-        data.question.options.forEach((option, index) => {
-            const isClickable = isMyQuiz;
-            const clickHandler = isClickable ? `onclick="game.answerQuiz(${index})"` : '';
-            const cursorClass = isClickable ? 'cursor-pointer hover:bg-gray-200' : 'cursor-not-allowed';
-            
-            modalContent += `
-                <div class="p-3 border-2 border-gray-400 rounded ${cursorClass}" ${clickHandler}>
-                    ${String.fromCharCode(65 + index)}. ${option}
-                </div>
-            `;
-        });
-
-        modalContent += `
-                </div>
-            </div>
-            <p class="text-center">
-                ${isMyQuiz ? 'Оберіть відповідь!' : 'Очікуйте відповіді...'}
-            </p>
-        `;
-
-        this.showQuestModal('Вікторина', modalContent, []);
-    }
-
-    endQuiz(data) {
-        let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Вікторина завершена!</h3>
-            <p class="mb-4">${data.resultMessage}</p>
-        `;
-
-        if (data.wasCorrect) {
-            modalContent += `<p class="text-center text-green-600 font-bold">Правильно! +${data.pointsChange} ОО</p>`;
-        } else {
-            modalContent += `<p class="text-center text-red-600 font-bold">Неправильно! ${data.pointsChange} ОО</p>`;
-        }
-
-        this.showQuestModal('Вікторина', modalContent, [
-            { text: 'Закрити', callback: () => this.closeMiniGame() }
-        ]);
-    }
-
-    answerQuiz(answerIndex) {
-        this.socket.emit('quiz_answer', {
-            roomId: this.roomId,
-            answer: answerIndex
-            // Видаляємо correctAnswer - сервер сам знає правильну відповідь
-        });
-    }
 
     swapPositions(targetPlayerId) {
         // Відправляємо запит на обмін місцями на сервер
@@ -1539,6 +1421,508 @@ class MultiplayerGame extends EducationalPathGame {
         } else {
             console.error('window.gameUI не знайдено');
         }
+    }
+    
+    // Нові міні-ігри
+    showTimedTextQuest(data) {
+        const isParticipant = data.gameState.players.includes(this.playerId);
+        const gameData = data.gameState.gameData;
+        
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">${gameData.name}!</h3>
+            <p class="mb-4">${gameData.description}</p>
+            <p class="mb-4">${data.player1.name} проти ${data.player2.name}</p>
+        `;
+        
+        if (isParticipant) {
+            modalContent += `
+                <div class="mb-4">
+                    <textarea id="text-input" class="w-full h-32 p-3 border-2 border-gray-400 rounded" placeholder="Введіть якомога більше слів..."></textarea>
+                </div>
+                <div class="mb-4">
+                    <div id="timer" class="text-2xl font-bold text-red-500">${data.gameState.timer}</div>
+                </div>
+                <button id="submit-result-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" disabled>
+                    Відправити результат
+                </button>
+            `;
+        } else {
+            modalContent += `
+                <p class="text-center text-gray-600">Спостерігайте за грою</p>
+            `;
+        }
+        
+        this.showQuestModal('PvP-квест', modalContent, []);
+        
+        if (isParticipant) {
+            this.startTimedTextQuestTimer(data.gameState.timer);
+        }
+    }
+    
+    startTimedTextQuestTimer(seconds) {
+        const timerElement = document.getElementById('timer');
+        const submitBtn = document.getElementById('submit-result-btn');
+        const textInput = document.getElementById('text-input');
+        
+        let timeLeft = seconds;
+        
+        const timer = setInterval(() => {
+            timerElement.textContent = timeLeft;
+            timeLeft--;
+            
+            if (timeLeft < 0) {
+                clearInterval(timer);
+                submitBtn.disabled = false;
+                textInput.disabled = true;
+                submitBtn.textContent = 'Відправити результат';
+                
+                // Автоматично відправляємо результат
+                this.submitTimedTextResult();
+            }
+        }, 1000);
+    }
+    
+    submitTimedTextResult() {
+        const textInput = document.getElementById('text-input');
+        const text = textInput.value.trim();
+        const wordsCount = text.split(/\s+/).filter(word => word.length > 0).length;
+        
+        this.socket.emit('timed_text_quest_result', {
+            roomId: this.roomId,
+            wordsCount: wordsCount
+        });
+    }
+    
+    endTimedTextQuest(data) {
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">PvP-квест завершено!</h3>
+            <p class="mb-4">${data.resultMessage}</p>
+            <div class="mb-4">
+                <h4 class="font-bold">Результати:</h4>
+        `;
+        
+        Object.values(data.results).forEach(result => {
+            modalContent += `<p>${result.playerName}: ${result.wordsCount} слів</p>`;
+        });
+        
+        modalContent += `</div>`;
+        
+        if (data.winner === this.playerId) {
+            modalContent += `<p class="text-center mb-4">Ви можете обмінятися місцями з будь-яким гравцем!</p>`;
+            
+            const buttons = this.players
+                .filter(p => p.id !== this.playerId)
+                .map(p => ({
+                    text: `Обмінятися з ${p.name}`,
+                    callback: () => this.swapPositions(p.id)
+                }));
+            
+            buttons.push({ text: 'Не обмінюватися', callback: () => this.closeMiniGame() });
+            
+            this.showQuestModal('PvP-квест', modalContent, buttons);
+        } else {
+            this.showQuestModal('PvP-квест', modalContent, [
+                { text: 'Закрити', callback: () => this.closeMiniGame() }
+            ]);
+        }
+    }
+    
+    showCollaborativeStory(data) {
+        const isMyTurn = data.currentPlayer.id === this.playerId;
+        
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Хроніки Неіснуючого Вояжу</h3>
+            <p class="mb-4">${data.gameState.gameData.description}</p>
+            <div class="mb-4">
+                <h4 class="font-bold">Історія:</h4>
+                <div id="story-content" class="bg-gray-100 p-3 rounded min-h-20">
+                    ${data.gameState.story.map(s => `<p>${s.playerName}: ${s.sentence}</p>`).join('')}
+                </div>
+            </div>
+        `;
+        
+        if (isMyTurn) {
+            modalContent += `
+                <div class="mb-4">
+                    <textarea id="sentence-input" class="w-full h-20 p-3 border-2 border-gray-400 rounded" placeholder="Додайте речення до історії..."></textarea>
+                </div>
+                <div class="mb-4">
+                    <div id="story-timer" class="text-xl font-bold text-red-500">${data.gameState.timer}</div>
+                </div>
+                <div class="flex gap-2">
+                    <button id="submit-sentence-btn" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                        Додати речення
+                    </button>
+                    <button id="skip-turn-btn" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                        Пропустити хід
+                    </button>
+                </div>
+            `;
+        } else {
+            modalContent += `
+                <p class="text-center text-gray-600">Черга гравця ${data.currentPlayer.name}</p>
+            `;
+        }
+        
+        this.showQuestModal('Творчий квест', modalContent, []);
+        
+        if (isMyTurn) {
+            this.startStoryTimer(data.gameState.timer);
+        }
+    }
+    
+    startStoryTimer(seconds) {
+        const timerElement = document.getElementById('story-timer');
+        let timeLeft = seconds;
+        
+        const timer = setInterval(() => {
+            timerElement.textContent = timeLeft;
+            timeLeft--;
+            
+            if (timeLeft < 0) {
+                clearInterval(timer);
+                // Автоматично пропускаємо хід
+                this.skipStoryTurn();
+            }
+        }, 1000);
+        
+        // Додаємо обробники кнопок
+        setTimeout(() => {
+            const submitBtn = document.getElementById('submit-sentence-btn');
+            const skipBtn = document.getElementById('skip-turn-btn');
+            
+            if (submitBtn) {
+                submitBtn.addEventListener('click', () => this.submitStorySentence());
+            }
+            
+            if (skipBtn) {
+                skipBtn.addEventListener('click', () => this.skipStoryTurn());
+            }
+        }, 100);
+    }
+    
+    submitStorySentence() {
+        const sentenceInput = document.getElementById('sentence-input');
+        const sentence = sentenceInput.value.trim();
+        
+        if (sentence) {
+            this.socket.emit('collaborative_story_sentence', {
+                roomId: this.roomId,
+                sentence: sentence
+            });
+        }
+    }
+    
+    skipStoryTurn() {
+        this.socket.emit('collaborative_story_skip', {
+            roomId: this.roomId
+        });
+    }
+    
+    updateCollaborativeStory(data) {
+        const isMyTurn = data.currentPlayer.id === this.playerId;
+        
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Хроніки Неіснуючого Вояжу</h3>
+            <div class="mb-4">
+                <h4 class="font-bold">Історія:</h4>
+                <div id="story-content" class="bg-gray-100 p-3 rounded min-h-20">
+                    ${data.gameState.story.map(s => `<p>${s.playerName}: ${s.sentence}</p>`).join('')}
+                </div>
+            </div>
+        `;
+        
+        if (isMyTurn) {
+            modalContent += `
+                <div class="mb-4">
+                    <textarea id="sentence-input" class="w-full h-20 p-3 border-2 border-gray-400 rounded" placeholder="Додайте речення до історії..."></textarea>
+                </div>
+                <div class="mb-4">
+                    <div id="story-timer" class="text-xl font-bold text-red-500">${data.gameState.timer}</div>
+                </div>
+                <div class="flex gap-2">
+                    <button id="submit-sentence-btn" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                        Додати речення
+                    </button>
+                    <button id="skip-turn-btn" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                        Пропустити хід
+                    </button>
+                </div>
+            `;
+        } else {
+            modalContent += `
+                <p class="text-center text-gray-600">Черга гравця ${data.currentPlayer.name}</p>
+            `;
+        }
+        
+        this.showQuestModal('Творчий квест', modalContent, []);
+        
+        if (isMyTurn) {
+            this.startStoryTimer(data.gameState.timer);
+        }
+    }
+    
+    endCollaborativeStory(data) {
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Хроніки Неіснуючого Вояжу завершено!</h3>
+            <p class="mb-4">${data.resultMessage}</p>
+            <div class="mb-4">
+                <h4 class="font-bold">Фінальна історія:</h4>
+                <div class="bg-gray-100 p-3 rounded">
+                    ${data.story.map(s => `<p>${s.playerName}: ${s.sentence}</p>`).join('')}
+                </div>
+            </div>
+        `;
+        
+        this.showQuestModal('Творчий квест', modalContent, [
+            { text: 'Закрити', callback: () => this.closeMiniGame() }
+        ]);
+    }
+    
+    showCreativeTaskInput(data) {
+        const isActivePlayer = data.gameState.activePlayer === this.playerId;
+        
+        if (isActivePlayer) {
+            let modalContent = `
+                <h3 class="text-2xl font-bold mb-4">${data.gameState.gameData.name}</h3>
+                <p class="mb-4">${data.gameState.gameData.description}</p>
+                <div class="mb-4">
+                    <div id="creative-timer" class="text-xl font-bold text-red-500">${data.gameState.timer}</div>
+                </div>
+                <div class="mb-4">
+                    <textarea id="creative-input" class="w-full h-32 p-3 border-2 border-gray-400 rounded" placeholder="Введіть вашу відповідь..."></textarea>
+                </div>
+                <button id="submit-creative-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                    Відправити
+                </button>
+            `;
+            
+            this.showQuestModal('Творчий квест', modalContent, []);
+            this.startCreativeTimer(data.gameState.timer);
+        }
+    }
+    
+    startCreativeTimer(seconds) {
+        const timerElement = document.getElementById('creative-timer');
+        let timeLeft = seconds;
+        
+        const timer = setInterval(() => {
+            timerElement.textContent = timeLeft;
+            timeLeft--;
+            
+            if (timeLeft < 0) {
+                clearInterval(timer);
+                // Автоматично відправляємо результат
+                this.submitCreativeTask();
+            }
+        }, 1000);
+        
+        // Додаємо обробник кнопки
+        setTimeout(() => {
+            const submitBtn = document.getElementById('submit-creative-btn');
+            if (submitBtn) {
+                submitBtn.addEventListener('click', () => this.submitCreativeTask());
+            }
+        }, 100);
+    }
+    
+    submitCreativeTask() {
+        const creativeInput = document.getElementById('creative-input');
+        const text = creativeInput.value.trim();
+        
+        if (text) {
+            this.socket.emit('creative_task_submission', {
+                roomId: this.roomId,
+                text: text
+            });
+        }
+    }
+    
+    showCreativeWritingWaiting(data) {
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Творчий квест</h3>
+            <p class="mb-4">${data.activePlayer} пише творче завдання...</p>
+            <p class="text-center text-gray-600">Очікуйте завершення</p>
+        `;
+        
+        this.showQuestModal('Творчий квест', modalContent, []);
+    }
+    
+    showVoting(data) {
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Голосування</h3>
+            <p class="mb-4">Оберіть найкращий варіант:</p>
+            <div class="space-y-2 mb-4">
+        `;
+        
+        data.submissions.forEach((submission, index) => {
+            modalContent += `
+                <div class="p-3 border-2 border-gray-400 rounded cursor-pointer hover:bg-gray-200" onclick="game.voteForCreative(${index})">
+                    <p class="font-bold">${submission.playerName}:</p>
+                    <p>${submission.text}</p>
+                </div>
+            `;
+        });
+        
+        modalContent += `
+            </div>
+            <p class="text-center text-gray-600">Оберіть варіант вище</p>
+        `;
+        
+        this.showQuestModal('Голосування', modalContent, []);
+    }
+    
+    voteForCreative(submissionIndex) {
+        this.socket.emit('creative_vote', {
+            roomId: this.roomId,
+            submissionIndex: submissionIndex
+        });
+    }
+    
+    endCreativeVoting(data) {
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Голосування завершено!</h3>
+            <p class="mb-4">${data.resultMessage}</p>
+            <div class="mb-4">
+                <h4 class="font-bold">Переможець:</h4>
+                <div class="p-3 bg-green-100 rounded">
+                    <p class="font-bold">${data.winner.playerName}:</p>
+                    <p>${data.winner.text}</p>
+                </div>
+            </div>
+        `;
+        
+        this.showQuestModal('Голосування', modalContent, [
+            { text: 'Закрити', callback: () => this.closeMiniGame() }
+        ]);
+    }
+    
+    showMadLibsQuestion(data) {
+        const isMyTurn = data.playerIndex === this.players.findIndex(p => p.id === this.playerId);
+        
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Хто, де, коли?</h3>
+            <p class="mb-4">Питання: <strong>${data.question}</strong></p>
+        `;
+        
+        if (isMyTurn) {
+            modalContent += `
+                <div class="mb-4">
+                    <input id="mad-libs-answer" type="text" class="w-full p-3 border-2 border-gray-400 rounded" placeholder="Ваша відповідь...">
+                </div>
+                <button id="submit-mad-libs-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                    Відправити
+                </button>
+            `;
+        } else {
+            modalContent += `
+                <p class="text-center text-gray-600">Очікуйте відповіді інших гравців</p>
+            `;
+        }
+        
+        this.showQuestModal('Хто, де, коли?', modalContent, []);
+        
+        if (isMyTurn) {
+            // Додаємо обробник кнопки
+            setTimeout(() => {
+                const submitBtn = document.getElementById('submit-mad-libs-btn');
+                const answerInput = document.getElementById('mad-libs-answer');
+                
+                if (submitBtn) {
+                    submitBtn.addEventListener('click', () => this.submitMadLibsAnswer());
+                }
+                
+                if (answerInput) {
+                    answerInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') this.submitMadLibsAnswer();
+                    });
+                }
+            }, 100);
+        }
+    }
+    
+    submitMadLibsAnswer() {
+        const answerInput = document.getElementById('mad-libs-answer');
+        const answer = answerInput.value.trim();
+        
+        if (answer) {
+            this.socket.emit('mad_libs_answer', {
+                roomId: this.roomId,
+                answer: answer
+            });
+        }
+    }
+    
+    showMadLibsResult(data) {
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Хто, де, коли? завершено!</h3>
+            <p class="mb-4">${data.resultMessage}</p>
+            <div class="mb-4">
+                <h4 class="font-bold">Відповіді:</h4>
+                <div class="space-y-2">
+        `;
+        
+        data.answers.forEach((answer, index) => {
+            modalContent += `<p><strong>${answer.playerName}:</strong> ${answer.answer}</p>`;
+        });
+        
+        modalContent += `
+                </div>
+            </div>
+        `;
+        
+        this.showQuestModal('Хто, де, коли?', modalContent, [
+            { text: 'Закрити', callback: () => this.closeMiniGame() }
+        ]);
+    }
+    
+    showWebNovellaEvent(data) {
+        const isMyEvent = data.gameState.playerId === this.playerId;
+        
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Халепа!</h3>
+            <p class="mb-4">${data.event.text}</p>
+        `;
+        
+        if (data.event.choices && data.event.choices.length > 0 && isMyEvent) {
+            modalContent += `<div class="space-y-2">`;
+            data.event.choices.forEach((choice, index) => {
+                modalContent += `
+                    <button class="w-full p-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded" onclick="game.makeWebNovellaChoice(${index})">
+                        ${choice.text}
+                    </button>
+                `;
+            });
+            modalContent += `</div>`;
+        } else if (isMyEvent) {
+            modalContent += `
+                <button class="w-full p-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded" onclick="game.closeMiniGame()">
+                    Закрити
+                </button>
+            `;
+        } else {
+            modalContent += `<p class="text-center text-gray-600">Очікуйте вибору гравця</p>`;
+        }
+        
+        this.showQuestModal('Вебновела', modalContent, []);
+    }
+    
+    makeWebNovellaChoice(choiceIndex) {
+        this.socket.emit('webnovella_choice', {
+            roomId: this.roomId,
+            choiceIndex: choiceIndex
+        });
+    }
+    
+    endWebNovella(data) {
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Вебновела завершена!</h3>
+            <p class="mb-4">${data.resultMessage}</p>
+        `;
+        
+        this.showQuestModal('Вебновела', modalContent, [
+            { text: 'Закрити', callback: () => this.closeMiniGame() }
+        ]);
     }
 }
 

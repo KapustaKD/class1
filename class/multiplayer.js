@@ -13,6 +13,9 @@ class MultiplayerGame extends EducationalPathGame {
         this.setupMultiplayerElements();
         // Потім обробники подій мультиплеєра (перезаписують базові)
         this.setupMultiplayerEventListeners();
+        
+        // Перевіряємо збережену гру
+        this.checkForSavedGame();
     }
     
     setupMultiplayerElements() {
@@ -33,7 +36,7 @@ class MultiplayerGame extends EducationalPathGame {
         this.statusIndicator = document.getElementById('status-indicator');
         this.statusText = document.getElementById('status-text');
         
-        this.roomNameInput = document.getElementById('room-name');
+        this.customRoomCodeInput = document.getElementById('custom-room-code');
         this.playerNameInput = document.getElementById('player-name');
         this.createRoomBtn = document.getElementById('create-room-btn');
         
@@ -133,6 +136,44 @@ class MultiplayerGame extends EducationalPathGame {
         console.log('Обробники подій мультиплеєра налаштовано');
     }
     
+    checkForSavedGame() {
+        const savedGame = sessionStorage.getItem('activeGameRoom');
+        if (savedGame) {
+            try {
+                const gameData = JSON.parse(savedGame);
+                console.log('Знайдено збережену гру:', gameData);
+                
+                // Показуємо повідомлення про можливість перепідключення
+                if (confirm('Знайдено збережену гру. Перепідключитися?')) {
+                    this.reconnectToGame(gameData);
+                } else {
+                    // Видаляємо збережені дані
+                    sessionStorage.removeItem('activeGameRoom');
+                }
+            } catch (error) {
+                console.error('Помилка при читанні збереженої гри:', error);
+                sessionStorage.removeItem('activeGameRoom');
+            }
+        }
+    }
+    
+    reconnectToGame(gameData) {
+        console.log('Спроба перепідключення до гри:', gameData);
+        
+        // Підключаємося до сервера
+        this.connectToServer();
+        
+        // Відправляємо запит на перепідключення
+        setTimeout(() => {
+            if (this.socket && this.socket.connected) {
+                this.socket.emit('reconnect_player', {
+                    roomId: gameData.roomId,
+                    playerId: gameData.playerId
+                });
+            }
+        }, 1000);
+    }
+    
     startLocalMode() {
         console.log('Запускаємо локальний режим');
         this.isOnlineMode = false;
@@ -222,6 +263,12 @@ class MultiplayerGame extends EducationalPathGame {
             this.showRoomCode(data.roomId);
             this.logMessage(`Кімната "${data.roomName}" створена! Код: ${this.roomId}`, 'system');
             
+            // Зберігаємо стан гри
+            sessionStorage.setItem('activeGameRoom', JSON.stringify({ 
+                roomId: this.roomId, 
+                playerId: this.playerId 
+            }));
+            
             // Показуємо кнопку виходу
             this.leaveRoomBtn.classList.remove('hidden');
             
@@ -237,6 +284,12 @@ class MultiplayerGame extends EducationalPathGame {
             this.showChat();
             this.logMessage(`Приєднано до кімнати "${data.roomName}"`, 'system');
             
+            // Зберігаємо стан гри
+            sessionStorage.setItem('activeGameRoom', JSON.stringify({ 
+                roomId: this.roomId, 
+                playerId: this.playerId 
+            }));
+            
             // Показуємо кнопку виходу
             this.leaveRoomBtn.classList.remove('hidden');
         });
@@ -249,6 +302,10 @@ class MultiplayerGame extends EducationalPathGame {
         this.socket.on('player_left', (data) => {
             this.updatePlayersList(data.players);
             this.addChatMessage('system', `${data.player.name} покинув гру`);
+        });
+        
+        this.socket.on('player_reconnected', (data) => {
+            this.addChatMessage('system', `${data.playerName} повернувся до гри`);
         });
         
         this.socket.on('spectator_joined', (data) => {
@@ -490,19 +547,25 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     createRoom() {
-        const roomName = this.roomNameInput.value.trim();
+        const customRoomCode = this.customRoomCodeInput.value.trim();
         const playerName = this.playerNameInput.value.trim();
         
-        console.log('Створюємо кімнату:', { roomName, playerName });
+        console.log('Створюємо кімнату:', { customRoomCode, playerName });
         
-        if (!roomName || !playerName) {
+        if (!customRoomCode || !playerName) {
             alert('Будь ласка, заповніть всі поля');
+            return;
+        }
+        
+        // Перевіряємо, чи код містить тільки цифри
+        if (!/^\d+$/.test(customRoomCode)) {
+            alert('Код кімнати повинен містити тільки цифри');
             return;
         }
         
         console.log('Відправляємо подію create_room');
         this.socket.emit('create_room', {
-            roomName,
+            customRoomCode,
             playerName,
             playerId: this.playerId
         });

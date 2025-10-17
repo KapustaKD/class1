@@ -68,11 +68,10 @@ function generateRoomCode() {
 }
 
 // Створення кімнати
-function createRoom(roomName, hostPlayer) {
-    const roomId = generateRoomCode();
+function createRoom(customRoomCode, hostPlayer) {
     const room = {
-        id: roomId,
-        name: roomName,
+        id: customRoomCode,
+        name: `Кімната ${customRoomCode}`,
         players: [hostPlayer],
         spectators: [],
         gameState: 'waiting', // waiting, playing, finished
@@ -89,8 +88,8 @@ function createRoom(roomName, hostPlayer) {
         }
     };
     
-    rooms.set(roomId, room);
-    players.set(hostPlayer.id, { ...hostPlayer, roomId, isHost: true });
+    rooms.set(customRoomCode, room);
+    players.set(hostPlayer.id, { ...hostPlayer, roomId: customRoomCode, isHost: true });
     
     return room;
 }
@@ -158,7 +157,13 @@ io.on('connection', (socket) => {
                 moveModifier: 0
             };
             
-            const room = createRoom(data.roomName, player);
+            // Перевіряємо, чи кімната з таким кодом вже існує
+            if (rooms.has(data.customRoomCode)) {
+                socket.emit('error', { message: 'Кімната з таким кодом вже існує' });
+                return;
+            }
+            
+            const room = createRoom(data.customRoomCode, player);
             console.log('Кімната створена:', room.id);
             
             socket.join(room.id);
@@ -317,12 +322,12 @@ io.on('connection', (socket) => {
         console.log('Кубик показав:', roll, 'Рух:', move);
         
         // Межі епох для системи реінкарнації
-        const EPOCH_BOUNDARIES = [12, 22, 42, 75, 97];
+        const EPOCH_BOUNDARIES = [12, 22, 42, 75, 97, 101];
         
         // Нова логіка руху з перевіркою меж епох
         const oldPosition = currentPlayer.position;
         let finalPosition = oldPosition;
-        let crossedBoundary = false;
+        let stopMove = false;
         
         // Поступово переміщуємо гравця крок за кроком
         for (let i = 1; i <= move; i++) {
@@ -330,17 +335,19 @@ io.on('connection', (socket) => {
             if (EPOCH_BOUNDARIES.includes(nextStep)) {
                 // Гравець ступив на межу епохи
                 finalPosition = nextStep;
-                crossedBoundary = true;
-                break; // Зупиняємо рух
+                stopMove = true;
+                break; // Зупиняємо рух, ходи скасовуються
             }
         }
         
-        // Якщо межу не перетнули, просто ходимо
-        if (!crossedBoundary) {
-            finalPosition = Math.min(oldPosition + move, 124);
+        if (stopMove) {
+            currentPlayer.position = finalPosition;
+            // Тут ТРЕБА запустити логіку реінкарнації (показати модальне вікно)
+            // і НЕ передавати хід.
+        } else {
+            // Якщо межу не перетнули, просто ходимо
+            currentPlayer.position = Math.min(oldPosition + move, 101);
         }
-        
-        currentPlayer.position = finalPosition;
         
         console.log(`${currentPlayer.name} перемістився з позиції ${oldPosition} на позицію ${finalPosition}`);
         
@@ -348,8 +355,8 @@ io.on('connection', (socket) => {
         const oldEpoch = getEpochForPosition(oldPosition);
         const newEpoch = getEpochForPosition(finalPosition);
         
-        if (newEpoch > oldEpoch) {
-            console.log(`${currentPlayer.name} перейшов з епохи ${oldEpoch} в епоху ${newEpoch} - реінкарнація!`);
+        if (stopMove) {
+            console.log(`${currentPlayer.name} зупинився на межі епохи ${newEpoch} - реінкарнація!`);
             
             // Нараховуємо бонусні очки
             currentPlayer.points += 50;
@@ -423,8 +430,8 @@ io.on('connection', (socket) => {
         // Перевіряємо, чи є подія на новій позиції
         let hasEvent = false;
         
-        // Перевірка на реінкарнацію (перехід між епохами)
-        if (newEpoch > oldEpoch) {
+        // Перевірка на реінкарнацію (зупинка на межі епохи)
+        if (stopMove) {
             hasEvent = true;
             // Відправляємо подію реінкарнації тільки поточному гравцю
             socket.emit('show_event_prompt', {
@@ -685,7 +692,7 @@ io.on('connection', (socket) => {
             if (data.choice === 'yes') {
                 // Перевіряємо, чи вистачає очок
                 if (player.points < data.eventData.cost) {
-                    socket.emit('error_message', 'Вам не вистачає очок, щоб скоротити шлях!');
+                    socket.emit('error_message', 'Вам не вистачає очок!');
                     return; // Зупиняємо виконання
                 }
                 
@@ -1277,17 +1284,81 @@ io.on('connection', (socket) => {
         }
     });
     
+    // Перепідключення гравця
+    socket.on('reconnect_player', (data) => {
+        console.log('Спроба перепідключення гравця:', data);
+        
+        const room = rooms.get(data.roomId);
+        if (!room) {
+            socket.emit('error', { message: 'Кімната не знайдена' });
+            return;
+        }
+        
+        const player = room.gameData.players.find(p => p.id === data.playerId);
+        if (!player) {
+            socket.emit('error', { message: 'Гравець не знайдений' });
+            return;
+        }
+        
+        // Оновлюємо playerId гравця
+        player.id = socket.id;
+        players.set(socket.id, { ...player, roomId: data.roomId });
+        
+        // Приєднуємося до кімнати
+        socket.join(data.roomId);
+        
+        // Відправляємо повний стан гри
+        socket.emit('game_state_update', room.gameData);
+        
+        // Повідомляємо інших гравців про повернення
+        socket.to(data.roomId).emit('player_reconnected', {
+            playerId: socket.id,
+            playerName: player.name
+        });
+        
+        console.log(`Гравець ${player.name} перепідключився`);
+    });
+    
     // Відключення
     socket.on('disconnect', () => {
         console.log(`Користувач відключився: ${socket.id}`);
         
-        const room = leaveRoom(socket.id);
-        if (room) {
-            // Повідомляємо інших гравців
-            socket.to(room.id).emit('player_left', {
-                player: { id: socket.id },
-                players: room.players
-            });
+        const player = players.get(socket.id);
+        if (player) {
+            const room = rooms.get(player.roomId);
+            if (room && room.gameState === 'playing') {
+                // Не видаляємо гравця одразу, а лише помічаємо як disconnected
+                const gamePlayer = room.gameData.players.find(p => p.id === socket.id);
+                if (gamePlayer) {
+                    gamePlayer.disconnected = true;
+                    
+                    // Запускаємо таймер на 2 хвилини
+                    setTimeout(() => {
+                        if (gamePlayer.disconnected) {
+                            // Видаляємо гравця через 2 хвилини
+                            room.gameData.players = room.gameData.players.filter(p => p.id !== socket.id);
+                            players.delete(socket.id);
+                            
+                            // Повідомляємо інших гравців
+                            socket.to(room.id).emit('player_left', {
+                                player: { id: socket.id, name: gamePlayer.name },
+                                players: room.gameData.players
+                            });
+                            
+                            console.log(`Гравець ${gamePlayer.name} видалено через відсутність`);
+                        }
+                    }, 120000); // 2 хвилини
+                }
+            } else {
+                // Якщо гра не активна, видаляємо одразу
+                const room = leaveRoom(socket.id);
+                if (room) {
+                    socket.to(room.id).emit('player_left', {
+                        player: { id: socket.id },
+                        players: room.players
+                    });
+                }
+            }
         }
     });
 });

@@ -316,16 +316,37 @@ io.on('connection', (socket) => {
         
         console.log('Кубик показав:', roll, 'Рух:', move);
         
-        // Оновлюємо позицію гравця
-        const oldPosition = currentPlayer.position;
-        const newPosition = Math.min(currentPlayer.position + move, 124);
-        currentPlayer.position = newPosition;
+        // Межі епох для системи реінкарнації
+        const EPOCH_BOUNDARIES = [12, 22, 42, 75, 97];
         
-        console.log(`${currentPlayer.name} перемістився з позиції ${oldPosition} на позицію ${newPosition}`);
+        // Нова логіка руху з перевіркою меж епох
+        const oldPosition = currentPlayer.position;
+        let finalPosition = oldPosition;
+        let crossedBoundary = false;
+        
+        // Поступово переміщуємо гравця крок за кроком
+        for (let i = 1; i <= move; i++) {
+            const nextStep = oldPosition + i;
+            if (EPOCH_BOUNDARIES.includes(nextStep)) {
+                // Гравець ступив на межу епохи
+                finalPosition = nextStep;
+                crossedBoundary = true;
+                break; // Зупиняємо рух
+            }
+        }
+        
+        // Якщо межу не перетнули, просто ходимо
+        if (!crossedBoundary) {
+            finalPosition = Math.min(oldPosition + move, 124);
+        }
+        
+        currentPlayer.position = finalPosition;
+        
+        console.log(`${currentPlayer.name} перемістився з позиції ${oldPosition} на позицію ${finalPosition}`);
         
         // Перевіряємо зміну епохи (реінкарнація)
         const oldEpoch = getEpochForPosition(oldPosition);
-        const newEpoch = getEpochForPosition(newPosition);
+        const newEpoch = getEpochForPosition(finalPosition);
         
         if (newEpoch > oldEpoch) {
             console.log(`${currentPlayer.name} перейшов з епохи ${oldEpoch} в епоху ${newEpoch} - реінкарнація!`);
@@ -387,7 +408,7 @@ io.on('connection', (socket) => {
             playerId: currentPlayer.id,
             roll,
             move,
-            newPosition,
+            newPosition: finalPosition,
             newPoints: currentPlayer.points,
             newClass: currentPlayer.class,
             currentPlayerIndex: room.gameData.currentPlayerIndex
@@ -395,33 +416,65 @@ io.on('connection', (socket) => {
         
         console.log('Відправлено подію dice_result всім гравцям');
         
-        // Переходимо до наступного гравця
-        console.log('Старий currentPlayerIndex:', room.gameData.currentPlayerIndex);
-        room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
-        console.log('Новий currentPlayerIndex:', room.gameData.currentPlayerIndex);
+        // КРИТИЧНО: Перевіряємо події на новій позиції ПЕРЕД передачею ходу
+        // Тут має бути перевірка на події (реінкарнація, скорочення шляху тощо)
+        // Якщо є подія - НЕ передаємо хід, а відправляємо подію тільки поточному гравцю
         
-        // Пропускаємо гравців, які вибули
-        while (room.gameData.players[room.gameData.currentPlayerIndex].hasWon || 
-               room.gameData.players[room.gameData.currentPlayerIndex].hasLost) {
-            room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
-            console.log('Пропущено вибулого гравця, новий індекс:', room.gameData.currentPlayerIndex);
+        // Перевіряємо, чи є подія на новій позиції
+        let hasEvent = false;
+        
+        // Перевірка на реінкарнацію (перехід між епохами)
+        if (newEpoch > oldEpoch) {
+            hasEvent = true;
+            // Відправляємо подію реінкарнації тільки поточному гравцю
+            socket.emit('show_event_prompt', {
+                playerId: currentPlayer.id,
+                playerName: currentPlayer.name,
+                eventType: 'reincarnation',
+                eventData: {
+                    nextEpoch: newEpoch,
+                    points: 30
+                },
+                activePlayerId: currentPlayer.id
+            });
+            console.log(`Відправлено подію реінкарнації гравцю ${currentPlayer.name}`);
         }
         
-        // Повідомляємо всіх про зміну черги
-        const nextPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
-        console.log('Наступний гравець:', nextPlayer.name, 'ID:', nextPlayer.id);
+        // Перевірка на інші події (скорочення шляху тощо)
+        // Тут можна додати інші перевірки подій
         
-        io.to(room.id).emit('turn_update', {
-            currentPlayerIndex: room.gameData.currentPlayerIndex,
-            currentPlayerId: nextPlayer.id,
-            currentPlayerName: nextPlayer.name
-        });
-        
-        console.log('Відправлено подію turn_update всім гравцям:', {
-            currentPlayerIndex: room.gameData.currentPlayerIndex,
-            currentPlayerId: nextPlayer.id,
-            currentPlayerName: nextPlayer.name
-        });
+        // Якщо події немає, передаємо хід наступному гравцю
+        if (!hasEvent) {
+            // Переходимо до наступного гравця
+            console.log('Старий currentPlayerIndex:', room.gameData.currentPlayerIndex);
+            room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+            console.log('Новий currentPlayerIndex:', room.gameData.currentPlayerIndex);
+            
+            // Пропускаємо гравців, які вибули
+            while (room.gameData.players[room.gameData.currentPlayerIndex].hasWon || 
+                   room.gameData.players[room.gameData.currentPlayerIndex].hasLost) {
+                room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+                console.log('Пропущено вибулого гравця, новий індекс:', room.gameData.currentPlayerIndex);
+            }
+            
+            // Повідомляємо всіх про зміну черги
+            const nextPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+            console.log('Наступний гравець:', nextPlayer.name, 'ID:', nextPlayer.id);
+            
+            io.to(room.id).emit('turn_update', {
+                currentPlayerIndex: room.gameData.currentPlayerIndex,
+                currentPlayerId: nextPlayer.id,
+                currentPlayerName: nextPlayer.name
+            });
+            
+            console.log('Відправлено подію turn_update всім гравцям:', {
+                currentPlayerIndex: room.gameData.currentPlayerIndex,
+                currentPlayerId: nextPlayer.id,
+                currentPlayerName: nextPlayer.name
+            });
+        } else {
+            console.log(`Гравець ${currentPlayer.name} потрапив на подію, хід не передається`);
+        }
     });
     
         // Обробляємо подію гравця
@@ -618,11 +671,13 @@ io.on('connection', (socket) => {
             }
         } else if (data.eventType === 'reincarnation') {
             if (data.choice === 'yes') {
-                // Переміщуємо гравця на першу клітинку наступної епохи
-                const nextEpochStartCell = data.eventData.nextEpoch * 25 + 1;
-                player.position = nextEpochStartCell;
-                player.points += data.eventData.points;
-                resultMessage = `${player.name} завершив епоху! Перехід до наступної епохи, отримано ${data.eventData.points} ОО.`;
+                // Нараховуємо очки за реінкарнацію
+                player.points += 30;
+                
+                // Автоматично переміщуємо на наступну клітинку
+                player.position += 1;
+                
+                resultMessage = `${player.name} завершив епоху! Отримано 30 ОО та переміщено на наступну клітинку.`;
             } else {
                 resultMessage = `${player.name} відмовився від переходу між епохами.`;
             }
@@ -657,7 +712,7 @@ io.on('connection', (socket) => {
             newPoints: player.points
         });
         
-        // Відправляємо оновлений стан гри всім гравцям
+        // КРИТИЧНО: Відправляємо повний оновлений стан гри всім гравцям
         io.to(room.id).emit('game_state_update', room.gameData);
         
         console.log('Відправлено результат події всім гравцям');
@@ -680,6 +735,9 @@ io.on('connection', (socket) => {
                 currentPlayerId: nextPlayer.id,
                 currentPlayerName: nextPlayer.name
             });
+            
+            // КРИТИЧНО: Відправляємо оновлений стан гри після передачі ходу
+            io.to(room.id).emit('game_state_update', room.gameData);
         }
     });
     

@@ -186,37 +186,72 @@ io.on('connection', (socket) => {
     // Приєднання до кімнати
     socket.on('join_room', (data) => {
         try {
-            const player = {
-                id: socket.id,
-                name: data.playerName,
-                color: '#38b2ac', // Буде змінюватися
-                position: 0,
-                points: 0,
-                class: null,
-                skipTurn: false,
-                extraTurn: false,
-                hasLost: false,
-                moveModifier: 0
-            };
+            const room = rooms.get(data.roomCode);
+            if (!room) {
+                socket.emit('error', { message: 'Кімната не знайдена' });
+                return;
+            }
             
-            const result = joinRoom(data.roomCode, player);
-            
-            if (result && !result.error) {
-                socket.join(result.id);
-                socket.emit('room_joined', {
-                    roomId: result.id,
-                    roomName: result.name,
-                    players: result.players
+            if (room.players.length >= 6) {
+                // Кімната заповнена, додаємо як спостерігача
+                if (!room.spectators) room.spectators = [];
+                const spectator = { 
+                    id: socket.id, 
+                    name: data.playerName,
+                    joinedAt: Date.now()
+                };
+                room.spectators.push(spectator);
+                socket.join(data.roomCode);
+                
+                // Відправляємо спостерігачу стан гри
+                socket.emit('joined_as_spectator', {
+                    roomId: data.roomCode,
+                    roomName: room.name,
+                    gameData: room.gameData,
+                    players: room.players,
+                    spectators: room.spectators
                 });
                 
-                // Повідомляємо інших гравців
-                socket.to(result.id).emit('player_joined', {
-                    player,
-                    players: result.players
+                // Повідомляємо інших про нового спостерігача
+                socket.to(data.roomCode).emit('spectator_joined', {
+                    spectator: spectator,
+                    spectators: room.spectators
                 });
                 
+                console.log(`${data.playerName} приєднався як спостерігач до кімнати ${data.roomCode}`);
             } else {
-                socket.emit('error', { message: result?.error || 'Кімната не знайдена' });
+                // Є вільні місця, додаємо як гравця (стара логіка)
+                const player = {
+                    id: socket.id,
+                    name: data.playerName,
+                    color: '#38b2ac', // Буде змінюватися
+                    position: 0,
+                    points: 0,
+                    class: null,
+                    skipTurn: false,
+                    extraTurn: false,
+                    hasLost: false,
+                    moveModifier: 0
+                };
+                
+                const result = joinRoom(data.roomCode, player);
+                
+                if (result && !result.error) {
+                    socket.join(result.id);
+                    socket.emit('room_joined', {
+                        roomId: result.id,
+                        roomName: result.name,
+                        players: result.players
+                    });
+                    
+                    // Повідомляємо інших гравців
+                    socket.to(result.id).emit('player_joined', {
+                        player,
+                        players: result.players
+                    });
+                } else {
+                    socket.emit('error', { message: result?.error || 'Не вдалося приєднатися до кімнати' });
+                }
             }
             
         } catch (error) {
@@ -1302,18 +1337,26 @@ io.on('connection', (socket) => {
         
         // Оновлюємо playerId гравця
         player.id = socket.id;
+        player.disconnected = false; // Позначаємо як підключеного
         players.set(socket.id, { ...player, roomId: data.roomId });
         
         // Приєднуємося до кімнати
         socket.join(data.roomId);
         
-        // Відправляємо повний стан гри
-        socket.emit('game_state_update', room.gameData);
+        // Критично важливо: Відправляємо повний актуальний стан гри
+        if (room.gameState === 'playing') {
+            socket.emit('game_started', {
+                players: room.gameData.players,
+                currentPlayerIndex: room.gameData.currentPlayerIndex
+            });
+        } else {
+            socket.emit('game_state_update', room.gameData);
+        }
         
         // Повідомляємо інших гравців про повернення
-        socket.to(data.roomId).emit('player_reconnected', {
-            playerId: socket.id,
-            playerName: player.name
+        socket.to(data.roomId).emit('chat_message', { 
+            type: 'system', 
+            message: `${player.name} повернувся в гру!` 
         });
         
         console.log(`Гравець ${player.name} перепідключився`);

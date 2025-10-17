@@ -7,6 +7,7 @@ class MultiplayerGame extends EducationalPathGame {
         this.roomId = null;
         this.playerId = null;
         this.isHost = false;
+        this.isSpectator = false;
         this.spectators = [];
         
         // Спочатку налаштовуємо елементи мультиплеєра
@@ -163,15 +164,19 @@ class MultiplayerGame extends EducationalPathGame {
         // Підключаємося до сервера
         this.connectToServer();
         
-        // Відправляємо запит на перепідключення
-        setTimeout(() => {
-            if (this.socket && this.socket.connected) {
-                this.socket.emit('reconnect_player', {
-                    roomId: gameData.roomId,
-                    playerId: gameData.playerId
-                });
+        // Чекаємо підключення та відправляємо запит на перепідключення
+        const attemptReconnect = () => {
+            if (!this.socket || !this.socket.connected) {
+                // Якщо сокет ще не підключений, чекаємо і пробуємо знову
+                setTimeout(attemptReconnect, 200);
+                return;
             }
-        }, 1000);
+            console.log('Намагаюся перепідключитися з даними:', gameData);
+            this.socket.emit('reconnect_player', gameData);
+        };
+        
+        // Починаємо спробу перепідключення через невелику затримку
+        setTimeout(attemptReconnect, 500);
     }
     
     startLocalMode() {
@@ -306,6 +311,31 @@ class MultiplayerGame extends EducationalPathGame {
         
         this.socket.on('player_reconnected', (data) => {
             this.addChatMessage('system', `${data.playerName} повернувся до гри`);
+        });
+        
+        this.socket.on('joined_as_spectator', (data) => {
+            console.log('Приєднався як спостерігач:', data);
+            this.isSpectator = true;
+            this.roomId = data.roomId;
+            this.playerId = this.socket.id;
+            
+            // Показуємо ігровий інтерфейс
+            this.showGameInterface();
+            
+            // Синхронізуємо стан гри
+            this.syncGameState(data.gameData);
+            
+            // Оновлюємо список гравців та спостерігачів
+            this.updatePlayersList(data.players);
+            this.spectators = data.spectators;
+            
+            // Показуємо чат
+            this.showChat();
+            
+            // Показуємо кнопку виходу
+            this.leaveRoomBtn.classList.remove('hidden');
+            
+            this.logMessage(`Ви приєдналися як спостерігач до кімнати "${data.roomName}"`, 'system');
         });
         
         this.socket.on('spectator_joined', (data) => {
@@ -599,6 +629,7 @@ class MultiplayerGame extends EducationalPathGame {
             // Очищуємо дані
             this.roomId = null;
             this.isHost = false;
+            this.isSpectator = false;
             this.players = [];
             this.spectators = [];
             this.gameActive = false;
@@ -1373,8 +1404,18 @@ class MultiplayerGame extends EducationalPathGame {
             gameActive: this.gameActive,
             currentPlayerIndex: this.currentPlayerIndex,
             players: this.players?.length,
-            myPlayerId: this.playerId
+            myPlayerId: this.playerId,
+            isSpectator: this.isSpectator
         });
+        
+        if (this.isSpectator) {
+            // Режим спостерігача - кнопка завжди неактивна
+            this.rollDiceBtn.disabled = true;
+            this.rollDiceBtn.style.opacity = '0.5';
+            this.rollDiceBtn.textContent = '👁️ Режим спостерігача';
+            this.rollDiceBtn.style.backgroundColor = '#6b7280'; // Сірий колір
+            return;
+        }
         
         if (this.isOnlineMode && this.gameActive) {
             const currentPlayer = this.players[this.currentPlayerIndex];

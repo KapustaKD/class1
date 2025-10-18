@@ -491,8 +491,7 @@ io.on('connection', (socket) => {
                 io.to(room.id).emit('start_timed_text_quest', {
                     gameState: room.timedTextQuestState,
                     player1: { id: player.id, name: player.name },
-                    player2: { id: opponent.id, name: opponent.name },
-                    activePlayerId: player.id
+                    player2: { id: opponent.id, name: opponent.name }
                 });
 
             } else if (data.eventType === 'creative-quest') {
@@ -518,27 +517,31 @@ io.on('connection', (socket) => {
                     const firstPlayer = room.collaborativeStoryState.players[0];
                     io.to(room.id).emit('collaborative_story_start', {
                         gameState: room.collaborativeStoryState,
-                        currentPlayer: firstPlayer,
-                        activePlayerId: firstPlayer.id
+                        currentPlayer: firstPlayer
                     });
                     
                 } else {
-                    // Великий Педагогічний / Я у мами педагог - всі пишуть, потім голосують
+                    // Великий Педагогічний / Я у мами педагог - один пише, інші голосують
                     room.creativeWritingState = {
                         gameType: randomGameKey,
                         gameData: selectedGame,
+                        activePlayer: player.id,
+                        activePlayerName: player.name,
                         timer: selectedGame.timer,
                         gameActive: true,
                         submissions: [],
-                        votes: {},
-                        players: room.gameData.players.map(p => ({ id: p.id, name: p.name }))
+                        votes: {}
                     };
                     
-                    // Відправляємо всім гравцям завдання
-                    io.to(room.id).emit('start_creative_submission', {
-                        gameState: room.creativeWritingState,
-                        task: selectedGame.description,
-                        timer: selectedGame.timer
+                    // Відправляємо активному гравцю завдання
+                    io.to(player.id).emit('creative_task_input', {
+                        gameState: room.creativeWritingState
+                    });
+                    
+                    // Відправляємо іншим гравцям інформацію про очікування
+                    socket.to(room.id).emit('creative_writing_waiting', {
+                        activePlayer: player.name,
+                        gameType: randomGameKey
                     });
                 }
 
@@ -559,8 +562,7 @@ io.on('connection', (socket) => {
                 io.to(firstPlayer.id).emit('mad_libs_question', {
                     question: firstQuestion,
                     playerIndex: 0,
-                    gameState: room.madLibsState,
-                    activePlayerId: firstPlayer.id
+                    gameState: room.madLibsState
                 });
 
             } else if (data.eventType === 'webnovella-quest') {
@@ -574,8 +576,7 @@ io.on('connection', (socket) => {
                 // Відправляємо першу подію
                 io.to(player.id).emit('webnovella_event', {
                     event: webNovella['start_event_1'],
-                    gameState: room.webNovellaState,
-                    activePlayerId: player.id
+                    gameState: room.webNovellaState
                 });
 
             } else {
@@ -1028,34 +1029,6 @@ io.on('connection', (socket) => {
             submissions: room.creativeWritingState.submissions,
             gameState: room.creativeWritingState
         });
-    });
-
-    // Обробляємо відправку творчої роботи (всі гравці пишуть)
-    socket.on('submit_creative_entry', (data) => {
-        console.log('Отримано творчу роботу:', data);
-        const player = players.get(socket.id);
-        if (!player) return;
-
-        const room = rooms.get(data.roomId);
-        if (!room || !room.creativeWritingState) return;
-
-        // Зберігаємо відповідь
-        room.creativeWritingState.submissions.push({
-            text: data.text,
-            playerName: player.name,
-            playerId: player.id
-        });
-
-        console.log(`Гравець ${player.name} відправив творчу роботу. Всього: ${room.creativeWritingState.submissions.length}/${room.gameData.players.length}`);
-
-        // Перевіряємо, чи всі гравці відправили роботи
-        if (room.creativeWritingState.submissions.length >= room.gameData.players.length) {
-            // Всі відправили, починаємо голосування
-            io.to(room.id).emit('start_voting', {
-                submissions: room.creativeWritingState.submissions,
-                gameState: room.creativeWritingState
-            });
-        }
     });
 
     // Обробляємо голосування в творчій грі

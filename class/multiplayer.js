@@ -1129,10 +1129,11 @@ class MultiplayerGame extends EducationalPathGame {
         setTimeout(async () => {
             this.diceInner.style.transform = `${rotations[data.roll]} translateZ(40px)`;
             
-            // Використовуємо плавну анімацію руху
-            await this.animatePawnMovement(player, data.newPosition - data.move, data.newPosition, data.move);
+            // Зберігаємо стару позицію для анімації
+            const oldPosition = player.position;
+            console.log(`Гравець ${player.name}: стара позиція ${oldPosition}, нова позиція ${data.newPosition}, рух ${data.move}`);
             
-            // Оновлюємо позицію гравця
+            // Оновлюємо позицію гравця ПЕРЕД анімацією
             player.position = data.newPosition;
             
             // Оновлюємо очки та клас гравця (якщо є)
@@ -1142,6 +1143,11 @@ class MultiplayerGame extends EducationalPathGame {
             if (data.newClass !== undefined) {
                 player.class = data.newClass;
             }
+            
+            // Використовуємо плавну анімацію руху з правильною старою позицією
+            console.log(`Починаємо анімацію руху з позиції ${oldPosition} до ${data.newPosition}`);
+            await this.animatePawnMovement(player, oldPosition, data.newPosition, data.move);
+            console.log(`Анімація завершена. Поточна позиція гравця: ${player.position}`);
             
             this.logMessage(`${player.name}${player.class ? ' (' + player.class.name + ')' : ''} викинув ${data.roll}. Рух: ${data.move}. Позиція: ${data.newPosition}`, 'roll');
         }, 1000);

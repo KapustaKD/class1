@@ -7,7 +7,39 @@ const path = require('path');
 const { pvpGames, creativeGames, madLibsQuestions, webNovella } = require('./questsData.js');
 
 // Імпортуємо дані про спеціальні клітинки
-const specialCells = require('./specialCells.js');
+const specialCells = {
+    // Нові міні-ігри на клітинках: 3, 10, 14, 21, 32, 40, 55, 61, 69, 81, 90, 96, 99
+    3: { type: 'pvp-quest' },
+    10: { type: 'creative-quest' },
+    14: { type: 'mad-libs-quest' },
+    21: { type: 'pvp-quest' },
+    32: { type: 'webnovella-quest' },
+    40: { type: 'creative-quest' },
+    55: { type: 'pvp-quest' },
+    61: { type: 'mad-libs-quest' },
+    69: { type: 'creative-quest' },
+    81: { type: 'webnovella-quest' },
+    90: { type: 'pvp-quest' },
+    96: { type: 'mad-libs-quest' },
+    99: { type: 'webnovella-quest' },
+
+    // Обхідні шляхи: 5→11, 14→18, 26→33, 46→57, 80→91
+    5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
+    14: { type: 'alternative-path', target: 18, cost: 8, description: 'Обхідний шлях до клітинки 18 за 8 ОО' },
+    26: { type: 'alternative-path', target: 33, cost: 12, description: 'Обхідний шлях до клітинки 33 за 12 ОО' },
+    46: { type: 'alternative-path', target: 57, cost: 15, description: 'Обхідний шлях до клітинки 57 за 15 ОО' },
+    80: { type: 'alternative-path', target: 91, cost: 18, description: 'Обхідний шлях до клітинки 91 за 18 ОО' },
+
+    // Реінкарнація та випадкова зміна класу: 12, 22, 43, 75, 97
+    12: { type: 'reincarnation', nextEpoch: 2, points: 30 },
+    22: { type: 'reincarnation', nextEpoch: 3, points: 40 },
+    43: { type: 'reincarnation', nextEpoch: 4, points: 50 },
+    75: { type: 'reincarnation', nextEpoch: 5, points: 60 },
+    97: { type: 'reincarnation', nextEpoch: 6, points: 70 },
+
+    // Фінальна подія
+    100: { type: 'machine-uprising' }
+};
 
 // Перевірка, що ми не намагаємося використовувати неіснуючі класи
 if (typeof EducationalPathGame !== 'undefined') {
@@ -15,7 +47,7 @@ if (typeof EducationalPathGame !== 'undefined') {
 }
 
 // Межі епох для системи реінкарнації
-const EPOCH_BOUNDARIES = { 1: 12, 2: 22, 3: 42, 4: 75, 5: 97, 6: 101 };
+const EPOCH_BOUNDARIES_ARRAY = [12, 22, 42, 75, 97, 101];
 
 function getEpochForPosition(position) {
     if (position <= 12) return 1;
@@ -361,7 +393,7 @@ io.on('connection', (socket) => {
         
         // ЗАМІНИТИ СТАРИЙ БЛОК РУХУ ТА ПЕРЕВІРКИ ПОДІЙ НА ЦЕЙ:
         
-        const EPOCH_BOUNDARIES = [12, 22, 42, 75, 97, 101];
+        const EPOCH_BOUNDARIES = EPOCH_BOUNDARIES_ARRAY;
         let finalPosition = currentPlayer.position;
         let stopMove = false;
         
@@ -381,6 +413,25 @@ io.on('connection', (socket) => {
         }
         
         currentPlayer.position = finalPosition;
+        
+        // Перевіряємо умову перемоги
+        if (finalPosition >= 101) {
+            console.log(`Гравець ${currentPlayer.name} досяг фінішу! Гра закінчена.`);
+            room.gameData.gameActive = false;
+            room.gameState = 'finished';
+            
+            io.to(room.id).emit('game_ended', {
+                winner: currentPlayer.name,
+                message: `🎉 ${currentPlayer.name} переміг, досягнувши фінішу!`,
+                finalResults: room.gameData.players.map(p => ({
+                    name: p.name,
+                    position: p.position,
+                    points: p.points,
+                    class: p.class
+                }))
+            });
+            return;
+        }
         
         // Повідомляємо всіх про кидання кубика та нову позицію
         io.to(room.id).emit('dice_result', {
@@ -630,7 +681,53 @@ io.on('connection', (socket) => {
                 // Автоматично переміщуємо на наступну клітинку
                 player.position += 1;
                 
-                resultMessage = `${player.name} завершив епоху! Отримано 30 ОО та переміщено на наступну клітинку.`;
+                // Змінюємо клас гравця
+                const availableClasses = [
+                    { id: 'aristocrat', name: '⚜️ Аристократ', startPoints: 50, moveModifier: 1 },
+                    { id: 'burgher', name: '⚖️ Міщанин', startPoints: 20, moveModifier: 0 },
+                    { id: 'peasant', name: '🌱 Селянин', startPoints: 0, moveModifier: -1 },
+                ];
+                
+                // Визначаємо нову епоху
+                const newEpoch = getEpochForPosition(player.position);
+                
+                // Збираємо класи, які вже зайняті в новій епосі
+                const occupiedClassesInNewEpoch = room.gameData.players
+                    .filter(p => p.id !== player.id && getEpochForPosition(p.position) === newEpoch)
+                    .map(p => p.class.id);
+                
+                // Створюємо лічильник класів
+                const classCounts = {};
+                for (const classId of occupiedClassesInNewEpoch) {
+                    classCounts[classId] = (classCounts[classId] || 0) + 1;
+                }
+                
+                // Визначаємо, які класи доступні
+                let availableClassPool = availableClasses.filter(cls => {
+                    const count = classCounts[cls.id] || 0;
+                    if (room.gameData.players.length <= 3) {
+                        return count < 1; // Якщо гравців мало, класи не повторюються
+                    } else {
+                        return count < 2; // Якщо багато, можуть повторюватися до 2 разів
+                    }
+                });
+                
+                // Якщо всі класи зайняті, дозволяємо будь-який
+                if (availableClassPool.length === 0) {
+                    availableClassPool = availableClasses;
+                }
+                
+                // Присвоюємо випадковий клас з доступних
+                const oldClass = player.class;
+                player.class = availableClassPool[Math.floor(Math.random() * availableClassPool.length)];
+                
+                resultMessage = `${player.name} завершив епоху! Отримано 30 ОО, переміщено на наступну клітинку та змінено клас з ${oldClass.name} на ${player.class.name}.`;
+                
+                // Повідомляємо всім про зміну класу
+                io.to(room.id).emit('chat_message', {
+                    type: 'system',
+                    message: `${player.name} реінкарнував і став ${player.class.name}!`
+                });
             } else {
                 resultMessage = `${player.name} відмовився від переходу між епохами.`;
             }

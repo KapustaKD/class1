@@ -34,10 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Якщо не вдалося відновити, створюємо нову гру
             window.game = new MultiplayerGame();
         }
-        } else {
-            // Ініціалізуємо нову гру
-            window.game = new MultiplayerGame();
-        }
+    } else {
+        // Ініціалізуємо нову гру
+        window.game = new MultiplayerGame();
+    }
     
     // Додаємо глобальні обробники подій
     setupGlobalEventListeners();

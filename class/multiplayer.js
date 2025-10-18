@@ -15,13 +15,16 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     initializeMultiplayer() {
-        // Спочатку налаштовуємо елементи мультиплеєра
-        this.setupMultiplayerElements();
-        // Потім обробники подій мультиплеєра (перезаписують базові)
-        this.setupMultiplayerEventListeners();
-        
-        // Перевіряємо збережену гру
-        this.checkForSavedGame();
+        // Чекаємо, поки DOM буде повністю готовий
+        setTimeout(() => {
+            // Спочатку налаштовуємо елементи мультиплеєра
+            this.setupMultiplayerElements();
+            // Потім обробники подій мультиплеєра (перезаписують базові)
+            this.setupMultiplayerEventListeners();
+            
+            // Перевіряємо збережену гру
+            this.checkForSavedGame();
+        }, 100);
     }
     
     setupMultiplayerElements() {
@@ -221,7 +224,13 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     startLocalMode() {
-        console.log('Запускаємо локальний режим');
+        console.log('🚀 startLocalMode викликано!');
+        console.log('🔍 Поточний стан:', {
+            isOnlineMode: this.isOnlineMode,
+            modeSelection: this.modeSelection,
+            gameContainer: this.gameContainer
+        });
+        
         this.isOnlineMode = false;
         
         // Зберігаємо стан гри
@@ -249,7 +258,13 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     startOnlineMode() {
-        console.log('Запускаємо онлайн режим');
+        console.log('🚀 startOnlineMode викликано!');
+        console.log('🔍 Поточний стан:', {
+            isOnlineMode: this.isOnlineMode,
+            modeSelection: this.modeSelection,
+            onlinePanel: this.onlinePanel
+        });
+        
         this.isOnlineMode = true;
         
         // Зберігаємо стан гри

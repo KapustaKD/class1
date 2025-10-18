@@ -320,113 +320,68 @@ io.on('connection', (socket) => {
         console.log('Відправлено подію game_started всім гравцям в кімнаті:', room.id);
     });
     
-    // Кидання кубика
+    // ЗАМІНИТИ СТАРИЙ ОБРОБНИК 'roll_dice' НА ЦЕЙ:
     socket.on('roll_dice', (data) => {
-        console.log('Сервер отримав подію roll_dice:', data);
-        const player = players.get(socket.id);
-        if (!player) {
-            console.log('Гравець не знайдений для roll_dice');
-            return;
-        }
-        
         const room = rooms.get(data.roomId);
-        if (!room || room.gameState !== 'playing') {
-            console.log('Кімната не знайдена або гра не активна');
-            return;
-        }
+        if (!room || !room.gameData || !room.gameData.gameActive) return;
         
-        const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
-        console.log('Поточний гравець:', currentPlayer.name, 'ID:', currentPlayer.id);
-        console.log('Гравець, який кидає:', player.name, 'ID:', player.id);
+        const playerIndex = room.gameData.currentPlayerIndex;
+        const currentPlayer = room.gameData.players[playerIndex];
         
-        if (currentPlayer.id !== player.id) {
-            console.log('Не хід цього гравця');
-            return;
-        }
+        if (currentPlayer.id !== socket.id) return; // Не хід цього гравця
         
-        console.log('Обробляємо кидання кубика для гравця:', currentPlayer.name);
-        
+        const oldPosition = currentPlayer.position;
         const roll = Math.floor(Math.random() * 6) + 1;
-        let move = roll;
+        let move = roll + (currentPlayer.class.moveModifier || 0);
+
+        let finalPosition = oldPosition;
+        let eventTriggered = false;
         
-        // Додаємо модифікатори класу
-        if (currentPlayer.class) {
-            move += currentPlayer.class.moveModifier;
-            if (currentPlayer.class.id === 'peasant') {
-                move = Math.max(1, move);
-            }
-        }
-        
-        console.log('Кубик показав:', roll, 'Рух:', move);
-        
-        // ЗАМІНИТИ СТАРИЙ БЛОК РУХУ ТА ПЕРЕВІРКИ ПОДІЙ НА ЦЕЙ:
-        
+        // Покрокова перевірка на реінкарнацію
         const EPOCH_BOUNDARIES = [12, 22, 42, 75, 97, 101];
-        let finalPosition = currentPlayer.position;
-        let stopMove = false;
-        
-        // Покроково перевіряємо рух на перетин межі епохи
         for (let i = 1; i <= move; i++) {
-            const nextStep = currentPlayer.position + i;
+            const nextStep = oldPosition + i;
             if (EPOCH_BOUNDARIES.includes(nextStep)) {
                 finalPosition = nextStep;
-                stopMove = true;
-                break; // Зупиняємо рух, ходи скасовуються
+                eventTriggered = true;
+                io.to(room.id).emit('show_event_prompt', {
+                    eventType: 'reincarnation',
+                    eventData: specialCells[nextStep],
+                    activePlayerId: currentPlayer.id,
+                });
+                break; 
             }
         }
-        
-        if (!stopMove) {
-            // Якщо межу не перетнули, гравець просто йде на кінцеву позицію
-            finalPosition = Math.min(currentPlayer.position + move, 101);
+
+        if (!eventTriggered) {
+            finalPosition = Math.min(oldPosition + move, 101);
+            const eventData = specialCells[finalPosition];
+            if (eventData) {
+                eventTriggered = true;
+                io.to(room.id).emit('show_event_prompt', {
+                    eventType: eventData.type,
+                    eventData: eventData,
+                    activePlayerId: currentPlayer.id,
+                });
+            }
         }
         
         currentPlayer.position = finalPosition;
-        
-        // Повідомляємо всіх про кидання кубика та нову позицію
-        io.to(room.id).emit('dice_result', {
-            playerId: currentPlayer.id,
-            roll,
-            move,
-            newPosition: finalPosition,
-            newPoints: currentPlayer.points,
-            newClass: currentPlayer.class,
-            currentPlayerIndex: room.gameData.currentPlayerIndex
-        });
-        
-        console.log('Відправлено подію dice_result всім гравцям');
-        
-        // --- ОСНОВНЕ ВИПРАВЛЕННЯ ---
-        // Тепер перевіряємо, чи є подія на кінцевій клітинці
-        const eventData = specialCells[finalPosition];
-        
-        if (eventData) {
-            // Якщо подія є, запускаємо її і НЕ передаємо хід
-            console.log(`Гравець ${currentPlayer.name} потрапив на подію ${eventData.type} на клітинці ${finalPosition}`);
-            io.to(room.id).emit('show_event_prompt', {
-                eventType: eventData.type,
-                eventData: eventData,
-                activePlayerId: currentPlayer.id
-            });
-        } else {
-            // Якщо події НЕМАЄ, тоді передаємо хід наступному гравцю
-            room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
-            
-            // Пропускаємо гравців, які вибули
-            while (room.gameData.players[room.gameData.currentPlayerIndex].hasWon || 
-                   room.gameData.players[room.gameData.currentPlayerIndex].hasLost) {
-                room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+
+        // Якщо подія НЕ спрацювала, відразу передаємо хід
+        if (!eventTriggered) {
+            if (!currentPlayer.extraTurn) {
+                room.gameData.currentPlayerIndex = (playerIndex + 1) % room.gameData.players.length;
+            } else {
+                currentPlayer.extraTurn = false;
             }
-            
-            // Повідомляємо всіх про зміну черги
-            const nextPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
-            io.to(room.id).emit('turn_update', {
-                currentPlayerIndex: room.gameData.currentPlayerIndex,
-                currentPlayerId: nextPlayer.id,
-                currentPlayerName: nextPlayer.name
-            });
-            
-            console.log(`Хід передано гравцю ${nextPlayer.name}`);
         }
+
+        // Надсилаємо ВСІМ гравцям повний оновлений стан гри
+        io.to(room.id).emit('game_state_update', { 
+            ...room.gameData, 
+            lastRoll: { roll, startPos: oldPosition, endPos: finalPosition }
+        });
     });
     
         // Обробляємо подію гравця
@@ -592,105 +547,31 @@ io.on('connection', (socket) => {
         });
     
     // Обробляємо вибір гравця в події
+    // ЗАМІНИТИ СТАРИЙ ОБРОБНИК 'event_choice_made' НА ЦЕЙ:
     socket.on('event_choice_made', (data) => {
-        console.log('Отримано вибір події:', data);
-        const player = players.get(socket.id);
-        if (!player) return;
-        
         const room = rooms.get(data.roomId);
-        if (!room || room.gameState !== 'playing') return;
-        
-        // Перевіряємо, чи це справді гравець, який потрапив на подію
-        if (room.currentEventPlayerId !== player.id) {
-            console.log('Не той гравець намагається зробити вибір');
-            return;
-        }
-        
-        console.log(`${player.name} зробив вибір: ${data.choice}`);
-        
-        // Обробляємо вибір залежно від типу події
-        let resultMessage = '';
-        let shouldContinue = true;
-        
-        if (data.eventType === 'portal') {
-            if (data.choice === 'yes') {
-                // Переміщуємо гравця на цільову позицію
-                player.position = data.targetPosition;
-                player.points = Math.max(0, player.points - data.cost);
-                resultMessage = `${player.name} скористався порталом! Переміщено на клітинку ${data.targetPosition}, втрачено ${data.cost} ОО.`;
-            } else {
-                resultMessage = `${player.name} відмовився від порталу.`;
-            }
-        } else if (data.eventType === 'reincarnation') {
-            if (data.choice === 'yes') {
-                // Нараховуємо очки за реінкарнацію
-                player.points += 30;
-                
-                // Автоматично переміщуємо на наступну клітинку
-                player.position += 1;
-                
-                resultMessage = `${player.name} завершив епоху! Отримано 30 ОО та переміщено на наступну клітинку.`;
-            } else {
-                resultMessage = `${player.name} відмовився від переходу між епохами.`;
-            }
-        } else if (data.eventType === 'alternative-path') {
-            if (data.choice === 'yes') {
-                // Перевіряємо, чи вистачає очок
-                if (player.points < data.eventData.cost) {
-                    socket.emit('error_message', 'Вам не вистачає очок!');
-                    return; // Зупиняємо виконання
-                }
-                
-                // Переміщуємо гравця на цільову позицію
-                player.position = data.eventData.target;
+        const player = room.gameData.players.find(p => p.id === socket.id);
+        if (!room || !player) return;
+
+        // Обробка вибору (скорочення шляху, реінкарнація і т.д.)
+        if (data.eventType === 'alternative-path' && data.choice === 'yes') {
+            if (player.points >= data.eventData.cost) {
                 player.points = Math.max(0, player.points - data.eventData.cost);
-                resultMessage = `${player.name} скористався обхідною дорогою! Переміщено на клітинку ${data.eventData.target}, втрачено ${data.eventData.cost} ОО.`;
+                player.position = data.eventData.target;
             } else {
-                resultMessage = `${player.name} відмовився від обхідної дороги.`;
+                socket.emit('error_message', 'Вам не вистачає очок!');
             }
+        } else if (data.eventType === 'reincarnation' && data.choice === 'yes') {
+            player.points += data.eventData.points || 30;
+            player.position += 1; // Перехід на наступну клітинку
+            // Тут має бути логіка зміни класу, якщо вона є
         }
-        
-        // Очищуємо поточну подію
-        room.currentEventPlayerId = null;
-        room.currentEventData = null;
-        
-        // Повідомляємо всіх про результат
-        io.to(room.id).emit('event_result', {
-            playerId: player.id,
-            playerName: player.name,
-            choice: data.choice,
-            resultMessage,
-            newPosition: player.position,
-            newPoints: player.points
-        });
-        
-        // КРИТИЧНО: Відправляємо повний оновлений стан гри всім гравцям
+
+        // Після події передаємо хід
+        room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+
+        // Надсилаємо ВСІМ гравцям фінальний стан після події
         io.to(room.id).emit('game_state_update', room.gameData);
-        
-        console.log('Відправлено результат події всім гравцям');
-        
-        // Якщо це був перехід між секціями, продовжуємо гру
-        if (shouldContinue) {
-            // Переходимо до наступного гравця
-            room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
-            
-            // Пропускаємо гравців, які вибули
-            while (room.gameData.players[room.gameData.currentPlayerIndex].hasWon || 
-                   room.gameData.players[room.gameData.currentPlayerIndex].hasLost) {
-                room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
-            }
-            
-            // Повідомляємо всіх про зміну черги
-            const nextPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
-            io.to(room.id).emit('turn_update', {
-                currentPlayerIndex: room.gameData.currentPlayerIndex,
-                currentPlayerId: nextPlayer.id,
-                currentPlayerName: nextPlayer.name
-            });
-            
-            // КРИТИЧНО: Відправляємо оновлений стан гри після передачі ходу
-            io.to(room.id).emit('game_state_update', room.gameData);
-        }
     });
     
     // Гравець покидає кімнату

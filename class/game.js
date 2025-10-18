@@ -1270,43 +1270,41 @@ class EducationalPathGame {
     
        
     
-        // Переміщення фішки на конкретну клітинку
+    // Переміщення фішки на конкретну клітинку
     
-        async movePawnToCell(pawn, cellPosition) {
+    async movePawnToCell(pawn, cellPosition) {
     
-            return new Promise((resolve) => {
+        return new Promise((resolve) => {
     
-                const targetCell = document.getElementById(`cell-${cellPosition}`);
+            const targetCell = document.getElementById(`cell-${cellPosition}`);
     
-                if (!targetCell) {
+            if (!targetCell) {
+                console.error(`Клітинка cell-${cellPosition} не знайдена!`);
+                resolve();
+                return;
+            }
+            
+            console.log(`Переміщуємо фішку ${pawn.id} на клітинку ${cellPosition}`);
     
-                    resolve();
+            // Переміщуємо фішку в нову клітинку
     
-                    return;
+            targetCell.appendChild(pawn);
     
-                }
+            
     
-               
+            // Центруємо вид на клітинці
     
-                // Переміщуємо фішку в нову клітинку
+            this.centerViewOn(targetCell);
     
-                targetCell.appendChild(pawn);
+            
     
-               
+            // Чекаємо завершення CSS transition
     
-                // Центруємо вид на клітинці
+            setTimeout(resolve, 250);
     
-                this.centerViewOn(targetCell);
+        });
     
-               
-    
-                // Чекаємо завершення CSS transition
-    
-                setTimeout(resolve, 250);
-    
-            });
-    
-        }
+    }
     
        
     

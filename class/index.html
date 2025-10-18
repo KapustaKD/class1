@@ -26,10 +26,10 @@
     <div id="mode-selection" class="text-center mb-8">
         <h2 class="text-2xl font-bold mb-4">Оберіть режим гри</h2>
         <div class="flex gap-4 justify-center">
-            <button id="local-mode-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-xl">
+            <button id="local-mode-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-xl" onclick="console.log('Локальна кнопка натиснута!'); if(window.game && window.game.startLocalMode) { window.game.startLocalMode(); } else { alert('Помилка: window.game.startLocalMode не знайдено'); }">
                 🏠 Локальна гра
             </button>
-            <button id="online-mode-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-xl">
+            <button id="online-mode-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-xl" onclick="console.log('Онлайн кнопка натиснута!'); if(window.game && window.game.startOnlineMode) { window.game.startOnlineMode(); } else { alert('Помилка: window.game.startOnlineMode не знайдено'); }">
                 🌐 Онлайн гра
             </button>
         </div>
@@ -192,6 +192,7 @@
     <script src="game.js"></script>
     <script src="multiplayer.js"></script>
     <script src="main.js"></script>
+    <script src="test-game.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const gameBoard = document.getElementById('game-board-container');

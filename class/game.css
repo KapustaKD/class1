@@ -92,9 +92,9 @@ body {
 }
 
 .board-cell.zone-4 {
-    border-color: #ffff4d;
-    box-shadow: 0 0 10px rgba(255, 255, 77, 0.3);
-    background: linear-gradient(135deg, #ffff4d, #ffff1a);
+    border-color: #b3b3b3;
+    box-shadow: 0 0 10px rgba(179, 179, 179, 0.3);
+    background: linear-gradient(135deg, #b3b3b3, #999999);
 }
 
 /* Фінішна клітинка з короною */

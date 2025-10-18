@@ -34,15 +34,19 @@ document.addEventListener('DOMContentLoaded', () => {
             // Якщо не вдалося відновити, створюємо нову гру
             window.game = new MultiplayerGame();
         }
-    } else {
-        // Ініціалізуємо нову гру
-        window.game = new MultiplayerGame();
-    }
+        } else {
+            // Ініціалізуємо нову гру
+            console.log('🔄 Створюємо нову гру...');
+            window.game = new MultiplayerGame();
+            console.log('✅ Гра створена:', window.game);
+        }
     
     // Додаємо глобальні обробники подій
     setupGlobalEventListeners();
     
     console.log('🎮 Освітній Шлях: Революція завантажено!');
+    console.log('🔍 window.game:', window.game);
+    console.log('🔍 window.gameUI:', window.gameUI);
     
     // Тест кнопок режиму
     setTimeout(() => {
@@ -53,7 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
             localBtn: localBtn,
             onlineBtn: onlineBtn,
             localBtnExists: !!localBtn,
-            onlineBtnExists: !!onlineBtn
+            onlineBtnExists: !!onlineBtn,
+            windowGame: !!window.game
         });
         
         if (localBtn) {
@@ -61,6 +66,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // Тестуємо клік
             localBtn.addEventListener('click', () => {
                 console.log('🎯 Кнопка локального режиму працює!');
+                if (window.game && window.game.startLocalMode) {
+                    console.log('🚀 Викликаємо startLocalMode');
+                    window.game.startLocalMode();
+                } else {
+                    console.error('❌ window.game.startLocalMode не знайдено');
+                }
             });
         } else {
             console.error('❌ Кнопка локального режиму НЕ знайдена!');
@@ -71,6 +82,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // Тестуємо клік
             onlineBtn.addEventListener('click', () => {
                 console.log('🎯 Кнопка онлайн режиму працює!');
+                if (window.game && window.game.startOnlineMode) {
+                    console.log('🚀 Викликаємо startOnlineMode');
+                    window.game.startOnlineMode();
+                } else {
+                    console.error('❌ window.game.startOnlineMode не знайдено');
+                }
             });
         } else {
             console.error('❌ Кнопка онлайн режиму НЕ знайдена!');

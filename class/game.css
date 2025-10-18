@@ -1,337 +1,647 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Освітній Шлях: Революція - Мультиплеєр</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="game.css">
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        // Налаштування для продакшн середовища
-        window.APP_CONFIG = {
-            isProduction: window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1',
-            socketUrl: window.location.origin
-        };
-    </script>
-</head>
-<body class="bg-gray-800 text-white flex flex-col items-center min-h-screen p-4">
+/* Основний CSS для гри */
+body { 
+    font-family: 'Montserrat', sans-serif; 
+    touch-action: none; 
+}
 
-    <h1 class="text-4xl font-bold mb-4 text-yellow-300">Освітній Шлях: Революція</h1>
+/* Контейнер ігрового поля */
+#game-container {
+    min-height: 500px; /* Мінімальна висота для контейнера */
+}
 
-    <!-- Меню вибору режиму -->
-    <div id="mode-selection" class="text-center mb-8">
-        <h2 class="text-2xl font-bold mb-4">Оберіть режим гри</h2>
-        <div class="flex gap-4 justify-center">
-            <button id="local-mode-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-xl">
-                🏠 Локальна гра
-            </button>
-            <button id="online-mode-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-xl">
-                🌐 Онлайн гра
-            </button>
-        </div>
-    </div>
+/* Ігрове поле */
+.lg\\:flex-grow {
+    min-height: 500px; /* Мінімальна висота для flex-grow */
+}
 
-    <!-- Основна гра (прихована спочатку) -->
-    <div id="game-container" class="hidden w-full max-w-screen-2xl flex flex-col lg:flex-row gap-8 lg:h-[85vh]">
-        <!-- Ігрове поле -->
-        <div class="bg-gray-700 p-2 rounded-2xl shadow-2xl" style="width: 1289px; height: 822px;">
-            <div class="game-viewport w-full h-full" id="game-viewport">
-                <div id="game-board-container" style="position: relative; width: 1273px; height: 806px; cursor: crosshair;">
-                    <img src="map_background.png" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;">
-                    
-                    <svg id="path-svg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;"></svg>
-                    
-                    <div id="game-board" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2;"></div>
-                </div>
-            </div>
-        </div>
+.game-viewport { 
+    width: 100%; 
+    height: 100%; 
+    min-height: 400px; /* Мінімальна висота */
+    position: relative; 
+    border-radius: 1rem; 
+    background-color: #2d3748; 
+    overflow: hidden; /* Додаємо назад для обмеження меж */
+    cursor: grab; 
+}
 
-        <!-- Панель керування -->
-        <div class="w-full lg:w-96 bg-gray-700 p-6 rounded-2xl shadow-2xl flex flex-col gap-4 shrink-0">
-            <div>
-                <h2 class="text-2xl font-bold border-b-2 border-yellow-300 pb-2 mb-2">Інформація</h2>
-                <div id="player-info" class="text-lg">Хід гравця: <span id="current-player-name" class="font-bold"></span></div>
-                <div id="player-class-info" class="text-md text-gray-300">Клас: <span id="current-player-class"></span></div>
-                <div id="player-points-info" class="text-lg font-bold">Очки Освіти: <span id="current-player-points" class="text-yellow-300"></span></div>
-            </div>
-            <div id="leaderboard"></div>
-            <div class="flex justify-center items-center my-4 h-24">
-                <div class="dice" id="dice">
-                    <div class="dice-inner" id="dice-inner">
-                        <div class="dice-face face-1">1</div>
-                        <div class="dice-face face-2">2</div>
-                        <div class="dice-face face-3">3</div>
-                        <div class="dice-face face-4">4</div>
-                        <div class="dice-face face-5">5</div>
-                        <div class="dice-face face-6">6</div>
-                    </div>
-                </div>
-            </div>
-            <button id="roll-dice-btn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition duration-300 shadow-lg text-xl">Кинути кубик</button>
-            <button id="exit-game-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 shadow-lg text-lg mt-2" onclick="window.exitGame()">Вийти з гри</button>
-            <div class="flex-grow flex flex-col">
-                <h3 class="text-xl font-semibold mt-2">Ігровий журнал</h3>
-                <div id="game-log" class="bg-gray-800 rounded-lg p-2 mt-2 overflow-y-auto text-sm text-gray-300" style="height: 200px;"></div>
-            </div>
-        </div>
-    </div>
+#game-board-container { 
+    position: relative; 
+    width: 100%; /* Гнучка ширина - займає весь контейнер */
+    height: 100%; /* Гнучка висота - займає весь контейнер */
+    transform-origin: 0 0; 
+    /* ВИДАЛЕНО: transition: transform 0.1s ease-out; - конфліктує з JavaScript */
+}
 
-    <!-- Онлайн панель (прихована спочатку) -->
-    <div id="online-panel" class="hidden w-full max-w-screen-2xl bg-gray-700 p-6 rounded-2xl shadow-2xl">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold">Онлайн гра</h2>
-            <div class="flex items-center gap-4">
-                <div id="connection-status" class="flex items-center gap-2">
-                    <div id="status-indicator" class="w-3 h-3 rounded-full bg-red-500"></div>
-                    <span id="status-text">Не підключено</span>
-                </div>
-                <button id="leave-room-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden">
-                    🚪 Покинути кімнату
-                </button>
-            </div>
-        </div>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Створення кімнати -->
-            <div class="bg-gray-800 p-4 rounded-lg">
-                <h3 class="text-xl font-bold mb-4">Створити кімнату</h3>
-                <div class="space-y-3">
-                    <input id="custom-room-code" type="text" placeholder="Придумайте код кімнати (тільки цифри)" class="w-full p-2 border border-gray-300 rounded text-black">
-                    <input id="player-name" type="text" placeholder="Ваше ім'я" class="w-full p-2 border border-gray-300 rounded text-black">
-                    <button id="create-room-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Створити</button>
-                </div>
-            </div>
-            
-            <!-- Приєднання до кімнати -->
-            <div class="bg-gray-800 p-4 rounded-lg">
-                <h3 class="text-xl font-bold mb-4">Приєднатися до кімнати</h3>
-                <div class="space-y-3">
-                    <input id="room-code" type="text" placeholder="Код кімнати" class="w-full p-2 border border-gray-300 rounded text-black">
-                    <input id="join-player-name" type="text" placeholder="Ваше ім'я" class="w-full p-2 border border-gray-300 rounded text-black">
-                    <button id="join-room-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Приєднатися</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Код кімнати -->
-        <div id="room-code-display" class="mt-6 hidden">
-            <h3 class="text-xl font-bold mb-4">Код кімнати</h3>
-            <div class="bg-gray-800 p-4 rounded-lg text-center">
-                <div class="text-3xl font-bold text-yellow-300 mb-2" id="room-code-text">-</div>
-                <button id="copy-room-code-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                    📋 Скопіювати код
-                </button>
-            </div>
-        </div>
-        
-        <!-- Список гравців -->
-        <div id="players-list" class="mt-6 hidden">
-            <h3 class="text-xl font-bold mb-4">Гравці в кімнаті</h3>
-            <div id="players-container" class="grid grid-cols-2 gap-2"></div>
-            
-            <!-- Кнопка почати гру -->
-            <div id="start-game-section" class="mt-4 hidden">
-                <button id="start-game-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-xl">
-                    🎮 Почати гру
-                </button>
-            </div>
-        </div>
-        
-        <!-- Чат -->
-        <div id="chat-container" class="mt-6 hidden">
-            <h3 class="text-xl font-bold mb-4">Чат</h3>
-            <div id="chat-messages" class="bg-gray-800 rounded-lg p-3 h-32 overflow-y-auto mb-3"></div>
-            <div class="flex gap-2">
-                <input id="chat-input" type="text" placeholder="Повідомлення..." class="flex-1 p-2 border border-gray-300 rounded text-black">
-                <button id="send-message-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Відправити</button>
-            </div>
-        </div>
-    </div>
+/* Статичне фонове зображення карти */
+#map-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    object-fit: contain; /* Змінюємо з cover на contain щоб карта не обрізалася */
+    border-radius: 0.5rem;
+}
 
-    <!-- Модальні вікна -->
-    <div id="rules-modal" class="modal-backdrop hidden">
-        <div class="modal-content text-gray-800">
-            <h2 class="text-3xl font-bold mb-4 text-center">Класи та Перемога</h2>
-            <p class="text-center mb-4">Мета гри - першим набрати <strong>300 Очок Освіти (ОО)</strong>.</p>
-            <div class="space-y-4 text-left">
-                <div><h3 class="text-xl font-bold text-yellow-600">⚜️ Аристократ</h3><p><strong>Старт:</strong> 50 ОО. <strong>Здібність:</strong> Завжди ходить на 1 клітинку більше.</p></div>
-                <div><h3 class="text-xl font-bold text-gray-600">⚖️ Міщанин</h3><p><strong>Старт:</strong> 20 ОО. <strong>Здібність:</strong> Нейтральний клас без бонусів.</p></div>
-                <div><h3 class="text-xl font-bold text-green-600">🌱 Селянин</h3><p><strong>Старт:</strong> 0 ОО. <strong>Здібність:</strong> Завжди ходить на 1 клітинку менше (мін. 1).</p></div>
-            </div>
-            <button id="show-setup-btn" class="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 text-xl">Зрозуміло!</button>
-        </div>
-    </div>
-    
-    <div id="start-modal" class="modal-backdrop hidden">
-        <div class="modal-content text-gray-800">
-            <h2 class="text-3xl font-bold mb-4 text-center">Налаштування гри</h2>
-            <div class="mb-4">
-                <label for="player-count" class="block text-lg font-medium mb-2">Кількість гравців:</label>
-                <select id="player-count" class="w-full p-2 border border-gray-300 rounded-lg text-black">
-                    <option value="2" selected>2</option>
-                    <option value="3">3</option>
-                </select>
-            </div>
-            <div id="player-setup-container"></div>
-            <button id="start-game-btn" class="w-full mt-6 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 text-xl">Почати гру</button>
-        </div>
-    </div>
-    
-    <div id="quest-modal" class="modal-backdrop hidden">
-        <div id="quest-modal-content" class="modal-content text-gray-800 text-center"></div>
-    </div>
+/* SVG для шляху */
+#path-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+}
 
-    <!-- Підключення скриптів -->
-    <script src="questsData.js"></script>
-    <script src="utils.js"></script>
-    <script src="ui.js"></script>
-    <script src="game.js"></script>
-    <script src="multiplayer.js"></script>
-    <script src="main.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const gameBoard = document.getElementById('game-board-container');
-            let cellCounter = 1;
-    
-            console.log('ІНСТРУМЕНТ АКТИВОВАНО! Клікайте на карті, щоб отримати координати для клітинок.');
-    
-            gameBoard.addEventListener('click', (event) => {
-                const x = event.offsetX;
-                const y = event.offsetY;
-    
-                // Виводимо в консоль рядок, готовий для копіювання в mapData.js
-                console.log(`{ id: ${cellCounter}, x: ${x}, y: ${y} },`);
-    
-                // Візуалізуємо клік, щоб ви бачили, де вже натиснули
-                const clickMarker = document.createElement('div');
-                clickMarker.style.cssText = `position: absolute; left: ${x-5}px; top: ${y-5}px; width: 10px; height: 10px; background: red; border-radius: 50%; z-index: 999;`;
-                gameBoard.appendChild(clickMarker);
-    
-                cellCounter++;
-            });
-        });
+/* Ігрова дошка з клітинками */
+#game-board {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+}
 
-    </script>
-    
-    <!-- СКРИПТ ДЛЯ ВІДСТЕЖЕННЯ ЗМІН СТИЛІВ КАРТИ -->
-    <script>
-        console.log('🔍 Запускаємо відстеження змін стилів карти...');
-        
-        // Функція для логування змін стилів
-        function logStyleChanges(element, property, oldValue, newValue) {
-            const timestamp = new Date().toLocaleTimeString();
-            console.log(`[${timestamp}] 🎨 СТИЛЬ ЗМІНЕНО:`, {
-                element: element.id || element.tagName,
-                property: property,
-                oldValue: oldValue,
-                newValue: newValue,
-                fullStyle: element.style.cssText
-            });
-        }
-        
-        // Відстеження змін transform
-        function watchTransform(element) {
-            let lastTransform = element.style.transform;
-            const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-                        const currentTransform = element.style.transform;
-                        if (currentTransform !== lastTransform) {
-                            logStyleChanges(element, 'transform', lastTransform, currentTransform);
-                            const scaleMatch = currentTransform.match(/scale\(([^)]+)\)/);
-                            const translateMatch = currentTransform.match(/translate\(([^)]+)\)/);
-                            if (scaleMatch) {
-                                console.log(`📏 МАСШТАБ: ${scaleMatch[1]}`);
-                            }
-                            if (translateMatch) {
-                                console.log(`📍 ПЕРЕМІЩЕННЯ: ${translateMatch[1]}`);
-                            }
-                            lastTransform = currentTransform;
-                        }
-                    }
-                });
-            });
-            observer.observe(element, { attributes: true, attributeFilter: ['style'] });
-            console.log('👀 Відстеження transform запущено для:', element.id || element.tagName);
-        }
-        
-        // Відстеження змін розмірів
-        function watchDimensions(element) {
-            let lastWidth = element.style.width;
-            let lastHeight = element.style.height;
-            const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-                        const currentWidth = element.style.width;
-                        const currentHeight = element.style.height;
-                        if (currentWidth !== lastWidth) {
-                            logStyleChanges(element, 'width', lastWidth, currentWidth);
-                            lastWidth = currentWidth;
-                        }
-                        if (currentHeight !== lastHeight) {
-                            logStyleChanges(element, 'height', lastHeight, currentHeight);
-                            lastHeight = currentHeight;
-                        }
-                    }
-                });
-            });
-            observer.observe(element, { attributes: true, attributeFilter: ['style'] });
-            console.log('📐 Відстеження розмірів запущено для:', element.id || element.tagName);
-        }
-        
-        // Налаштування відстеження після завантаження DOM
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 DOM завантажено, налаштовуємо відстеження...');
-            
-            // Відстежуємо game-board-container
-            const gameBoardContainer = document.getElementById('game-board-container');
-            if (gameBoardContainer) {
-                console.log('🎯 Знайдено game-board-container, налаштовуємо відстеження...');
-                watchTransform(gameBoardContainer);
-                watchDimensions(gameBoardContainer);
-                console.log('📋 ПОЧАТКОВИЙ СТАН КАРТИ:', {
-                    id: gameBoardContainer.id,
-                    style: gameBoardContainer.style.cssText,
-                    computedStyle: window.getComputedStyle(gameBoardContainer).transform
-                });
-            } else {
-                console.error('❌ game-board-container не знайдено!');
-            }
-            
-            // Відстежуємо game-viewport
-            const gameViewport = document.getElementById('game-viewport');
-            if (gameViewport) {
-                console.log('👁️ Знайдено game-viewport, налаштовуємо відстеження...');
-                watchTransform(gameViewport);
-                watchDimensions(gameViewport);
-            }
-            
-            // Відстежуємо батьківський контейнер
-            const parentContainer = gameBoardContainer?.parentElement;
-            if (parentContainer) {
-                console.log('👨‍👩‍👧‍👦 Відстежуємо батьківський контейнер:', parentContainer.className);
-                watchDimensions(parentContainer);
-            }
-        });
-        
-        // Періодична перевірка змін
-        setInterval(() => {
-            const gameBoardContainer = document.getElementById('game-board-container');
-            if (gameBoardContainer) {
-                const currentStyle = gameBoardContainer.style.cssText;
-                if (window.lastLoggedStyle !== currentStyle) {
-                    console.log('⏰ ПЕРИОДИЧНА ПЕРЕВІРКА - стиль змінився:', currentStyle);
-                    window.lastLoggedStyle = currentStyle;
-                }
-            }
-        }, 1000);
-        
-        console.log('✅ Скрипт відстеження налаштовано!');
-    </script>
-    
-</body>
-</html>
+/* Клітинки з прив'язкою до зон */
+.board-cell.zone-0 {
+    border-color: #b3b3b3;
+    box-shadow: 0 0 10px rgba(179, 179, 179, 0.3);
+    background: linear-gradient(135deg, #b3b3b3, #999999);
+}
+
+.board-cell.zone-1 {
+    border-color: #ffb3d1;
+    box-shadow: 0 0 10px rgba(255, 179, 209, 0.3);
+    background: linear-gradient(135deg, #ffb3d1, #ff99c7);
+}
+
+.board-cell.zone-2 {
+    border-color: #33cc33;
+    box-shadow: 0 0 10px rgba(51, 204, 51, 0.3);
+    background: linear-gradient(135deg, #33cc33, #29a329);
+}
+
+.board-cell.zone-3 {
+    border-color: #3399ff;
+    box-shadow: 0 0 10px rgba(51, 153, 255, 0.3);
+    background: linear-gradient(135deg, #3399ff, #1a7ae6);
+}
+
+.board-cell.zone-4 {
+    border-color: #ffff4d;
+    box-shadow: 0 0 10px rgba(255, 255, 77, 0.3);
+    background: linear-gradient(135deg, #ffff4d, #ffff1a);
+}
+
+/* Фінішна клітинка з короною */
+.board-cell.finish {
+    background: radial-gradient(circle, #ffd700, #ffb347);
+    color: #8b4513;
+    border: 4px solid #ffd700;
+    animation: crownGlow 2s infinite;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+@keyframes crownGlow {
+    0%, 100% { 
+        box-shadow: 0 0 20px #ffd700;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 40px #ffd700;
+        transform: translate(-50%, -50%) scale(1.05);
+    }
+}
+
+/* Реінкарнація */
+.board-cell.reincarnation {
+    color: #4a5568;
+    font-weight: bold;
+}
+
+/* Обхідна дорога */
+.board-cell.alternative-path {
+    color: #2d5016;
+    font-weight: bold;
+}
+
+@keyframes pathGlow {
+    0%, 100% { 
+        box-shadow: 0 0 15px #90be6d;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 25px #90be6d;
+        transform: translate(-50%, -50%) scale(1.03);
+    }
+}
+
+/* Повстання машин */
+.board-cell.machine-uprising {
+    color: white;
+    font-weight: bold;
+}
+
+@keyframes uprisingPulse {
+    0%, 100% { 
+        box-shadow: 0 0 20px #e53e3e;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 40px #e53e3e;
+        transform: translate(-50%, -50%) scale(1.05);
+    }
+}
+
+@keyframes portalPulse {
+    0%, 100% { 
+        box-shadow: 0 0 20px #f6e05e;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 40px #f6e05e;
+        transform: translate(-50%, -50%) scale(1.05);
+    }
+}
+
+/* Анімація телепорту */
+@keyframes teleportFlash {
+    0% { 
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+    }
+    50% { 
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 1;
+    }
+    100% { 
+        transform: translate(-50%, -50%) scale(2);
+        opacity: 0;
+    }
+}
+
+/* Підсвітка поточної епохи */
+.epoch-background.current-epoch {
+    opacity: 0.6;
+    filter: blur(8px);
+    border-width: 5px;
+    animation: epochGlow 3s infinite;
+}
+
+@keyframes epochGlow {
+    0%, 100% { 
+        box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+    }
+    50% { 
+        box-shadow: 0 0 50px rgba(255, 255, 255, 0.6);
+    }
+}
+
+/* Плавна анімація руху фішки */
+.player-pawn {
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.player-pawn.moving {
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transform: scale(1.2);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+}
+
+.player-pawn.teleporting {
+    animation: teleportPawn 0.8s ease-in-out;
+}
+
+@keyframes teleportPawn {
+    0% { 
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+    50% { 
+        transform: scale(0) rotate(180deg);
+        opacity: 0;
+    }
+    100% { 
+        transform: scale(1) rotate(360deg);
+        opacity: 1;
+    }
+}
+
+#era-bg-antiquity { 
+    background-color: #8c4f4f; 
+    top: 350px; 
+    left: 25px; 
+    width: 500px; 
+    height: 400px; 
+}
+
+#era-bg-middle-ages { 
+    background-color: #c2a77d; 
+    top: 0px; 
+    left: 200px; 
+    width: 600px; 
+    height: 450px; 
+}
+
+#era-bg-renaissance { 
+    background-color: #6d8e95; 
+    top: 300px; 
+    left: 450px; 
+    width: 550px; 
+    height: 450px; 
+}
+
+#era-bg-modern { 
+    background-color: #5568a3; 
+    top: 0px; 
+    left: 750px; 
+    width: 500px; 
+    height: 450px; 
+}
+
+#era-bg-contemporary { 
+    background-color: #a76b9a; 
+    top: 350px; 
+    left: 800px; 
+    width: 450px; 
+    height: 400px; 
+}
+
+.map-image { 
+    position: absolute; 
+    pointer-events: none; 
+    opacity: 0.3; 
+}
+
+#path-svg { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    z-index: 1; 
+}
+
+/* Клітинки дошки */
+.board-cell { 
+    position: absolute; 
+    border: 2px solid #1a202c; 
+    border-radius: 50%; 
+    width: 35px; 
+    height: 35px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-weight: bold; 
+    font-size: 0.8rem; 
+    transition: all 0.3s ease; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4); 
+    z-index: 2; 
+    transform: translate(-50%, -50%); 
+}
+
+.board-cell.start { 
+    background-color: #48bb78; 
+    color: white; 
+}
+
+.board-cell.finish { 
+    background-color: #f6e05e; 
+    color: #4a5568; 
+}
+
+.board-cell.quest { 
+    color: white; 
+}
+
+.board-cell.pvp-quest { 
+    color: white; 
+}
+
+.board-cell.creative-quest { 
+    color: white; 
+}
+
+.board-cell.event-good { 
+    color: white; 
+}
+
+.board-cell.event-bad { 
+    color: white; 
+}
+
+.board-cell.empty { 
+    background-color: #e2e8f0; 
+    color: #2d3748;
+}
+
+.board-cell.reincarnation { 
+    color: #4a5568; 
+}
+
+.board-cell.machine-uprising { 
+    color: #f56565; 
+}
+
+.board-cell.future { 
+    color: #1a202c; 
+}
+
+.board-cell.portal { 
+    color: white; 
+}
+
+.board-cell.mad-libs-quest { 
+    color: white; 
+}
+
+.board-cell.webnovella-quest { 
+    color: white; 
+}
+
+/* Анімації */
+@keyframes pulse-red { 
+    0%, 100% { 
+        box-shadow: 0 0 15px #f56565; 
+    } 
+    50% { 
+        box-shadow: 0 0 30px #f56565; 
+    } 
+}
+
+/* Фішки гравців */
+.player-pawn { 
+    width: 12px; 
+    height: 12px; 
+    border-radius: 50%; 
+    border: 1px solid white; 
+    position: absolute; 
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    box-shadow: 0 1px 2px rgba(0,0,0,0.5); 
+    z-index: 5;
+}
+
+/* Анімації руху фішки */
+.player-pawn.moving {
+    transition: all 0.25s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transform: scale(1.2);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.6);
+}
+
+.player-pawn.landing {
+    animation: bounceLanding 0.4s ease-out;
+}
+
+.player-pawn.trail {
+    position: relative;
+}
+
+.player-pawn.trail::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    animation: ripple 0.6s ease-out;
+    pointer-events: none;
+}
+
+@keyframes bounceLanding {
+    0% { transform: scale(1.2); }
+    50% { transform: scale(0.8); }
+    100% { transform: scale(1); }
+}
+
+@keyframes ripple {
+    0% { 
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0.8;
+    }
+    100% { 
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0;
+    }
+}
+
+/* Ефект вітру для далеких переміщень */
+.player-pawn.wind-effect {
+    animation: windTrail 0.3s ease-out;
+}
+
+@keyframes windTrail {
+    0% { 
+        filter: blur(0px);
+        transform: scale(1);
+    }
+    50% { 
+        filter: blur(1px);
+        transform: scale(1.1);
+    }
+    100% { 
+        filter: blur(0px);
+        transform: scale(1);
+    }
+}
+
+#pawn-1 { 
+    background-color: #e53e3e; 
+    top: 20%; 
+    left: 20%; 
+}
+
+#pawn-2 { 
+    background-color: #38b2ac; 
+    top: 20%; 
+    right: 20%; 
+}
+
+#pawn-3 { 
+    background-color: #ed8936; 
+    bottom: 20%; 
+    left: 20%; 
+}
+
+#pawn-4 { 
+    background-color: #d69e2e; 
+    bottom: 20%; 
+    right: 20%; 
+}
+
+/* Кубик */
+.dice { 
+    width: 80px; 
+    height: 80px; 
+    perspective: 1000px; 
+    position: relative;
+    z-index: 10;
+}
+
+.dice-inner { 
+    width: 100%; 
+    height: 100%; 
+    position: relative; 
+    transform-style: preserve-3d; 
+    transition: transform 1s; 
+}
+
+.dice-face { 
+    position: absolute; 
+    width: 80px; 
+    height: 80px; 
+    background: white; 
+    border: 2px solid #4a5568; 
+    font-size: 3rem; 
+    font-weight: bold; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    color: #2d3748; 
+}
+
+.face-1 { transform: rotateY(0deg) translateZ(40px); }
+.face-2 { transform: rotateY(90deg) translateZ(40px); }
+.face-3 { transform: rotateY(180deg) translateZ(40px); }
+.face-4 { transform: rotateY(-90deg) translateZ(40px); }
+.face-5 { transform: rotateX(90deg) translateZ(40px); }
+.face-6 { transform: rotateX(-90deg) translateZ(40px); }
+
+/* Модальні вікна */
+.modal-backdrop { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background-color: rgba(0,0,0,0.7); 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    z-index: 100; 
+    backdrop-filter: blur(5px); 
+}
+
+.modal-content { 
+    background: white; 
+    padding: 1.5rem; 
+    border-radius: 1rem; 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+    max-width: 90%; 
+    width: 450px; 
+    max-height: 80vh; 
+    overflow-y: auto; 
+    transition: transform 0.3s ease, box-shadow 0.3s ease; 
+}
+
+@keyframes shake { 
+    0%, 100% { transform: translateX(0); } 
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); } 
+    20%, 40%, 60%, 80% { transform: translateX(10px); } 
+}
+
+.modal-shake { 
+    animation: shake 0.6s ease-in-out; 
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.7); 
+}
+
+@keyframes pulse-green { 
+    0% { transform: translate(-50%, -50%) scale(1); } 
+    50% { transform: translate(-50%, -50%) scale(1.05); } 
+    100% { transform: translate(-50%, -50%) scale(1); } 
+}
+
+.modal-pulse-green { 
+    animation: pulse-green 0.5s ease-in-out; 
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.7); 
+}
+
+/* Хрестики-нулики */
+.tic-tac-toe-grid { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 2px; 
+    width: 150px; 
+    height: 150px; 
+    margin: 0 auto; 
+}
+
+.tic-tac-toe-cell { 
+    width: 50px; 
+    height: 50px; 
+    border: 2px solid #4a5568; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 2rem; 
+    cursor: pointer; 
+    background: white; 
+}
+
+.tic-tac-toe-cell:hover { 
+    background: #f7fafc; 
+}
+
+.tic-tac-toe-cell.disabled { 
+    cursor: not-allowed; 
+    opacity: 0.5; 
+}
+
+/* Онлайн панель */
+#connection-status {
+    font-size: 0.9rem;
+}
+
+#status-indicator {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.player-card {
+    background: #374151;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    border: 2px solid transparent;
+    transition: border-color 0.3s;
+}
+
+.player-card.current-player {
+    border-color: #fbbf24;
+}
+
+.player-card.spectator {
+    border-color: #6b7280;
+    opacity: 0.7;
+}
+
+.chat-message {
+    margin-bottom: 0.5rem;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+}
+
+.chat-message.system {
+    background: #374151;
+    font-style: italic;
+}
+
+.chat-message.player {
+    background: #1f2937;
+}
+
+.chat-message.spectator {
+    background: #111827;
+    opacity: 0.8;
+}

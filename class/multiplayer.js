@@ -352,25 +352,15 @@ class MultiplayerGame extends EducationalPathGame {
             this.syncGameState(data);
         });
         
-        this.socket.on('dice_result', (data) => {
-            console.log('Отримано подію dice_result:', data);
-            this.handleDiceResult(data);
-        });
-        
-        this.socket.on('turn_update', (data) => {
-            console.log('Отримано подію turn_update:', data);
-            this.handleTurnUpdate(data);
-        });
-        
         this.socket.on('show_event_prompt', (data) => {
             console.log('Отримано подію show_event_prompt:', data);
             this.showEventPrompt(data);
         });
         
-                this.socket.on('event_result', (data) => {
-                    console.log('Отримано подію event_result:', data);
-                    this.handleEventResult(data);
-                });
+        this.socket.on('event_result', (data) => {
+            console.log('Отримано подію event_result:', data);
+            this.handleEventResult(data);
+        });
 
                 this.socket.on('quest_started', (data) => {
                     this.handleRemoteQuest(data);
@@ -1285,21 +1275,56 @@ class MultiplayerGame extends EducationalPathGame {
         this.socket.emit('next_turn', { roomId: this.roomId });
     }
     
-    syncGameState(data) {
-        this.players = data.players;
-        this.currentPlayerIndex = data.currentPlayerIndex;
-        this.gameActive = data.gameActive;
-        
-        this.updateUI();
-        
-        // Оновлюємо позиції фішок
-        this.players.forEach(player => {
-            this.updatePawnPosition(player);
-        });
-        
-        if (data.gameActive) {
-            this.rollDiceBtn.disabled = false;
+    // ДОДАЙ АБО ЗАМІНИ НА ЦЮ ФУНКЦІЮ В MULTIPLAYER.JS
+    async syncGameState(gameData) {
+        console.log("Синхронізація стану гри:", gameData);
+
+        // Зберігаємо стару позицію для анімації
+        const oldPositions = {};
+        this.players.forEach(p => { oldPositions[p.id] = p.position; });
+
+        this.gameActive = gameData.gameActive;
+        this.players = gameData.players;
+        this.currentPlayerIndex = gameData.currentPlayerIndex;
+
+        // Анімація кубика, якщо є кидок
+        if (gameData.lastRoll) {
+            await this.animateDice(gameData.lastRoll.roll);
+            const movingPlayer = this.players.find(p => oldPositions[p.id] !== p.position);
+            if(movingPlayer) {
+                 const startPos = oldPositions[movingPlayer.id];
+                 const endPos = movingPlayer.position;
+                 await this.animatePawnMovement(movingPlayer, startPos, endPos);
+            }
         }
+        
+        // Оновлюємо позиції ВСІХ фішок
+        this.updatePawnPositions();
+        this.updateUI();
+    }
+
+    // Додай також функцію updatePawnPositions, якщо її немає
+    updatePawnPositions() {
+        this.players.forEach(player => {
+            const pawn = document.getElementById(`pawn-${player.id}`);
+            const cellId = player.position === 0 ? 'cell-0' : `cell-${player.position}`;
+            const cell = document.getElementById(cellId);
+            if (pawn && cell) {
+                cell.appendChild(pawn);
+            }
+        });
+    }
+
+    // І функцію анімації кубика
+    async animateDice(roll) {
+        return new Promise(resolve => {
+            const rotations = { 1: 'rotateY(0deg)', 2: 'rotateY(-90deg)', 3: 'rotateY(-180deg)', 4: 'rotateY(90deg)', 5: 'rotateX(-90deg)', 6: 'rotateX(90deg)' };
+            this.diceInner.style.transform = `rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg)`;
+            setTimeout(() => {
+                this.diceInner.style.transform = `${rotations[roll]} translateZ(40px)`;
+                resolve();
+            }, 1000);
+        });
     }
     
     handleRemoteQuest(data) {

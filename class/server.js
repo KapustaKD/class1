@@ -6,48 +6,13 @@ const path = require('path');
 // Імпортуємо дані міні-ігор
 const { pvpGames, creativeGames, madLibsQuestions, webNovella } = require('./questsData.js');
 
-// Імпортуємо дані про спеціальні клітинки
-const specialCells = {
-    // Нові міні-ігри на клітинках: 3, 10, 14, 21, 32, 40, 55, 61, 69, 81, 90, 96, 99
-    3: { type: 'pvp-quest' },
-    10: { type: 'creative-quest' },
-    14: { type: 'mad-libs-quest' },
-    21: { type: 'pvp-quest' },
-    32: { type: 'webnovella-quest' },
-    40: { type: 'creative-quest' },
-    55: { type: 'pvp-quest' },
-    61: { type: 'mad-libs-quest' },
-    69: { type: 'creative-quest' },
-    81: { type: 'webnovella-quest' },
-    90: { type: 'pvp-quest' },
-    96: { type: 'mad-libs-quest' },
-    99: { type: 'webnovella-quest' },
-
-    // Обхідні шляхи: 5→11, 14→18, 26→33, 46→57, 80→91
-    5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
-    14: { type: 'alternative-path', target: 18, cost: 8, description: 'Обхідний шлях до клітинки 18 за 8 ОО' },
-    26: { type: 'alternative-path', target: 33, cost: 12, description: 'Обхідний шлях до клітинки 33 за 12 ОО' },
-    46: { type: 'alternative-path', target: 57, cost: 15, description: 'Обхідний шлях до клітинки 57 за 15 ОО' },
-    80: { type: 'alternative-path', target: 91, cost: 18, description: 'Обхідний шлях до клітинки 91 за 18 ОО' },
-
-    // Реінкарнація та випадкова зміна класу: 12, 22, 43, 75, 97
-    12: { type: 'reincarnation', nextEpoch: 2, points: 30 },
-    22: { type: 'reincarnation', nextEpoch: 3, points: 40 },
-    43: { type: 'reincarnation', nextEpoch: 4, points: 50 },
-    75: { type: 'reincarnation', nextEpoch: 5, points: 60 },
-    97: { type: 'reincarnation', nextEpoch: 6, points: 70 },
-
-    // Фінальна подія
-    100: { type: 'machine-uprising' }
-};
-
 // Перевірка, що ми не намагаємося використовувати неіснуючі класи
 if (typeof EducationalPathGame !== 'undefined') {
     console.warn('EducationalPathGame is defined but should not be used in server.js');
 }
 
 // Межі епох для системи реінкарнації
-const EPOCH_BOUNDARIES_ARRAY = [12, 22, 42, 75, 97, 101];
+const EPOCH_BOUNDARIES = { 1: 12, 2: 22, 3: 42, 4: 75, 5: 97, 6: 101 };
 
 function getEpochForPosition(position) {
     if (position <= 12) return 1;
@@ -391,46 +356,93 @@ io.on('connection', (socket) => {
         
         console.log('Кубик показав:', roll, 'Рух:', move);
         
-        // ЗАМІНИТИ СТАРИЙ БЛОК РУХУ ТА ПЕРЕВІРКИ ПОДІЙ НА ЦЕЙ:
+        // Межі епох для системи реінкарнації
+        const EPOCH_BOUNDARIES = [12, 22, 42, 75, 97, 101];
         
-        const EPOCH_BOUNDARIES = EPOCH_BOUNDARIES_ARRAY;
-        let finalPosition = currentPlayer.position;
+        // Нова логіка руху з перевіркою меж епох
+        const oldPosition = currentPlayer.position;
+        let finalPosition = oldPosition;
         let stopMove = false;
         
-        // Покроково перевіряємо рух на перетин межі епохи
+        // Поступово переміщуємо гравця крок за кроком
         for (let i = 1; i <= move; i++) {
-            const nextStep = currentPlayer.position + i;
+            const nextStep = oldPosition + i;
             if (EPOCH_BOUNDARIES.includes(nextStep)) {
+                // Гравець ступив на межу епохи
                 finalPosition = nextStep;
                 stopMove = true;
                 break; // Зупиняємо рух, ходи скасовуються
             }
         }
         
-        if (!stopMove) {
-            // Якщо межу не перетнули, гравець просто йде на кінцеву позицію
-            finalPosition = Math.min(currentPlayer.position + move, 101);
+        if (stopMove) {
+            currentPlayer.position = finalPosition;
+            // Тут ТРЕБА запустити логіку реінкарнації (показати модальне вікно)
+            // і НЕ передавати хід.
+        } else {
+            // Якщо межу не перетнули, просто ходимо
+            currentPlayer.position = Math.min(oldPosition + move, 101);
         }
         
-        currentPlayer.position = finalPosition;
+        console.log(`${currentPlayer.name} перемістився з позиції ${oldPosition} на позицію ${finalPosition}`);
         
-        // Перевіряємо умову перемоги
-        if (finalPosition >= 101) {
-            console.log(`Гравець ${currentPlayer.name} досяг фінішу! Гра закінчена.`);
-            room.gameData.gameActive = false;
-            room.gameState = 'finished';
+        // Перевіряємо зміну епохи (реінкарнація)
+        const oldEpoch = getEpochForPosition(oldPosition);
+        const newEpoch = getEpochForPosition(finalPosition);
+        
+        if (stopMove) {
+            console.log(`${currentPlayer.name} зупинився на межі епохи ${newEpoch} - реінкарнація!`);
             
-            io.to(room.id).emit('game_ended', {
-                winner: currentPlayer.name,
-                message: `🎉 ${currentPlayer.name} переміг, досягнувши фінішу!`,
-                finalResults: room.gameData.players.map(p => ({
-                    name: p.name,
-                    position: p.position,
-                    points: p.points,
-                    class: p.class
-                }))
+            // Нараховуємо бонусні очки
+            currentPlayer.points += 50;
+            
+            // Збираємо зайняті класи тільки з гравців, які знаходяться в новій епосі
+            const occupiedClasses = room.gameData.players
+                .filter(p => p.id !== currentPlayer.id && p.class && getEpochForPosition(p.position) === newEpoch)
+                .map(p => p.class.id);
+            
+            // Створюємо пул доступних класів
+            const availableClasses = [
+                { id: 'aristocrat', name: 'Аристократ', moveModifier: 1, description: 'Аристократ' },
+                { id: 'burgher', name: 'Міщанин', moveModifier: 0, description: 'Міщанин' },
+                { id: 'peasant', name: 'Селянин', moveModifier: -1, description: 'Селянин' }
+            ];
+            
+            // ЗАМІНИТИ СТАРУ ЛОГІКУ ВИБОРУ КЛАСУ НА ЦЮ:
+            
+            // 1. Збираємо класи, які вже зайняті в новій епосі
+            const occupiedClassesInNewEpoch = room.gameData.players
+                .filter(p => p.id !== currentPlayer.id && getEpochForPosition(p.position) === newEpoch)
+                .map(p => p.class.id);
+
+            // 2. Створюємо лічильник класів
+            const classCounts = {};
+            for (const classId of occupiedClassesInNewEpoch) {
+                classCounts[classId] = (classCounts[classId] || 0) + 1;
+            }
+
+            // 3. Визначаємо, які класи доступні
+            let availableClassPool = availableClasses.filter(cls => {
+                const count = classCounts[cls.id] || 0;
+                if (room.gameData.players.length <= 3) {
+                    return count < 1; // Якщо гравців мало, класи не повторюються
+                } else {
+                    return count < 2; // Якщо багато, можуть повторюватися до 2 разів
+                }
             });
-            return;
+
+            // Якщо всі класи зайняті, дозволяємо будь-який
+            if (availableClassPool.length === 0) {
+                availableClassPool = availableClasses;
+            }
+
+            // 4. Присвоюємо випадковий клас з доступних
+            currentPlayer.class = availableClassPool[Math.floor(Math.random() * availableClassPool.length)];
+            
+            console.log(`${currentPlayer.name} отримав новий клас: ${currentPlayer.class.name}`);
+            
+            // Повідомлення про зміну класу
+            io.to(room.id).emit('chat_message', { type: 'system', message: `${currentPlayer.name} реінкарнував і став ${currentPlayer.class.name}!` });
         }
         
         // Повідомляємо всіх про кидання кубика та нову позицію
@@ -446,37 +458,64 @@ io.on('connection', (socket) => {
         
         console.log('Відправлено подію dice_result всім гравцям');
         
-        // --- ОСНОВНЕ ВИПРАВЛЕННЯ ---
-        // Тепер перевіряємо, чи є подія на кінцевій клітинці
-        const eventData = specialCells[finalPosition];
+        // КРИТИЧНО: Перевіряємо події на новій позиції ПЕРЕД передачею ходу
+        // Тут має бути перевірка на події (реінкарнація, скорочення шляху тощо)
+        // Якщо є подія - НЕ передаємо хід, а відправляємо подію тільки поточному гравцю
         
-        if (eventData) {
-            // Якщо подія є, запускаємо її і НЕ передаємо хід
-            console.log(`Гравець ${currentPlayer.name} потрапив на подію ${eventData.type} на клітинці ${finalPosition}`);
-            io.to(room.id).emit('show_event_prompt', {
-                eventType: eventData.type,
-                eventData: eventData,
+        // Перевіряємо, чи є подія на новій позиції
+        let hasEvent = false;
+        
+        // Перевірка на реінкарнацію (зупинка на межі епохи)
+        if (stopMove) {
+            hasEvent = true;
+            // Відправляємо подію реінкарнації тільки поточному гравцю
+            socket.emit('show_event_prompt', {
+                playerId: currentPlayer.id,
+                playerName: currentPlayer.name,
+                eventType: 'reincarnation',
+                eventData: {
+                    nextEpoch: newEpoch,
+                    points: 30
+                },
                 activePlayerId: currentPlayer.id
             });
-        } else {
-            // Якщо події НЕМАЄ, тоді передаємо хід наступному гравцю
+            console.log(`Відправлено подію реінкарнації гравцю ${currentPlayer.name}`);
+        }
+        
+        // Перевірка на інші події (скорочення шляху тощо)
+        // Тут можна додати інші перевірки подій
+        
+        // Якщо події немає, передаємо хід наступному гравцю
+        if (!hasEvent) {
+            // Переходимо до наступного гравця
+            console.log('Старий currentPlayerIndex:', room.gameData.currentPlayerIndex);
             room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+            console.log('Новий currentPlayerIndex:', room.gameData.currentPlayerIndex);
             
             // Пропускаємо гравців, які вибули
             while (room.gameData.players[room.gameData.currentPlayerIndex].hasWon || 
                    room.gameData.players[room.gameData.currentPlayerIndex].hasLost) {
                 room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+                console.log('Пропущено вибулого гравця, новий індекс:', room.gameData.currentPlayerIndex);
             }
             
             // Повідомляємо всіх про зміну черги
             const nextPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+            console.log('Наступний гравець:', nextPlayer.name, 'ID:', nextPlayer.id);
+            
             io.to(room.id).emit('turn_update', {
                 currentPlayerIndex: room.gameData.currentPlayerIndex,
                 currentPlayerId: nextPlayer.id,
                 currentPlayerName: nextPlayer.name
             });
             
-            console.log(`Хід передано гравцю ${nextPlayer.name}`);
+            console.log('Відправлено подію turn_update всім гравцям:', {
+                currentPlayerIndex: room.gameData.currentPlayerIndex,
+                currentPlayerId: nextPlayer.id,
+                currentPlayerName: nextPlayer.name
+            });
+        } else {
+            console.log(`Гравець ${currentPlayer.name} потрапив на подію, хід не передається`);
         }
     });
     
@@ -542,7 +581,8 @@ io.on('connection', (socket) => {
                 io.to(room.id).emit('start_timed_text_quest', {
                     gameState: room.timedTextQuestState,
                     player1: { id: player.id, name: player.name },
-                    player2: { id: opponent.id, name: opponent.name }
+                    player2: { id: opponent.id, name: opponent.name },
+                    activePlayerId: player.id
                 });
 
             } else if (data.eventType === 'creative-quest') {
@@ -568,31 +608,27 @@ io.on('connection', (socket) => {
                     const firstPlayer = room.collaborativeStoryState.players[0];
                     io.to(room.id).emit('collaborative_story_start', {
                         gameState: room.collaborativeStoryState,
-                        currentPlayer: firstPlayer
+                        currentPlayer: firstPlayer,
+                        activePlayerId: firstPlayer.id
                     });
                     
                 } else {
-                    // Великий Педагогічний / Я у мами педагог - один пише, інші голосують
+                    // Великий Педагогічний / Я у мами педагог - всі пишуть, потім голосують
                     room.creativeWritingState = {
                         gameType: randomGameKey,
                         gameData: selectedGame,
-                        activePlayer: player.id,
-                        activePlayerName: player.name,
                         timer: selectedGame.timer,
                         gameActive: true,
                         submissions: [],
-                        votes: {}
+                        votes: {},
+                        players: room.gameData.players.map(p => ({ id: p.id, name: p.name }))
                     };
                     
-                    // Відправляємо активному гравцю завдання
-                    io.to(player.id).emit('creative_task_input', {
-                        gameState: room.creativeWritingState
-                    });
-                    
-                    // Відправляємо іншим гравцям інформацію про очікування
-                    socket.to(room.id).emit('creative_writing_waiting', {
-                        activePlayer: player.name,
-                        gameType: randomGameKey
+                    // Відправляємо всім гравцям завдання
+                    io.to(room.id).emit('start_creative_submission', {
+                        gameState: room.creativeWritingState,
+                        task: selectedGame.description,
+                        timer: selectedGame.timer
                     });
                 }
 
@@ -613,7 +649,8 @@ io.on('connection', (socket) => {
                 io.to(firstPlayer.id).emit('mad_libs_question', {
                     question: firstQuestion,
                     playerIndex: 0,
-                    gameState: room.madLibsState
+                    gameState: room.madLibsState,
+                    activePlayerId: firstPlayer.id
                 });
 
             } else if (data.eventType === 'webnovella-quest') {
@@ -627,7 +664,8 @@ io.on('connection', (socket) => {
                 // Відправляємо першу подію
                 io.to(player.id).emit('webnovella_event', {
                     event: webNovella['start_event_1'],
-                    gameState: room.webNovellaState
+                    gameState: room.webNovellaState,
+                    activePlayerId: player.id
                 });
 
             } else {
@@ -681,53 +719,7 @@ io.on('connection', (socket) => {
                 // Автоматично переміщуємо на наступну клітинку
                 player.position += 1;
                 
-                // Змінюємо клас гравця
-                const availableClasses = [
-                    { id: 'aristocrat', name: '⚜️ Аристократ', startPoints: 50, moveModifier: 1 },
-                    { id: 'burgher', name: '⚖️ Міщанин', startPoints: 20, moveModifier: 0 },
-                    { id: 'peasant', name: '🌱 Селянин', startPoints: 0, moveModifier: -1 },
-                ];
-                
-                // Визначаємо нову епоху
-                const newEpoch = getEpochForPosition(player.position);
-                
-                // Збираємо класи, які вже зайняті в новій епосі
-                const occupiedClassesInNewEpoch = room.gameData.players
-                    .filter(p => p.id !== player.id && getEpochForPosition(p.position) === newEpoch)
-                    .map(p => p.class.id);
-                
-                // Створюємо лічильник класів
-                const classCounts = {};
-                for (const classId of occupiedClassesInNewEpoch) {
-                    classCounts[classId] = (classCounts[classId] || 0) + 1;
-                }
-                
-                // Визначаємо, які класи доступні
-                let availableClassPool = availableClasses.filter(cls => {
-                    const count = classCounts[cls.id] || 0;
-                    if (room.gameData.players.length <= 3) {
-                        return count < 1; // Якщо гравців мало, класи не повторюються
-                    } else {
-                        return count < 2; // Якщо багато, можуть повторюватися до 2 разів
-                    }
-                });
-                
-                // Якщо всі класи зайняті, дозволяємо будь-який
-                if (availableClassPool.length === 0) {
-                    availableClassPool = availableClasses;
-                }
-                
-                // Присвоюємо випадковий клас з доступних
-                const oldClass = player.class;
-                player.class = availableClassPool[Math.floor(Math.random() * availableClassPool.length)];
-                
-                resultMessage = `${player.name} завершив епоху! Отримано 30 ОО, переміщено на наступну клітинку та змінено клас з ${oldClass.name} на ${player.class.name}.`;
-                
-                // Повідомляємо всім про зміну класу
-                io.to(room.id).emit('chat_message', {
-                    type: 'system',
-                    message: `${player.name} реінкарнував і став ${player.class.name}!`
-                });
+                resultMessage = `${player.name} завершив епоху! Отримано 30 ОО та переміщено на наступну клітинку.`;
             } else {
                 resultMessage = `${player.name} відмовився від переходу між епохами.`;
             }
@@ -1126,6 +1118,34 @@ io.on('connection', (socket) => {
             submissions: room.creativeWritingState.submissions,
             gameState: room.creativeWritingState
         });
+    });
+
+    // Обробляємо відправку творчої роботи (всі гравці пишуть)
+    socket.on('submit_creative_entry', (data) => {
+        console.log('Отримано творчу роботу:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+
+        const room = rooms.get(data.roomId);
+        if (!room || !room.creativeWritingState) return;
+
+        // Зберігаємо відповідь
+        room.creativeWritingState.submissions.push({
+            text: data.text,
+            playerName: player.name,
+            playerId: player.id
+        });
+
+        console.log(`Гравець ${player.name} відправив творчу роботу. Всього: ${room.creativeWritingState.submissions.length}/${room.gameData.players.length}`);
+
+        // Перевіряємо, чи всі гравці відправили роботи
+        if (room.creativeWritingState.submissions.length >= room.gameData.players.length) {
+            // Всі відправили, починаємо голосування
+            io.to(room.id).emit('start_voting', {
+                submissions: room.creativeWritingState.submissions,
+                gameState: room.creativeWritingState
+            });
+        }
     });
 
     // Обробляємо голосування в творчій грі

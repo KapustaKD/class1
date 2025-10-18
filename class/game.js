@@ -1184,47 +1184,37 @@ class EducationalPathGame {
     
            
     
-            try {
+        try {
     
-                // Рухаємося покроково
+            // Рухаємося покроково
     
-                for (let i = 1; i <= steps; i++) {
+            for (let i = 1; i <= steps; i++) {
     
-                    const currentPosition = fromPosition + i;
+                const currentPosition = fromPosition + i;
     
-                   
+               
     
-                    // Переміщуємо фішку на поточну клітинку
+                // Переміщуємо фішку на поточну клітинку
     
-                    await this.movePawnToCell(pawn, currentPosition);
+                await this.movePawnToCell(pawn, currentPosition);
     
-                   
+               
     
-                    // Невелика затримка між кроками
+                // Невелика затримка між кроками
     
-                    await this.sleep(250);
+                await this.sleep(250);
     
-                   
-    
-                    // Перевіряємо події на поточній клітинці
-    
-                    if (i === steps) {
-    
-                        // Останній крок - перевіряємо події
-    
-                        const cellData = this.specialCells[currentPosition];
-    
-                        if (cellData) {
-    
-                            console.log(`Гравець ${player.name} потрапив на подію на клітинці ${currentPosition}`);
-    
-                            await this.handleSpecialCell(player, cellData);
-    
-                        }
-    
-                    }
-    
-                }
+            }
+            
+            // Після завершення анімації перевіряємо події на фінальній позиції
+            console.log(`Перевіряємо події на позиції ${toPosition} для гравця ${player.name}`);
+            const cellData = this.specialCells[toPosition];
+            if (cellData) {
+                console.log(`🎯 Гравець ${player.name} потрапив на подію типу "${cellData.type}" на клітинці ${toPosition}`);
+                await this.handleSpecialCell(player, cellData);
+            } else {
+                console.log(`✅ На позиції ${toPosition} немає подій`);
+            }
     
                
     

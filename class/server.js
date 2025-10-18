@@ -6,6 +6,9 @@ const path = require('path');
 // Імпортуємо дані міні-ігор
 const { pvpGames, creativeGames, madLibsQuestions, webNovella } = require('./questsData.js');
 
+// Імпортуємо дані про спеціальні клітинки
+const specialCells = require('./specialCells.js');
+
 // Перевірка, що ми не намагаємося використовувати неіснуючі класи
 if (typeof EducationalPathGame !== 'undefined') {
     console.warn('EducationalPathGame is defined but should not be used in server.js');
@@ -483,7 +486,23 @@ io.on('connection', (socket) => {
         }
         
         // Перевірка на інші події (скорочення шляху тощо)
-        // Тут можна додати інші перевірки подій
+        if (!stopMove) {
+            // Перевіряємо, чи є подія на фінальній позиції
+            const cellData = specialCells[finalPosition];
+            if (cellData) {
+                hasEvent = true;
+                console.log(`Гравець ${currentPlayer.name} потрапив на подію типу "${cellData.type}" на клітинці ${finalPosition}`);
+                
+                // Відправляємо подію тільки поточному гравцю
+                socket.emit('show_event_prompt', {
+                    playerId: currentPlayer.id,
+                    playerName: currentPlayer.name,
+                    eventType: cellData.type,
+                    eventData: cellData,
+                    activePlayerId: currentPlayer.id
+                });
+            }
+        }
         
         // Якщо події немає, передаємо хід наступному гравцю
         if (!hasEvent) {

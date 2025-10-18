@@ -428,11 +428,6 @@ class MultiplayerGame extends EducationalPathGame {
                     this.showCreativeTaskInput(data);
                 });
 
-                this.socket.on('start_creative_submission', (data) => {
-                    console.log('Початок творчого завдання для всіх:', data);
-                    this.showCreativeSubmission(data);
-                });
-
                 this.socket.on('creative_writing_waiting', (data) => {
                     console.log('Очікування творчого завдання:', data);
                     this.showCreativeWritingWaiting(data);
@@ -1541,7 +1536,6 @@ class MultiplayerGame extends EducationalPathGame {
     // Нові міні-ігри
     showTimedTextQuest(data) {
         const isParticipant = data.gameState.players.includes(this.playerId);
-        const isMyEvent = data.activePlayerId === this.playerId;
         const gameData = data.gameState.gameData;
         
         let modalContent = `
@@ -1644,7 +1638,7 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     showCollaborativeStory(data) {
-        const isMyTurn = data.activePlayerId === this.playerId;
+        const isMyTurn = data.currentPlayer.id === this.playerId;
         
         let modalContent = `
             <h3 class="text-2xl font-bold mb-4">Хроніки Неіснуючого Вояжу</h3>
@@ -1796,7 +1790,7 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     showCreativeTaskInput(data) {
-        const isActivePlayer = data.activePlayerId === this.playerId;
+        const isActivePlayer = data.gameState.activePlayer === this.playerId;
         
         if (isActivePlayer) {
             let modalContent = `
@@ -1863,65 +1857,6 @@ class MultiplayerGame extends EducationalPathGame {
         
         this.showQuestModal('Творчий квест', modalContent, []);
     }
-
-    showCreativeSubmission(data) {
-        let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Творчий квест</h3>
-            <p class="mb-4">${data.task}</p>
-            <div class="mb-4">
-                <div id="creative-submission-timer" class="text-xl font-bold text-red-500">${data.timer}</div>
-            </div>
-            <div class="mb-4">
-                <textarea id="creative-submission-input" class="w-full h-32 p-3 border-2 border-gray-400 rounded" placeholder="Введіть вашу відповідь..."></textarea>
-            </div>
-            <button id="submit-creative-entry-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                Відправити
-            </button>
-        `;
-        
-        this.showQuestModal('Творчий квест', modalContent, []);
-        
-        // Запускаємо таймер
-        this.startCreativeSubmissionTimer(data.timer);
-    }
-
-    startCreativeSubmissionTimer(seconds) {
-        let timeLeft = seconds;
-        const timerElement = document.getElementById('creative-submission-timer');
-        
-        const timer = setInterval(() => {
-            timeLeft--;
-            if (timerElement) {
-                timerElement.textContent = timeLeft;
-            }
-            
-            if (timeLeft <= 0) {
-                clearInterval(timer);
-                // Автоматично відправляємо результат
-                this.submitCreativeEntry();
-            }
-        }, 1000);
-        
-        // Додаємо обробник кнопки
-        setTimeout(() => {
-            const submitBtn = document.getElementById('submit-creative-entry-btn');
-            if (submitBtn) {
-                submitBtn.addEventListener('click', () => this.submitCreativeEntry());
-            }
-        }, 100);
-    }
-
-    submitCreativeEntry() {
-        const creativeInput = document.getElementById('creative-submission-input');
-        const text = creativeInput.value.trim();
-        
-        if (text) {
-            this.socket.emit('submit_creative_entry', {
-                roomId: this.roomId,
-                text: text
-            });
-        }
-    }
     
     showVoting(data) {
         let modalContent = `
@@ -1973,7 +1908,7 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     showMadLibsQuestion(data) {
-        const isMyTurn = data.activePlayerId === this.playerId;
+        const isMyTurn = data.playerIndex === this.players.findIndex(p => p.id === this.playerId);
         
         let modalContent = `
             <h3 class="text-2xl font-bold mb-4">Хто, де, коли?</h3>
@@ -2052,7 +1987,7 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     showWebNovellaEvent(data) {
-        const isMyEvent = data.activePlayerId === this.playerId;
+        const isMyEvent = data.gameState.playerId === this.playerId;
         
         let modalContent = `
             <h3 class="text-2xl font-bold mb-4">Халепа!</h3>

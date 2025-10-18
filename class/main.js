@@ -43,6 +43,39 @@ document.addEventListener('DOMContentLoaded', () => {
     setupGlobalEventListeners();
     
     console.log('🎮 Освітній Шлях: Революція завантажено!');
+    
+    // Тест кнопок режиму
+    setTimeout(() => {
+        const localBtn = document.getElementById('local-mode-btn');
+        const onlineBtn = document.getElementById('online-mode-btn');
+        
+        console.log('🔍 Тест кнопок режиму:', {
+            localBtn: localBtn,
+            onlineBtn: onlineBtn,
+            localBtnExists: !!localBtn,
+            onlineBtnExists: !!onlineBtn
+        });
+        
+        if (localBtn) {
+            console.log('✅ Кнопка локального режиму знайдена');
+            // Тестуємо клік
+            localBtn.addEventListener('click', () => {
+                console.log('🎯 Кнопка локального режиму працює!');
+            });
+        } else {
+            console.error('❌ Кнопка локального режиму НЕ знайдена!');
+        }
+        
+        if (onlineBtn) {
+            console.log('✅ Кнопка онлайн режиму знайдена');
+            // Тестуємо клік
+            onlineBtn.addEventListener('click', () => {
+                console.log('🎯 Кнопка онлайн режиму працює!');
+            });
+        } else {
+            console.error('❌ Кнопка онлайн режиму НЕ знайдена!');
+        }
+    }, 1000);
 });
 
 function setupGlobalEventListeners() {

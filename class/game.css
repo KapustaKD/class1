@@ -360,6 +360,19 @@ body {
     color: white; 
 }
 
+/* Тест кнопок режиму */
+#local-mode-btn, #online-mode-btn {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: inline-block !important;
+}
+
+#local-mode-btn:hover, #online-mode-btn:hover {
+    transform: scale(1.05) !important;
+}
+
 /* Анімації */
 @keyframes pulse-red { 
     0%, 100% { 

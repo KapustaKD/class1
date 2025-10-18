@@ -58,39 +58,10 @@ class EducationalPathGame {
     
            
     
-            this.specialCells = {
-            // Нові міні-ігри на клітинках: 3, 10, 14, 21, 32, 40, 55, 61, 69, 81, 90, 96, 99
-            3: { type: 'pvp-quest' },
-            10: { type: 'creative-quest' },
-            14: { type: 'mad-libs-quest' },
-            21: { type: 'pvp-quest' },
-            32: { type: 'webnovella-quest' },
-            40: { type: 'creative-quest' },
-            55: { type: 'pvp-quest' },
-            61: { type: 'mad-libs-quest' },
-            69: { type: 'creative-quest' },
-            81: { type: 'webnovella-quest' },
-                90: { type: 'pvp-quest' },
-            96: { type: 'mad-libs-quest' },
-            99: { type: 'webnovella-quest' },
-
-            // Обхідні шляхи: 5→11, 14→18, 26→33, 46→57, 80→91
-            5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
-            14: { type: 'alternative-path', target: 18, cost: 8, description: 'Обхідний шлях до клітинки 18 за 8 ОО' },
-            26: { type: 'alternative-path', target: 33, cost: 12, description: 'Обхідний шлях до клітинки 33 за 12 ОО' },
-            46: { type: 'alternative-path', target: 57, cost: 15, description: 'Обхідний шлях до клітинки 57 за 15 ОО' },
-            80: { type: 'alternative-path', target: 91, cost: 18, description: 'Обхідний шлях до клітинки 91 за 18 ОО' },
-
-            // Реінкарнація та випадкова зміна класу: 12, 22, 43, 75, 97
-            12: { type: 'reincarnation', nextEpoch: 2, points: 30 },
-            22: { type: 'reincarnation', nextEpoch: 3, points: 40 },
-            43: { type: 'reincarnation', nextEpoch: 4, points: 50 },
-            75: { type: 'reincarnation', nextEpoch: 5, points: 60 },
-            97: { type: 'reincarnation', nextEpoch: 6, points: 70 },
-
-            // Фінальна подія
-            100: { type: 'machine-uprising' }
-            };
+        this.specialCells = {
+            // Використовуємо дані з specialCells.js
+            ...require('./specialCells.js')
+        };
     
            
     
@@ -918,17 +889,17 @@ class EducationalPathGame {
     
                     break;
     
-                case 'alternative-path':
-    
-                    this.showQuestModal('Обхідна дорога!', `${cellData.description}`, [
-    
-                        { text: 'Так', callback: () => { this.updatePoints(player, -cellData.cost); this.movePlayerTo(player, cellData.target); this.questModal.classList.add('hidden'); }},
-    
-                        { text: 'Ні', callback: () => { this.questModal.classList.add('hidden'); this.nextTurn(); }}
-    
-                    ]);
-    
-                    break;
+            case 'event-good':
+                this.handleGoodEvent(player, cellData);
+                break;
+
+            case 'event-bad':
+                this.handleBadEvent(player, cellData);
+                break;
+
+            case 'future':
+                this.handleVictory(player, cellData);
+                break;
     
             default:
                 // Якщо є ефект - виконуємо його
@@ -1629,6 +1600,23 @@ class EducationalPathGame {
         this.logMessage(`Реінкарнація на епоху ${cellData.nextEpoch} за ${cellData.points} ОО`, 'system');
         this.updatePoints(player, cellData.points, `Реінкарнація! +${cellData.points} ОО.`, true);
         this.nextTurn();
+    }
+
+    handleGoodEvent(player, cellData) {
+        const points = cellData.points || 20;
+        this.updatePoints(player, points, `${cellData.description} +${points} ОО!`, true);
+        this.nextTurn();
+    }
+
+    handleBadEvent(player, cellData) {
+        const points = cellData.points || -20;
+        this.updatePoints(player, points, `${cellData.description} ${points} ОО!`, true);
+        this.nextTurn();
+    }
+
+    handleVictory(player, cellData) {
+        this.logMessage(`🎉 ${player.name} досяг майбутнього! Перемога!`, 'victory');
+        this.endGame(player, `${player.name} переміг, досягнувши майбутнього!`);
     }
     
     // Масштабування та переміщення карти

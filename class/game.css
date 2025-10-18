@@ -360,18 +360,6 @@ body {
     color: white; 
 }
 
-.board-cell.event-good { 
-    color: white; 
-}
-
-.board-cell.event-bad { 
-    color: white; 
-}
-
-.board-cell.future { 
-    color: white; 
-}
-
 /* Анімації */
 @keyframes pulse-red { 
     0%, 100% { 

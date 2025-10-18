@@ -10,6 +10,11 @@ class MultiplayerGame extends EducationalPathGame {
         this.isSpectator = false;
         this.spectators = [];
         
+        // Ініціалізуємо мультиплеєр одразу, оскільки main.js вже чекає на DOMContentLoaded
+        this.initializeMultiplayer();
+    }
+    
+    initializeMultiplayer() {
         // Спочатку налаштовуємо елементи мультиплеєра
         this.setupMultiplayerElements();
         // Потім обробники подій мультиплеєра (перезаписують базові)
@@ -72,13 +77,33 @@ class MultiplayerGame extends EducationalPathGame {
         this.leaveRoomBtn = document.getElementById('leave-room-btn');
         
         console.log('Елементи мультиплеєра налаштовано');
+        
+        // Додаємо глобальні функції для тестування
+        window.testButtons = () => {
+            console.log('Тестуємо кнопки:', {
+                localModeBtn: this.localModeBtn,
+                onlineModeBtn: this.onlineModeBtn,
+                modeSelection: this.modeSelection
+            });
+            
+            if (this.localModeBtn) {
+                console.log('Кнопка локального режиму знайдена, тестуємо клік...');
+                this.localModeBtn.click();
+            }
+        };
     }
     
     setupMultiplayerEventListeners() {
         console.log('Налаштовуємо обробники подій для кнопок режиму');
+        console.log('DOM стан:', {
+            localModeBtn: this.localModeBtn,
+            onlineModeBtn: this.onlineModeBtn,
+            modeSelection: this.modeSelection
+        });
         
         // Обробники для кнопок режиму
         if (this.localModeBtn) {
+            console.log('Додаємо обробник для локального режиму');
             this.localModeBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 console.log('Натиснуто локальний режим');
@@ -89,6 +114,7 @@ class MultiplayerGame extends EducationalPathGame {
         }
         
         if (this.onlineModeBtn) {
+            console.log('Додаємо обробник для онлайн режиму');
             this.onlineModeBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 console.log('Натиснуто онлайн режим');
@@ -96,6 +122,21 @@ class MultiplayerGame extends EducationalPathGame {
             });
         } else {
             console.error('Кнопка онлайн режиму не знайдена!');
+        }
+        
+        // Додатковий спосіб через делегування подій (якщо кнопки не знайдені)
+        if (this.modeSelection) {
+            this.modeSelection.addEventListener('click', (e) => {
+                if (e.target.id === 'local-mode-btn') {
+                    e.preventDefault();
+                    console.log('Натиснуто локальний режим (через делегування)');
+                    this.startLocalMode();
+                } else if (e.target.id === 'online-mode-btn') {
+                    e.preventDefault();
+                    console.log('Натиснуто онлайн режим (через делегування)');
+                    this.startOnlineMode();
+                }
+            });
         }
         
         if (this.createRoomBtn) {

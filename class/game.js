@@ -1148,9 +1148,10 @@ class EducationalPathGame {
     
         // Плавна анімація руху фішки покроково
     
-        async animatePawnMovement(player, fromPosition, toPosition, steps) {
-    
-            console.log(`Анімація руху ${player.name} з ${fromPosition} до ${toPosition}, кроків: ${steps}`);
+    async animatePawnMovement(player, fromPosition, toPosition, steps) {
+        // Виправляємо негативну початкову позицію
+        fromPosition = Math.max(0, fromPosition);
+        console.log(`Анімація руху ${player.name} з ${fromPosition} до ${toPosition}, кроків: ${steps}`);
     
            
     

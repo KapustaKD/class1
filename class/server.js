@@ -54,6 +54,27 @@ function getEpochForPosition(position) {
     return 6;
 }
 
+// Спеціальні клітинки з подіями
+const SPECIAL_CELLS = {
+    3: { type: 'pvp-quest' },
+    5: { type: 'alternative-path', target: 11, cost: 10 },
+    10: { type: 'pvp-quest' },
+    14: { type: 'alternative-path', target: 18, cost: 15 },
+    21: { type: 'creative-quest' },
+    26: { type: 'alternative-path', target: 33, cost: 20 },
+    32: { type: 'mad-libs' },
+    40: { type: 'webnovella' },
+    46: { type: 'alternative-path', target: 57, cost: 25 },
+    55: { type: 'creative-quest' },
+    61: { type: 'pvp-quest' },
+    69: { type: 'mad-libs' },
+    80: { type: 'alternative-path', target: 91, cost: 30 },
+    81: { type: 'webnovella' },
+    90: { type: 'creative-quest' },
+    96: { type: 'pvp-quest' },
+    99: { type: 'mad-libs' }
+};
+
 const app = express();
 const server = http.createServer(app);
 
@@ -620,7 +641,11 @@ io.on('connection', (socket) => {
         }
         
         // Перевірка на інші події (скорочення шляху тощо)
-        // Тут можна додати інші перевірки подій
+        const specialCell = SPECIAL_CELLS[currentPlayer.position];
+        if (specialCell && !hasEvent) {
+            hasEvent = true;
+            console.log(`Гравець ${currentPlayer.name} потрапив на спеціальну клітинку ${currentPlayer.position}: ${specialCell.type}`);
+        }
         
         // Якщо є подія, не передаємо хід одразу - чекаємо на обробку події
         if (hasEvent) {

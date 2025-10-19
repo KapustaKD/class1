@@ -330,7 +330,10 @@ io.on('connection', (socket) => {
         
         // Повідомляємо всіх гравців
         io.to(room.id).emit('game_started', {
-            players: room.gameData.players,
+            players: room.gameData.players.map(player => ({
+                ...player,
+                avatarUrl: room.gameData.avatarSelections[player.id] || null
+            })),
             currentPlayerIndex: room.gameData.currentPlayerIndex
         });
         
@@ -403,7 +406,17 @@ io.on('connection', (socket) => {
         // Перевіряємо, чи всі гравці готові
         if (room.gameData.readyPlayers.length === room.gameData.players.length) {
             console.log('Всі гравці готові! Запускаємо гру...');
-            io.to(room.id).emit('all_players_ready_start_game');
+            
+            // Додаємо аватари до даних гравців перед запуском гри
+            room.gameData.players = room.gameData.players.map(player => ({
+                ...player,
+                avatarUrl: room.gameData.avatarSelections[player.id] || null
+            }));
+            
+            io.to(room.id).emit('all_players_ready_start_game', {
+                players: room.gameData.players,
+                currentPlayerIndex: room.gameData.currentPlayerIndex
+            });
         }
         
         console.log('Гравець готовий:', player.name, 'Готово:', room.gameData.readyPlayers.length, '/', room.gameData.players.length);

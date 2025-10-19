@@ -771,24 +771,37 @@ io.on('connection', (socket) => {
                 }
 
             } else if (data.eventType === 'mad-libs-quest') {
-                // Гра "Хто, де, коли?"
+                // Гра "Хто, де, коли?" - нова логіка
                 room.madLibsState = {
                     questions: [...madLibsQuestions],
                     players: room.gameData.players.filter(p => !p.hasWon && !p.hasLost),
+                    currentQuestionIndex: 0,
                     currentPlayerIndex: 0,
                     answers: [],
                     gameActive: true
                 };
                 
-                // Відправляємо перше питання
+                // Відправляємо перше питання першому гравцю
                 const firstPlayer = room.madLibsState.players[0];
                 const firstQuestion = room.madLibsState.questions[0];
                 
                 io.to(firstPlayer.id).emit('mad_libs_question', {
                     question: firstQuestion,
+                    questionIndex: 0,
                     playerIndex: 0,
                     gameState: room.madLibsState,
                     activePlayerId: firstPlayer.id
+                });
+                
+                // Відправляємо іншим гравцям очікування
+                room.madLibsState.players.forEach((player, index) => {
+                    if (index !== 0) {
+                        io.to(player.id).emit('mad_libs_waiting', {
+                            currentPlayer: firstPlayer,
+                            question: firstQuestion,
+                            questionIndex: 0
+                        });
+                    }
                 });
 
             } else if (data.eventType === 'webnovella-quest') {
@@ -1403,36 +1416,55 @@ io.on('connection', (socket) => {
         // Додаємо відповідь
         room.madLibsState.answers.push({
             answer: data.answer,
-            playerName: player.name,
-            questionIndex: room.madLibsState.currentPlayerIndex
+            questionIndex: room.madLibsState.currentQuestionIndex
         });
 
-        // Переходимо до наступного гравця
-        room.madLibsState.currentPlayerIndex++;
+        console.log(`Гравець ${player.name} відповів на питання ${room.madLibsState.currentQuestionIndex}: ${data.answer}`);
+
+        // Переходимо до наступного питання
+        room.madLibsState.currentQuestionIndex++;
         
-        if (room.madLibsState.currentPlayerIndex < room.madLibsState.players.length) {
-            // Відправляємо наступне питання
-            const nextPlayer = room.madLibsState.players[room.madLibsState.currentPlayerIndex];
-            const questionIndex = room.madLibsState.currentPlayerIndex % room.madLibsState.questions.length;
-            const question = room.madLibsState.questions[questionIndex];
+        if (room.madLibsState.currentQuestionIndex < room.madLibsState.questions.length) {
+            // Є ще питання - переходимо до наступного гравця
+            room.madLibsState.currentPlayerIndex = 
+                (room.madLibsState.currentPlayerIndex + 1) % room.madLibsState.players.length;
             
+            const nextPlayer = room.madLibsState.players[room.madLibsState.currentPlayerIndex];
+            const nextQuestion = room.madLibsState.questions[room.madLibsState.currentQuestionIndex];
+            
+            console.log(`Наступне питання ${room.madLibsState.currentQuestionIndex} для гравця ${nextPlayer.name}: ${nextQuestion}`);
+            
+            // Відправляємо наступне питання наступному гравцю
             io.to(nextPlayer.id).emit('mad_libs_question', {
-                question: question,
+                question: nextQuestion,
+                questionIndex: room.madLibsState.currentQuestionIndex,
                 playerIndex: room.madLibsState.currentPlayerIndex,
                 gameState: room.madLibsState,
                 activePlayerId: nextPlayer.id
             });
+            
+            // Відправляємо іншим гравцям очікування
+            room.madLibsState.players.forEach((player, index) => {
+                if (index !== room.madLibsState.currentPlayerIndex) {
+                    io.to(player.id).emit('mad_libs_waiting', {
+                        currentPlayer: nextPlayer,
+                        question: nextQuestion,
+                        questionIndex: room.madLibsState.currentQuestionIndex
+                    });
+                }
+            });
         } else {
-            // Всі відповіли, формуємо фінальну історію
+            // Всі питання відповідені - формуємо фінальну історію
             const story = room.madLibsState.answers
                 .sort((a, b) => a.questionIndex - b.questionIndex)
                 .map(answer => answer.answer)
                 .join(' ');
 
+            console.log('Фінальна історія:', story);
+
             io.to(room.id).emit('mad_libs_result', {
                 story: story,
-                answers: room.madLibsState.answers,
-                resultMessage: `Ось ваша історія: ${story}`
+                answers: room.madLibsState.answers
             });
 
             room.madLibsState = null;

@@ -2057,7 +2057,14 @@ class MultiplayerGame extends EducationalPathGame {
         if (modal) {
             modal.classList.remove('hidden');
             this.populateAvatarGrid();
-            this.setupAvatarEventListeners();
+            
+            // Оновлюємо лічильник гравців
+            this.updateReadyCounter(0, this.players.length);
+            
+            // Встановлюємо обробники подій після створення елементів
+            setTimeout(() => {
+                this.setupAvatarEventListeners();
+            }, 100);
         }
     }
     
@@ -2067,8 +2074,8 @@ class MultiplayerGame extends EducationalPathGame {
         
         avatarGrid.innerHTML = '';
         
-        // Створюємо 6 аватарів
-        for (let i = 1; i <= 6; i++) {
+        // Створюємо 8 аватарів
+        for (let i = 1; i <= 8; i++) {
             const avatarDiv = document.createElement('div');
             avatarDiv.className = 'avatar-item cursor-pointer p-2 rounded-lg border-2 border-gray-600 hover:border-yellow-400 transition-colors';
             avatarDiv.dataset.avatarUrl = `image/chips/avatar${i}.png`;
@@ -2089,43 +2096,61 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     setupAvatarEventListeners() {
+        console.log('Налаштовуємо обробники подій для аватарів...');
+        
         const avatarItems = document.querySelectorAll('.avatar-item');
-        avatarItems.forEach(item => {
+        console.log('Знайдено аватарів:', avatarItems.length);
+        
+        avatarItems.forEach((item, index) => {
+            console.log(`Аватар ${index + 1}:`, item.dataset.avatarUrl);
             item.addEventListener('click', () => {
+                console.log('Клік по аватару:', item.dataset.avatarUrl);
                 const avatarUrl = item.dataset.avatarUrl;
                 if (avatarUrl && !item.classList.contains('taken')) {
+                    console.log('Відправляємо вибір аватара:', avatarUrl);
                     this.selectAvatar(avatarUrl);
+                } else {
+                    console.log('Аватар зайнятий або URL відсутній');
                 }
             });
         });
         
         const readyBtn = document.getElementById('player-ready-btn');
         if (readyBtn) {
+            console.log('Кнопка "Готово" знайдена');
             readyBtn.addEventListener('click', () => {
+                console.log('Натиснуто "Готово"');
                 this.markPlayerReady();
             });
+        } else {
+            console.error('Кнопка "Готово" не знайдена!');
         }
     }
     
     selectAvatar(avatarUrl) {
+        console.log('Відправляємо select_avatar на сервер:', avatarUrl);
         this.socket.emit('select_avatar', { avatarUrl });
     }
     
     markPlayerReady() {
+        console.log('Відправляємо player_ready на сервер');
         this.socket.emit('player_ready', {});
     }
     
     // Обробники подій для аватарів
     setupAvatarEventHandlers() {
         this.socket.on('avatar_update', (avatarSelections) => {
+            console.log('Отримано avatar_update:', avatarSelections);
             this.updateAvatarGrid(avatarSelections);
         });
         
         this.socket.on('ready_update', (data) => {
+            console.log('Отримано ready_update:', data);
             this.updateReadyCounter(data.readyCount, data.totalCount);
         });
         
         this.socket.on('all_players_ready_start_game', () => {
+            console.log('Всі гравці готові! Запускаємо гру...');
             this.startActualGame();
         });
     }

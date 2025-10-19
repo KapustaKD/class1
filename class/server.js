@@ -103,8 +103,17 @@ function joinRoom(roomId, player) {
         return { error: 'Кімната заповнена' };
     }
     
+    // Перевіряємо, чи гравець вже не в кімнаті
+    const existingPlayer = room.players.find(p => p.id === player.id);
+    if (existingPlayer) {
+        console.log('Гравець вже в кімнаті:', player.name);
+        return { error: 'Гравець вже в кімнаті' };
+    }
+    
     room.players.push(player);
     players.set(player.id, { ...player, roomId, isHost: false });
+    
+    console.log(`Гравець ${player.name} доданий до кімнати ${roomId}. Загальна кількість: ${room.players.length}`);
     
     return room;
 }
@@ -333,6 +342,12 @@ io.on('connection', (socket) => {
         const room = rooms.get(player.roomId);
         if (!room) {
             console.log('Кімната не знайдена для select_avatar');
+            return;
+        }
+        
+        // Перевіряємо, чи ініціалізований gameData
+        if (!room.gameData || !room.gameData.avatarSelections) {
+            console.log('gameData не ініціалізований для select_avatar');
             return;
         }
         

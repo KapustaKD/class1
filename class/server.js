@@ -1212,14 +1212,19 @@ io.on('connection', (socket) => {
         const room = rooms.get(data.roomId);
         if (!room || !room.collaborativeStoryState) return;
 
+        console.log(`Гравець ${player.name} пропустив хід. Залишилося гравців: ${room.collaborativeStoryState.players.length}`);
+
         // Виключаємо гравця з гри
         room.collaborativeStoryState.eliminatedPlayers.push(player.id);
         room.collaborativeStoryState.players = room.collaborativeStoryState.players.filter(p => p.id !== player.id);
+
+        console.log(`Після виключення залишилося гравців: ${room.collaborativeStoryState.players.length}`);
 
         // Перевіряємо, чи залишилися гравці
         if (room.collaborativeStoryState.players.length <= 1) {
             // Гра закінчена
             const winner = room.collaborativeStoryState.players[0];
+            console.log(`Гра закінчена! Переможець: ${winner.name}`);
             io.to(room.id).emit('collaborative_story_end', {
                 winner: winner,
                 story: room.collaborativeStoryState.story,
@@ -1228,10 +1233,12 @@ io.on('connection', (socket) => {
             room.collaborativeStoryState = null;
         } else {
             // Переходимо до наступного гравця
+            // Правильно обчислюємо індекс наступного гравця
             room.collaborativeStoryState.currentPlayerIndex = 
-                room.collaborativeStoryState.currentPlayerIndex % room.collaborativeStoryState.players.length;
+                (room.collaborativeStoryState.currentPlayerIndex + 1) % room.collaborativeStoryState.players.length;
 
             const nextPlayer = room.collaborativeStoryState.players[room.collaborativeStoryState.currentPlayerIndex];
+            console.log(`Наступний гравець: ${nextPlayer.name}`);
 
             io.to(room.id).emit('collaborative_story_update', {
                 gameState: room.collaborativeStoryState,

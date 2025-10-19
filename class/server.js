@@ -486,10 +486,11 @@ io.on('connection', (socket) => {
             // і НЕ передавати хід.
         } else {
             // Якщо межу не перетнули, просто ходимо
-            currentPlayer.position = Math.min(oldPosition + move, 101);
+            finalPosition = Math.min(oldPosition + move, 101);
+            currentPlayer.position = finalPosition;
         }
         
-        console.log(`${currentPlayer.name} перемістився з позиції ${oldPosition} на позицію ${finalPosition}`);
+        console.log(`${currentPlayer.name} перемістився з позиції ${oldPosition} на позицію ${currentPlayer.position}`);
         
         // Перевіряємо зміну епохи (реінкарнація)
         const oldEpoch = getEpochForPosition(oldPosition);
@@ -555,7 +556,7 @@ io.on('connection', (socket) => {
             playerId: currentPlayer.id,
             roll,
             move,
-            newPosition: finalPosition,
+            newPosition: currentPlayer.position,
             newPoints: currentPlayer.points,
             newClass: currentPlayer.class,
             currentPlayerIndex: room.gameData.currentPlayerIndex

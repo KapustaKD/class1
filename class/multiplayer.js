@@ -2168,8 +2168,17 @@ class MultiplayerGame extends EducationalPathGame {
             this.updateReadyCounter(data.readyCount, data.totalCount);
         });
         
-        this.socket.on('all_players_ready_start_game', () => {
-            console.log('Всі гравці готові! Запускаємо гру...');
+        this.socket.on('all_players_ready_start_game', (data) => {
+            console.log('Всі гравці готові! Запускаємо гру...', data);
+            
+            // Оновлюємо дані гравців з аватарами
+            if (data.players) {
+                this.players = data.players;
+            }
+            if (data.currentPlayerIndex !== undefined) {
+                this.currentPlayerIndex = data.currentPlayerIndex;
+            }
+            
             this.startActualGame();
         });
     }

@@ -9,6 +9,7 @@ class MultiplayerGame extends EducationalPathGame {
         this.isHost = false;
         this.isSpectator = false;
         this.spectators = [];
+        this.storyTimer = null; // Змінна для зберігання таймера спільної історії
         
         // Спочатку налаштовуємо елементи мультиплеєра
         this.setupMultiplayerElements();
@@ -1218,6 +1219,12 @@ class MultiplayerGame extends EducationalPathGame {
     }
 
     closeMiniGame() {
+        // Очищаємо таймер спільної історії, якщо він існує
+        if (this.storyTimer) {
+            clearInterval(this.storyTimer);
+            this.storyTimer = null;
+        }
+        
         this.questModal.classList.add('hidden');
         
         // Передаємо хід наступному гравцю
@@ -1632,15 +1639,22 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     startStoryTimer(seconds) {
+        // Очищаємо попередній таймер, якщо він існує
+        if (this.storyTimer) {
+            clearInterval(this.storyTimer);
+            this.storyTimer = null;
+        }
+        
         const timerElement = document.getElementById('story-timer');
         let timeLeft = seconds;
         
-        const timer = setInterval(() => {
+        this.storyTimer = setInterval(() => {
             timerElement.textContent = timeLeft;
             timeLeft--;
             
             if (timeLeft < 0) {
-                clearInterval(timer);
+                clearInterval(this.storyTimer);
+                this.storyTimer = null;
                 // Автоматично пропускаємо хід
                 this.skipStoryTurn();
             }
@@ -1666,6 +1680,12 @@ class MultiplayerGame extends EducationalPathGame {
         const sentence = sentenceInput.value.trim();
         
         if (sentence) {
+            // Очищаємо таймер перед відправкою
+            if (this.storyTimer) {
+                clearInterval(this.storyTimer);
+                this.storyTimer = null;
+            }
+            
             this.socket.emit('collaborative_story_sentence', {
                 roomId: this.roomId,
                 sentence: sentence
@@ -1674,6 +1694,12 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     skipStoryTurn() {
+        // Очищаємо таймер перед пропуском
+        if (this.storyTimer) {
+            clearInterval(this.storyTimer);
+            this.storyTimer = null;
+        }
+        
         this.socket.emit('collaborative_story_skip', {
             roomId: this.roomId
         });

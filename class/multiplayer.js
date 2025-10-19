@@ -615,8 +615,11 @@ class MultiplayerGame extends EducationalPathGame {
             const playerCard = document.createElement('div');
             playerCard.className = 'player-card';
             playerCard.innerHTML = `
-                <div style="color: ${player.color};">${player.name}</div>
-                <div class="text-sm text-gray-400">${player.class?.name || 'Не обрано'}</div>
+                <div class="flex items-center gap-2">
+                    <img src="${player.avatarUrl || 'image/chips/avatar1.png'}" class="w-8 h-8 rounded-full border-2 border-gray-500">
+                    <div style="color: ${player.color};">${player.name}</div>
+                </div>
+                <div class="text-sm text-gray-400">${player.class?.name || 'Очікує...'}</div>
                 <div class="text-sm">${player.points || 0} ОО</div>
             `;
             

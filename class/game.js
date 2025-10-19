@@ -559,17 +559,25 @@ class EducationalPathGame {
     
            
     
-        // Фішки гравців
+        // Фішки гравців (аватари)
     
         this.players.forEach(p => {
     
-            const pawn = document.createElement('div');
+            const pawn = document.createElement('img');
     
             pawn.id = `pawn-${p.id}`;
     
             pawn.className = 'player-pawn';
     
-            pawn.style.backgroundColor = p.color;
+            // Використовуємо аватар, якщо він є, інакше кольоровий кружечок
+            if (p.avatarUrl) {
+                pawn.src = p.avatarUrl;
+                pawn.alt = `${p.name} аватар`;
+            } else {
+                // Fallback на кольоровий кружечок
+                pawn.style.backgroundColor = p.color;
+                pawn.style.borderRadius = '50%';
+            }
     
             startCell.appendChild(pawn);
     

@@ -308,6 +308,10 @@ io.on('connection', (socket) => {
         }));
         room.gameData.currentPlayerIndex = 0;
         
+        // Додаємо нові поля для вибору аватарів
+        room.gameData.avatarSelections = {};
+        room.gameData.readyPlayers = [];
+        
         // Повідомляємо всіх гравців
         io.to(room.id).emit('game_started', {
             players: room.gameData.players,
@@ -315,6 +319,72 @@ io.on('connection', (socket) => {
         });
         
         console.log('Відправлено подію game_started всім гравцям в кімнаті:', room.id);
+    });
+    
+    // Обробник вибору аватара
+    socket.on('select_avatar', (data) => {
+        console.log('Сервер отримав подію select_avatar:', data);
+        const player = players.get(socket.id);
+        if (!player) {
+            console.log('Гравець не знайдений для select_avatar');
+            return;
+        }
+        
+        const room = rooms.get(player.roomId);
+        if (!room) {
+            console.log('Кімната не знайдена для select_avatar');
+            return;
+        }
+        
+        // Перевіряємо, чи аватар вже зайнятий
+        const isAvatarTaken = Object.values(room.gameData.avatarSelections).includes(data.avatarUrl);
+        if (isAvatarTaken) {
+            socket.emit('error', { message: 'Цей аватар вже обраний іншим гравцем!' });
+            return;
+        }
+        
+        // Зберігаємо вибір
+        room.gameData.avatarSelections[socket.id] = data.avatarUrl;
+        
+        // Відправляємо оновлення всім гравцям
+        io.to(room.id).emit('avatar_update', room.gameData.avatarSelections);
+        
+        console.log('Аватар обрано:', data.avatarUrl, 'для гравця:', player.name);
+    });
+    
+    // Обробник готовності гравця
+    socket.on('player_ready', (data) => {
+        console.log('Сервер отримав подію player_ready:', data);
+        const player = players.get(socket.id);
+        if (!player) {
+            console.log('Гравець не знайдений для player_ready');
+            return;
+        }
+        
+        const room = rooms.get(player.roomId);
+        if (!room) {
+            console.log('Кімната не знайдена для player_ready');
+            return;
+        }
+        
+        // Додаємо гравця до списку готових
+        if (!room.gameData.readyPlayers.includes(socket.id)) {
+            room.gameData.readyPlayers.push(socket.id);
+        }
+        
+        // Відправляємо оновлення лічильника
+        io.to(room.id).emit('ready_update', {
+            readyCount: room.gameData.readyPlayers.length,
+            totalCount: room.gameData.players.length
+        });
+        
+        // Перевіряємо, чи всі гравці готові
+        if (room.gameData.readyPlayers.length === room.gameData.players.length) {
+            console.log('Всі гравці готові! Запускаємо гру...');
+            io.to(room.id).emit('all_players_ready_start_game');
+        }
+        
+        console.log('Гравець готовий:', player.name, 'Готово:', room.gameData.readyPlayers.length, '/', room.gameData.players.length);
     });
     
     // Кидання кубика

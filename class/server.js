@@ -110,6 +110,13 @@ function joinRoom(roomId, player) {
         return { error: 'Гравець вже в кімнаті' };
     }
     
+    // Перевіряємо, чи ім'я вже зайняте
+    const nameExists = room.players.find(p => p.name.toLowerCase() === player.name.toLowerCase());
+    if (nameExists) {
+        console.log('Ім\'я вже зайняте:', player.name);
+        return { error: 'Ім\'я вже зайняте іншим гравцем. Оберіть інше ім\'я.' };
+    }
+    
     room.players.push(player);
     players.set(player.id, { ...player, roomId, isHost: false });
     

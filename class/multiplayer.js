@@ -438,6 +438,8 @@ class MultiplayerGame extends EducationalPathGame {
 
                 this.socket.on('start_voting', (data) => {
                     console.log('🗳️ Клієнт отримав start_voting:', data);
+                    console.log('🗳️ Мій ID:', this.playerId);
+                    console.log('🗳️ Варіанти для голосування:', data.submissions.map(s => `${s.playerName}: ${s.text}`));
                     this.showVoting(data);
                 });
 
@@ -449,6 +451,11 @@ class MultiplayerGame extends EducationalPathGame {
                 this.socket.on('mad_libs_question', (data) => {
                     console.log('Питання для "Хто, де, коли?":', data);
                     this.showMadLibsQuestion(data);
+                });
+
+                this.socket.on('mad_libs_waiting', (data) => {
+                    console.log('Очікування в "Хто, де, коли?":', data);
+                    this.showMadLibsWaiting(data);
                 });
 
                 this.socket.on('mad_libs_result', (data) => {
@@ -1996,6 +2003,16 @@ class MultiplayerGame extends EducationalPathGame {
         }
     }
     
+    showMadLibsWaiting(data) {
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Хто, де, коли?</h3>
+            <p class="mb-4">Питання: <strong>${data.question}</strong></p>
+            <p class="text-center text-gray-600">Черга гравця ${data.currentPlayer.name}</p>
+        `;
+        
+        this.showQuestModal('Хто, де, коли?', modalContent, []);
+    }
+    
     submitMadLibsAnswer() {
         const answerInput = document.getElementById('mad-libs-answer');
         const answer = answerInput.value.trim();
@@ -2011,17 +2028,10 @@ class MultiplayerGame extends EducationalPathGame {
     showMadLibsResult(data) {
         let modalContent = `
             <h3 class="text-2xl font-bold mb-4">Хто, де, коли? завершено!</h3>
-            <p class="mb-4">${data.resultMessage}</p>
             <div class="mb-4">
-                <h4 class="font-bold">Відповіді:</h4>
-                <div class="space-y-2">
-        `;
-        
-        data.answers.forEach((answer, index) => {
-            modalContent += `<p><strong>${answer.playerName}:</strong> ${answer.answer}</p>`;
-        });
-        
-        modalContent += `
+                <h4 class="font-bold mb-2">Ось історія, яка вийшла:</h4>
+                <div class="bg-gray-100 p-4 rounded text-lg">
+                    ${data.story}
                 </div>
             </div>
         `;

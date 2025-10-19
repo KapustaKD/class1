@@ -92,9 +92,9 @@ body {
 }
 
 .board-cell.zone-4 {
-    border-color: #ffff4d;
-    box-shadow: 0 0 10px rgba(255, 255, 77, 0.3);
-    background: linear-gradient(135deg, #ffff4d, #ffff1a);
+    border-color: #cccccc;
+    box-shadow: 0 0 10px rgba(204, 204, 204, 0.3);
+    background: linear-gradient(135deg, #cccccc, #b3b3b3);
 }
 
 /* Фінішна клітинка з короною */
@@ -303,6 +303,8 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.4); 
     z-index: 2; 
     transform: translate(-50%, -50%); 
+    box-sizing: border-box;
+    background-clip: padding-box;
 }
 
 .board-cell.start { 
@@ -384,6 +386,13 @@ body {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
     object-fit: cover; 
     z-index: 5;
+}
+
+.player-pawn img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 /* Анімації руху фішки */

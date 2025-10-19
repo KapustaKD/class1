@@ -14,8 +14,7 @@ class MultiplayerGame extends EducationalPathGame {
         this.setupMultiplayerElements();
         // Потім обробники подій мультиплеєра (перезаписують базові)
         this.setupMultiplayerEventListeners();
-        // Додаємо обробники подій для аватарів
-        this.setupAvatarEventHandlers();
+        // Обробники подій для аватарів встановлюються при показі модального вікна
         
         // Перевіряємо збережену гру
         this.checkForSavedGame();
@@ -2061,6 +2060,9 @@ class MultiplayerGame extends EducationalPathGame {
             // Оновлюємо лічильник гравців
             this.updateReadyCounter(0, this.players.length);
             
+            // Встановлюємо обробники подій Socket.IO
+            this.setupAvatarEventHandlers();
+            
             // Встановлюємо обробники подій після створення елементів
             setTimeout(() => {
                 this.setupAvatarEventListeners();
@@ -2149,6 +2151,13 @@ class MultiplayerGame extends EducationalPathGame {
     
     // Обробники подій для аватарів
     setupAvatarEventHandlers() {
+        console.log('Налаштовуємо обробники подій Socket.IO для аватарів...');
+        
+        // Видаляємо старі обробники
+        this.socket.off('avatar_update');
+        this.socket.off('ready_update');
+        this.socket.off('all_players_ready_start_game');
+        
         this.socket.on('avatar_update', (avatarSelections) => {
             console.log('Отримано avatar_update:', avatarSelections);
             this.updateAvatarGrid(avatarSelections);
@@ -2166,10 +2175,15 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     updateAvatarGrid(avatarSelections) {
+        console.log('Оновлюємо сітку аватарів з даними:', avatarSelections);
         const avatarItems = document.querySelectorAll('.avatar-item');
-        avatarItems.forEach(item => {
+        console.log('Знайдено елементів аватарів для оновлення:', avatarItems.length);
+        
+        avatarItems.forEach((item, index) => {
             const avatarUrl = item.dataset.avatarUrl;
             const isTaken = Object.values(avatarSelections).includes(avatarUrl);
+            
+            console.log(`Аватар ${index + 1} (${avatarUrl}): ${isTaken ? 'зайнятий' : 'вільний'}`);
             
             if (isTaken) {
                 item.classList.add('taken');
@@ -2179,6 +2193,7 @@ class MultiplayerGame extends EducationalPathGame {
                 const player = this.players.find(p => p.id === playerId);
                 if (nameDiv && player) {
                     nameDiv.textContent = player.name;
+                    console.log(`Аватар ${avatarUrl} зайнятий гравцем ${player.name}`);
                 }
             } else {
                 item.classList.remove('taken');

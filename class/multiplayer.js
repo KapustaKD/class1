@@ -267,7 +267,6 @@ class MultiplayerGame extends EducationalPathGame {
             this.showPlayersList();
             this.showChat();
             this.showRoomCode(data.roomId);
-            this.logMessage(`Кімната "${data.roomName}" створена! Код: ${this.roomId}`, 'system');
             
             // Зберігаємо стан гри
             sessionStorage.setItem('activeGameRoom', JSON.stringify({ 
@@ -288,7 +287,6 @@ class MultiplayerGame extends EducationalPathGame {
             this.updatePlayersList(data.players);
             this.showPlayersList();
             this.showChat();
-            this.logMessage(`Приєднано до кімнати "${data.roomName}"`, 'system');
             
             // Зберігаємо стан гри
             sessionStorage.setItem('activeGameRoom', JSON.stringify({ 
@@ -336,7 +334,6 @@ class MultiplayerGame extends EducationalPathGame {
             // Показуємо кнопку виходу
             this.leaveRoomBtn.classList.remove('hidden');
             
-            this.logMessage(`Ви приєдналися як спостерігач до кімнати "${data.roomName}"`, 'system');
         });
         
         this.socket.on('spectator_joined', (data) => {
@@ -381,7 +378,6 @@ class MultiplayerGame extends EducationalPathGame {
                 // Обмін місцями
                 this.socket.on('positions_swapped', (data) => {
                     console.log('Обмін місцями:', data);
-                    this.logMessage(data.message, 'system');
                     
                     // Знаходимо гравців в локальному масиві
                     const player1 = this.players.find(p => p.id === data.player1.id);
@@ -440,12 +436,12 @@ class MultiplayerGame extends EducationalPathGame {
                 });
 
                 this.socket.on('start_voting', (data) => {
-                    console.log('Початок голосування:', data);
+                    console.log('🗳️ Клієнт отримав start_voting:', data);
                     this.showVoting(data);
                 });
 
                 this.socket.on('creative_voting_end', (data) => {
-                    console.log('Кінець голосування:', data);
+                    console.log('🗳️ Клієнт отримав creative_voting_end:', data);
                     this.endCreativeVoting(data);
                 });
 
@@ -472,7 +468,6 @@ class MultiplayerGame extends EducationalPathGame {
         // Реінкарнація гравця
         this.socket.on('player_reincarnated', (data) => {
             console.log('Реінкарнація гравця:', data);
-            this.logMessage(data.message, 'reincarnation');
             
             // Знаходимо гравця в локальному масиві
             const player = this.players.find(p => p.id === data.playerId);
@@ -769,7 +764,6 @@ class MultiplayerGame extends EducationalPathGame {
         eliminatedPlayer.hasWon = true;
         eliminatedPlayer.finalPosition = data.position;
         
-        this.logMessage(`🎉 ${eliminatedPlayer.name} досяг 300 ОО і займає ${data.position} місце!`, 'system');
         
         // Оновлюємо інтерфейс
         this.updatePlayerInfo();
@@ -800,7 +794,6 @@ class MultiplayerGame extends EducationalPathGame {
             message += `${medal} ${position} місце: ${player.name} (${player.points || 0} ОО)\n`;
         });
         
-        this.logMessage(message, 'system');
         
         // Показуємо фінальне модальне вікно
         this.showFinalResults(sortedPlayers);
@@ -994,7 +987,6 @@ class MultiplayerGame extends EducationalPathGame {
                 
                 // Показуємо повідомлення користувачу
                 if (!isCurrentPlayer) {
-                    this.logMessage(`Зараз хід гравця ${currentPlayer?.name || 'невідомо'}`, 'system');
                 } else {
                     console.log('Гравець може кинути кубик - це його хід');
                 }
@@ -1032,7 +1024,6 @@ class MultiplayerGame extends EducationalPathGame {
             this.movePlayer(player, data.move);
         }, 1000);
         
-        this.logMessage(`${player.name}${player.class ? ' (' + player.class.name + ')' : ''} викинув ${data.roll}. Рух: ${data.move}.`, 'roll');
         
         // Не оновлюємо кнопку тут - оновимо після turn_changed
     }
@@ -1043,11 +1034,9 @@ class MultiplayerGame extends EducationalPathGame {
         
         player.position = data.position;
         this.updatePawnPosition(player);
-        this.logMessage(`${player.name} перемістився на клітинку ${data.position}.`, 'system');
     }
     
     handleSpecialCell(player, cellData) {
-        this.logMessage(`${player.name} потрапив на подію!`, 'event');
         
         if (this.isOnlineMode) {
             // В онлайн режимі відправляємо подію на сервер
@@ -1102,7 +1091,6 @@ class MultiplayerGame extends EducationalPathGame {
                 player.class = data.newClass;
             }
             
-            this.logMessage(`${player.name}${player.class ? ' (' + player.class.name + ')' : ''} викинув ${data.roll}. Рух: ${data.move}. Позиція: ${data.newPosition}`, 'roll');
         }, 1000);
     }
     
@@ -1119,7 +1107,6 @@ class MultiplayerGame extends EducationalPathGame {
         this.updatePlayerInfo();
         this.updateDiceButtonState();
         
-        this.logMessage(`Тепер хід гравця ${data.currentPlayerName}.`, 'turn');
     }
     
     showEventPrompt(data) {
@@ -1209,7 +1196,6 @@ class MultiplayerGame extends EducationalPathGame {
         }
         
         // Показуємо повідомлення всім
-        this.logMessage(data.resultMessage, 'event');
         
         // Закриваємо модальне вікно для всіх гравців
         this.questModal.classList.add('hidden');
@@ -1906,6 +1892,10 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     voteForCreative(submissionIndex) {
+        console.log('🗳️ Клієнт відправляє голос:', {
+            roomId: this.roomId,
+            submissionIndex: submissionIndex
+        });
         this.socket.emit('creative_vote', {
             roomId: this.roomId,
             submissionIndex: submissionIndex

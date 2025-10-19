@@ -1875,17 +1875,23 @@ class MultiplayerGame extends EducationalPathGame {
         `;
         
         data.submissions.forEach((submission, index) => {
+            // Перевіряємо, чи це робота поточного гравця
+            const isMyWork = submission.playerId === this.playerId;
+            const clickHandler = isMyWork ? '' : `onclick="game.voteForCreative(${index})"`;
+            const cursorStyle = isMyWork ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-200';
+            
             modalContent += `
-                <div class="p-3 border-2 border-gray-400 rounded cursor-pointer hover:bg-gray-200" onclick="game.voteForCreative(${index})">
+                <div class="p-3 border-2 border-gray-400 rounded ${cursorStyle}" ${clickHandler}>
                     <p class="font-bold">${submission.playerName}:</p>
                     <p>${submission.text}</p>
+                    ${isMyWork ? '<p class="text-sm text-gray-500 italic">(Ваша робота - голосувати не можна)</p>' : ''}
                 </div>
             `;
         });
         
         modalContent += `
             </div>
-            <p class="text-center text-gray-600">Оберіть варіант вище</p>
+            <p class="text-center text-gray-600">Оберіть варіант вище (не можна голосувати за свою роботу)</p>
         `;
         
         this.showQuestModal('Голосування', modalContent, []);

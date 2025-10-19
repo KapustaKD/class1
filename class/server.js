@@ -1308,11 +1308,19 @@ io.on('connection', (socket) => {
         const room = rooms.get(data.roomId);
         if (!room || !room.creativeWritingState) return;
 
+        // Перевіряємо, чи гравець не голосує за свою роботу
+        const submission = room.creativeWritingState.submissions[data.submissionIndex];
+        if (submission && submission.playerId === player.id) {
+            console.log('Гравець намагається проголосувати за свою роботу - блокуємо');
+            return;
+        }
+
         // Зберігаємо голос
         room.creativeWritingState.votes[player.id] = data.submissionIndex;
 
         // Перевіряємо, чи всі проголосували
-        const totalVoters = room.gameData.players.filter(p => p.id !== room.creativeWritingState.activePlayer).length;
+        // В творчих іграх голосують ВСІ гравці (включно з активним)
+        const totalVoters = room.gameData.players.length;
         const votesCount = Object.keys(room.creativeWritingState.votes).length;
 
         if (votesCount >= totalVoters) {
@@ -1325,26 +1333,52 @@ io.on('connection', (socket) => {
             // Знаходимо переможця
             let winnerIndex = 0;
             let maxVotes = 0;
+            let isTie = false;
+            
             Object.entries(voteCounts).forEach(([index, votes]) => {
                 if (votes > maxVotes) {
                     maxVotes = votes;
                     winnerIndex = parseInt(index);
+                    isTie = false;
+                } else if (votes === maxVotes && votes > 0) {
+                    isTie = true;
                 }
             });
 
             const winner = room.creativeWritingState.submissions[winnerIndex];
             
+            let resultMessage;
+            if (isTie) {
+                resultMessage = 'Перемогла дружба! Кожному по 20 очок!';
+                // Даємо очки всім гравцям при нічиї
+                room.gameData.players.forEach(player => {
+                    player.points += 20;
+                });
+            } else {
+                resultMessage = `Переможець: ${winner.playerName}!`;
+                // Даємо бонус переможцю
+                const winnerPlayer = room.gameData.players.find(p => p.id === winner.playerId);
+                if (winnerPlayer) {
+                    winnerPlayer.points += 30;
+                }
+            }
+            
             console.log('🗳️ Відправляємо creative_voting_end:', {
                 winner: winner,
                 voteCounts: voteCounts,
-                resultMessage: `Переможець: ${winner.playerName}!`
+                resultMessage: resultMessage,
+                isTie: isTie
             });
             
             io.to(room.id).emit('creative_voting_end', {
                 winner: winner,
                 voteCounts: voteCounts,
-                resultMessage: `Переможець: ${winner.playerName}!`
+                resultMessage: resultMessage,
+                isTie: isTie
             });
+
+            // Відправляємо оновлений стан гри з новими очками
+            io.to(room.id).emit('game_state_update', room.gameData);
 
             room.creativeWritingState = null;
         }

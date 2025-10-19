@@ -14,6 +14,8 @@ class MultiplayerGame extends EducationalPathGame {
         this.setupMultiplayerElements();
         // Потім обробники подій мультиплеєра (перезаписують базові)
         this.setupMultiplayerEventListeners();
+        // Додаємо обробники подій для аватарів
+        this.setupAvatarEventHandlers();
         
         // Перевіряємо збережену гру
         this.checkForSavedGame();
@@ -516,54 +518,8 @@ class MultiplayerGame extends EducationalPathGame {
                 this.currentPlayerIndex = data.currentPlayerIndex;
                 this.gameActive = true;
                 
-                // Перевіряємо, чи знаходимося серед гравців
-                const myPlayer = this.players.find(p => p.id === this.playerId);
-                console.log('Мій гравець в грі:', myPlayer);
-                console.log('Мій playerId:', this.playerId);
-                console.log('Всі гравці:', this.players.map(p => ({ name: p.name, id: p.id })));
-                
-                // КРИТИЧНО: Створюємо карту для всіх гравців
-                // Чекаємо трохи щоб mapData встиг завантажитися
-                setTimeout(() => {
-                    try {
-                        console.log('Створюємо карту...');
-                        this.createBoard();
-                        
-                        // Переходимо до ігрового інтерфейсу
-                        this.showGameInterface();
-                        this.updatePlayerInfo();
-                        this.updateDiceButtonState();
-                        
-                        // Приховуємо онлайн панель
-                        this.onlinePanel.classList.add('hidden');
-                        
-                        // Показуємо повідомлення
-                        this.addChatMessage('system', 'Гра почалася! Перший хід за ' + this.players[this.currentPlayerIndex].name);
-                        
-                        // Показуємо клас кожному гравцю
-                        this.showPlayerClassAssignment();
-                        
-                        // KРИТИЧНО: Фокусуємо камеру на старті для всіх гравців
-                        setTimeout(() => {
-                            try {
-                                const startCell = document.getElementById('cell-0');
-                                if (startCell) {
-                                    this.centerViewOn(startCell);
-                                    console.log('Камера сфокусована на старті');
-                                } else {
-                                    console.error('Не знайдено стартову клітинку cell-0');
-                                }
-                            } catch (error) {
-                                console.error('Помилка при фокусуванні камери:', error);
-                            }
-                        }, 200);
-                        
-                        console.log('Карта створена успішно');
-                    } catch (error) {
-                        console.error('Помилка при створенні карти:', error);
-                        alert('Помилка при створенні карти. Спробуйте перезавантажити сторінку.');
-                    }
-                }, 100);
+                // Показуємо модальне вікно вибору аватарів
+                this.showAvatarSelectionModal();
             } catch (error) {
                 console.error('Помилка в обробнику game_started:', error);
                 alert('Помилка при запуску гри. Спробуйте перезавантажити сторінку.');
@@ -2093,6 +2049,168 @@ class MultiplayerGame extends EducationalPathGame {
         this.showQuestModal('Вебновела', modalContent, [
             { text: 'Закрити', callback: () => this.closeMiniGame() }
         ]);
+    }
+    
+    // Методи для роботи з аватарами
+    showAvatarSelectionModal() {
+        const modal = document.getElementById('avatar-selection-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            this.populateAvatarGrid();
+            this.setupAvatarEventListeners();
+        }
+    }
+    
+    populateAvatarGrid() {
+        const avatarGrid = document.getElementById('avatar-grid');
+        if (!avatarGrid) return;
+        
+        avatarGrid.innerHTML = '';
+        
+        // Створюємо 6 аватарів
+        for (let i = 1; i <= 6; i++) {
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'avatar-item cursor-pointer p-2 rounded-lg border-2 border-gray-600 hover:border-yellow-400 transition-colors';
+            avatarDiv.dataset.avatarUrl = `image/chips/avatar${i}.png`;
+            
+            const img = document.createElement('img');
+            img.src = `image/chips/avatar${i}.png`;
+            img.alt = `Аватар ${i}`;
+            img.className = 'w-16 h-16 rounded-full mx-auto';
+            
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'text-center text-sm text-gray-300 mt-2';
+            nameDiv.textContent = 'Вільний';
+            
+            avatarDiv.appendChild(img);
+            avatarDiv.appendChild(nameDiv);
+            avatarGrid.appendChild(avatarDiv);
+        }
+    }
+    
+    setupAvatarEventListeners() {
+        const avatarItems = document.querySelectorAll('.avatar-item');
+        avatarItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const avatarUrl = item.dataset.avatarUrl;
+                if (avatarUrl && !item.classList.contains('taken')) {
+                    this.selectAvatar(avatarUrl);
+                }
+            });
+        });
+        
+        const readyBtn = document.getElementById('player-ready-btn');
+        if (readyBtn) {
+            readyBtn.addEventListener('click', () => {
+                this.markPlayerReady();
+            });
+        }
+    }
+    
+    selectAvatar(avatarUrl) {
+        this.socket.emit('select_avatar', { avatarUrl });
+    }
+    
+    markPlayerReady() {
+        this.socket.emit('player_ready', {});
+    }
+    
+    // Обробники подій для аватарів
+    setupAvatarEventHandlers() {
+        this.socket.on('avatar_update', (avatarSelections) => {
+            this.updateAvatarGrid(avatarSelections);
+        });
+        
+        this.socket.on('ready_update', (data) => {
+            this.updateReadyCounter(data.readyCount, data.totalCount);
+        });
+        
+        this.socket.on('all_players_ready_start_game', () => {
+            this.startActualGame();
+        });
+    }
+    
+    updateAvatarGrid(avatarSelections) {
+        const avatarItems = document.querySelectorAll('.avatar-item');
+        avatarItems.forEach(item => {
+            const avatarUrl = item.dataset.avatarUrl;
+            const isTaken = Object.values(avatarSelections).includes(avatarUrl);
+            
+            if (isTaken) {
+                item.classList.add('taken');
+                item.style.filter = 'grayscale(100%)';
+                const nameDiv = item.querySelector('div');
+                const playerId = Object.keys(avatarSelections).find(id => avatarSelections[id] === avatarUrl);
+                const player = this.players.find(p => p.id === playerId);
+                if (nameDiv && player) {
+                    nameDiv.textContent = player.name;
+                }
+            } else {
+                item.classList.remove('taken');
+                item.style.filter = 'none';
+                const nameDiv = item.querySelector('div');
+                if (nameDiv) {
+                    nameDiv.textContent = 'Вільний';
+                }
+            }
+        });
+    }
+    
+    updateReadyCounter(readyCount, totalCount) {
+        const counter = document.getElementById('ready-counter');
+        if (counter) {
+            counter.textContent = `Готово: ${readyCount} / ${totalCount}`;
+        }
+    }
+    
+    startActualGame() {
+        // Приховуємо модальне вікно вибору аватарів
+        const modal = document.getElementById('avatar-selection-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        
+        // Створюємо карту та запускаємо гру
+        setTimeout(() => {
+            try {
+                console.log('Створюємо карту...');
+                this.createBoard();
+                
+                // Переходимо до ігрового інтерфейсу
+                this.showGameInterface();
+                this.updatePlayerInfo();
+                this.updateDiceButtonState();
+                
+                // Приховуємо онлайн панель
+                this.onlinePanel.classList.add('hidden');
+                
+                // Показуємо повідомлення
+                this.addChatMessage('system', 'Гра почалася! Перший хід за ' + this.players[this.currentPlayerIndex].name);
+                
+                // Показуємо клас кожному гравцю
+                this.showPlayerClassAssignment();
+                
+                // Фокусуємо камеру на старті
+                setTimeout(() => {
+                    try {
+                        const startCell = document.getElementById('cell-0');
+                        if (startCell) {
+                            this.centerViewOn(startCell);
+                            console.log('Камера сфокусована на старті');
+                        } else {
+                            console.error('Не знайдено стартову клітинку cell-0');
+                        }
+                    } catch (error) {
+                        console.error('Помилка при фокусуванні камери:', error);
+                    }
+                }, 200);
+                
+                console.log('Карта створена успішно');
+            } catch (error) {
+                console.error('Помилка при створенні карти:', error);
+                alert('Помилка при створенні карти. Спробуйте перезавантажити сторінку.');
+            }
+        }, 100);
     }
 }
 

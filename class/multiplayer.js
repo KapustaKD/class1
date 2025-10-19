@@ -2098,10 +2098,17 @@ class MultiplayerGame extends EducationalPathGame {
     setupAvatarEventListeners() {
         console.log('Налаштовуємо обробники подій для аватарів...');
         
+        // Видаляємо старі обробники подій
         const avatarItems = document.querySelectorAll('.avatar-item');
-        console.log('Знайдено аватарів:', avatarItems.length);
+        avatarItems.forEach(item => {
+            item.replaceWith(item.cloneNode(true));
+        });
         
-        avatarItems.forEach((item, index) => {
+        // Отримуємо нові елементи після клонування
+        const newAvatarItems = document.querySelectorAll('.avatar-item');
+        console.log('Знайдено аватарів:', newAvatarItems.length);
+        
+        newAvatarItems.forEach((item, index) => {
             console.log(`Аватар ${index + 1}:`, item.dataset.avatarUrl);
             item.addEventListener('click', () => {
                 console.log('Клік по аватару:', item.dataset.avatarUrl);
@@ -2118,7 +2125,10 @@ class MultiplayerGame extends EducationalPathGame {
         const readyBtn = document.getElementById('player-ready-btn');
         if (readyBtn) {
             console.log('Кнопка "Готово" знайдена');
-            readyBtn.addEventListener('click', () => {
+            // Видаляємо старі обробники
+            readyBtn.replaceWith(readyBtn.cloneNode(true));
+            const newReadyBtn = document.getElementById('player-ready-btn');
+            newReadyBtn.addEventListener('click', () => {
                 console.log('Натиснуто "Готово"');
                 this.markPlayerReady();
             });

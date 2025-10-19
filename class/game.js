@@ -436,14 +436,10 @@ class EducationalPathGame {
     
             this.updateUI();
     
-            this.startModal.classList.add('hidden');
-    
-            this.logMessage(`Гра почалася! Мета: ${this.WIN_CONDITION_POINTS} ОО.`, 'system');
-    
-            this.logMessage(`Хід гравця ${this.players[this.currentPlayerIndex].name}.`, 'turn');
-    
-           
-    
+        this.startModal.classList.add('hidden');
+        
+       
+        
         const startCell = document.getElementById('cell-0');
     
         this.centerViewOn(startCell);
@@ -748,15 +744,11 @@ class EducationalPathGame {
     
             let move = roll + player.class.moveModifier + player.moveModifier;
     
-            if (player.class.id === 'peasant') move = Math.max(1, move);
-    
-           
-    
-            this.logMessage(`${player.name} (${player.class.name}) викинув ${roll}. Рух: ${move}.`, 'roll');
-    
-           
-    
-            const rotations = {
+        if (player.class.id === 'peasant') move = Math.max(1, move);
+        
+       
+        
+        const rotations = {
     
                 1: 'rotateY(0deg)',
     
@@ -774,15 +766,15 @@ class EducationalPathGame {
     
            
     
-            this.diceInner.style.transform = `rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg)`;
-    
-            setTimeout(async () => {
-    
-                this.diceInner.style.transform = `${rotations[roll]} translateZ(40px)`;
-    
-                await this.movePlayer(player, move);
-    
-            }, 1000);
+        this.diceInner.style.transform = `rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg)`;
+        
+        setTimeout(async () => {
+            
+            this.diceInner.style.transform = `${rotations[roll]}`;
+            
+            await this.movePlayer(player, move);
+            
+        }, 1000);
     
         }
     
@@ -807,7 +799,6 @@ class EducationalPathGame {
         
         // Перевіряємо перемогу (досягнення останньої клітинки)
         if (endPos >= this.BOARD_SIZE) {
-            this.logMessage(`🎉 ${player.name} досяг кінця шляху! Перемога!`, 'victory');
             this.endGame(player, `${player.name} переміг, досягнувши кінця освітнього шляху!`);
             return; // Не перевіряємо події на клітинці, бо гра закінчена
         }
@@ -827,11 +818,9 @@ class EducationalPathGame {
     
         await new Promise(res => setTimeout(res, 300));
     
-        this.logMessage(`${player.name} переміщено на клітинку ${player.position}.`, 'system');
         
         // Перевіряємо перемогу (досягнення останньої клітинки)
         if (position >= this.BOARD_SIZE) {
-            this.logMessage(`🎉 ${player.name} досяг кінця шляху! Перемога!`, 'victory');
             this.endGame(player, `${player.name} переміг, досягнувши кінця освітнього шляху!`);
             return; // Не перевіряємо події на клітинці, бо гра закінчена
         }
@@ -862,7 +851,6 @@ class EducationalPathGame {
     
         handleSpecialCell(player, cellData) {
     
-            this.logMessage(`${player.name} потрапив на подію!`, 'event');
     
            
     
@@ -905,7 +893,6 @@ class EducationalPathGame {
                             // Оновлюємо позицію фішки
                             this.updatePawnPosition(player);
                             
-                            this.logMessage(`${player.name} загинув від повстання машин, але реінкарнувався на клітинці 75!`, 'system');
                             
                             this.questModal.classList.add('hidden');
                             this.nextTurn();
@@ -998,7 +985,6 @@ class EducationalPathGame {
     
                         this.questModal.classList.add('hidden');
     
-                        this.logMessage(`${player.name} отримав ${quest.reward} ОО за ${quest.title.toLowerCase()}.`, 'system');
     
                         this.nextTurn();
     
@@ -1026,7 +1012,6 @@ class EducationalPathGame {
     
             player.points += amount;
     
-            if (reason) this.logMessage(`${player.name} ${amount > 0 ? '+' : ''}${amount} ОО. (${reason})`, 'system');
     
             this.updateUI();
     
@@ -1066,7 +1051,6 @@ class EducationalPathGame {
     
                 player.extraTurn = false;
     
-                this.logMessage(`${player.name} отримує додатковий хід!`, 'turn');
     
                 this.rollDiceBtn.disabled = false;
     
@@ -1080,7 +1064,6 @@ class EducationalPathGame {
     
                 player.skipTurn = false;
     
-                this.logMessage(`${player.name} пропускає хід.`, 'turn');
     
                 this.showQuestModal('Пропуск ходу', `${player.name} пропускає цей хід через подію.`, [
     
@@ -1104,7 +1087,6 @@ class EducationalPathGame {
     
             this.updateUI();
     
-            this.logMessage(`Тепер хід гравця ${this.players[this.currentPlayerIndex].name}.`, 'turn');
     
             this.rollDiceBtn.disabled = false;
     
@@ -1373,7 +1355,6 @@ class EducationalPathGame {
     
            
     
-            this.logMessage(`${player.name} телепортувався до епохи ${nextEpoch.name}!`, 'system');
     
            
     
@@ -1463,40 +1444,6 @@ class EducationalPathGame {
     
        
     
-        logMessage(message, type) {
-    
-            const logEntry = document.createElement('div');
-    
-            let typeClass = '';
-    
-            if (type === 'roll') typeClass = 'text-yellow-300';
-    
-            else if (type === 'event') typeClass = 'text-purple-300';
-    
-            else if (type === 'turn') typeClass = 'text-green-300 font-semibold';
-    
-            else if (type === 'system') typeClass = 'text-gray-400 italic';
-        else if (type === 'reincarnation') typeClass = 'text-blue-300 font-bold';
-    
-           
-    
-            logEntry.className = `p-1 border-b border-gray-700 ${typeClass}`;
-    
-            logEntry.innerHTML = `> ${message}`;
-    
-            this.gameLog.insertBefore(logEntry, this.gameLog.firstChild);
-    
-           
-    
-            // Обмежуємо кількість записів до 20
-    
-            while (this.gameLog.children.length > 20) {
-    
-                this.gameLog.removeChild(this.gameLog.lastChild);
-    
-            }
-    
-        }
     
        
     
@@ -1538,7 +1485,6 @@ class EducationalPathGame {
     
            
     
-            this.logMessage(message, 'system');
     
             const contentHTML = `
     
@@ -1620,7 +1566,6 @@ class EducationalPathGame {
     
     triggerPvpQuest(player) {
     
-        this.logMessage("PvP квест буде реалізований в мультиплеєрі", 'system');
     
         this.nextTurn();
     
@@ -1630,24 +1575,20 @@ class EducationalPathGame {
     
     triggerCreativeQuest(player) {
     
-        this.logMessage("Творчий квест буде реалізований в мультиплеєрі", 'system');
     
         this.nextTurn();
     
     }
 
     triggerMadLibsQuest(player) {
-        this.logMessage("Гра 'Хто, де, коли?' буде реалізована в мультиплеєрі", 'system');
         this.nextTurn();
     }
 
     triggerWebNovellaQuest(player) {
-        this.logMessage("Вебновела 'Халепа!' буде реалізована в мультиплеєрі", 'system');
         this.nextTurn();
     }
 
     triggerReincarnation(player, cellData) {
-        this.logMessage(`Реінкарнація на епоху ${cellData.nextEpoch} за ${cellData.points} ОО`, 'system');
         this.updatePoints(player, cellData.points, `Реінкарнація! +${cellData.points} ОО.`, true);
         this.nextTurn();
     }

@@ -627,6 +627,8 @@ io.on('connection', (socket) => {
             passTurnToNextPlayer(room);
         } else {
             console.log(`Гравець ${currentPlayer.name} потрапив на подію, хід не передається`);
+            // Зберігаємо ID гравця, який потрапив на подію
+            room.currentEventPlayerId = currentPlayer.id;
         }
     });
     
@@ -639,15 +641,13 @@ io.on('connection', (socket) => {
             const room = rooms.get(data.roomId);
             if (!room || room.gameState !== 'playing') return;
 
-            // Перевіряємо, чи це справді поточний гравець
-            const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
-            if (currentPlayer.id !== player.id) {
+            // Перевіряємо, чи це справді гравець, який потрапив на подію
+            if (room.currentEventPlayerId !== player.id) {
                 console.log('Не той гравець намагається активувати подію');
                 return;
             }
 
             // Зберігаємо інформацію про поточну подію
-            room.currentEventPlayerId = player.id;
             room.currentEventData = data.eventData;
 
             console.log(`${player.name} потрапив на подію ${data.eventType}`);
@@ -815,20 +815,35 @@ io.on('connection', (socket) => {
         
         if (data.eventType === 'portal') {
             if (data.choice === 'yes') {
-                // Переміщуємо гравця на цільову позицію
-                player.position = data.targetPosition;
-                player.points = Math.max(0, player.points - data.cost);
+                // Знаходимо гравця в масиві гравців кімнати
+                const roomPlayer = room.gameData.players.find(p => p.id === player.id);
+                if (roomPlayer) {
+                    // Переміщуємо гравця на цільову позицію
+                    roomPlayer.position = data.targetPosition;
+                    roomPlayer.points = Math.max(0, roomPlayer.points - data.cost);
+                    
+                    // Оновлюємо також в глобальному списку
+                    player.position = data.targetPosition;
+                    player.points = Math.max(0, player.points - data.cost);
+                }
+                
                 resultMessage = `${player.name} скористався порталом! Переміщено на клітинку ${data.targetPosition}, втрачено ${data.cost} ОО.`;
             } else {
                 resultMessage = `${player.name} відмовився від порталу.`;
             }
         } else if (data.eventType === 'reincarnation') {
             if (data.choice === 'yes') {
-                // Нараховуємо очки за реінкарнацію
-                player.points += 30;
-                
-                // Автоматично переміщуємо на наступну клітинку
-                player.position += 1;
+                // Знаходимо гравця в масиві гравців кімнати
+                const roomPlayer = room.gameData.players.find(p => p.id === player.id);
+                if (roomPlayer) {
+                    // Нараховуємо очки за реінкарнацію
+                    roomPlayer.points += 30;
+                    player.points += 30;
+                    
+                    // Автоматично переміщуємо на наступну клітинку
+                    roomPlayer.position += 1;
+                    player.position += 1;
+                }
                 
                 resultMessage = `${player.name} завершив епоху! Отримано 30 ОО та переміщено на наступну клітинку.`;
             } else {
@@ -842,9 +857,18 @@ io.on('connection', (socket) => {
                     return; // Зупиняємо виконання
                 }
                 
-                // Переміщуємо гравця на цільову позицію
-                player.position = data.eventData.target;
-                player.points = Math.max(0, player.points - data.eventData.cost);
+                // Знаходимо гравця в масиві гравців кімнати
+                const roomPlayer = room.gameData.players.find(p => p.id === player.id);
+                if (roomPlayer) {
+                    // Переміщуємо гравця на цільову позицію
+                    roomPlayer.position = data.eventData.target;
+                    roomPlayer.points = Math.max(0, roomPlayer.points - data.eventData.cost);
+                    
+                    // Оновлюємо також в глобальному списку
+                    player.position = data.eventData.target;
+                    player.points = Math.max(0, player.points - data.eventData.cost);
+                }
+                
                 resultMessage = `${player.name} скористався обхідною дорогою! Переміщено на клітинку ${data.eventData.target}, втрачено ${data.eventData.cost} ОО.`;
             } else {
                 resultMessage = `${player.name} відмовився від обхідної дороги.`;
@@ -856,13 +880,14 @@ io.on('connection', (socket) => {
         room.currentEventData = null;
         
         // Повідомляємо всіх про результат
+        const roomPlayer = room.gameData.players.find(p => p.id === player.id);
         io.to(room.id).emit('event_result', {
             playerId: player.id,
             playerName: player.name,
             choice: data.choice,
             resultMessage,
-            newPosition: player.position,
-            newPoints: player.points
+            newPosition: roomPlayer ? roomPlayer.position : player.position,
+            newPoints: roomPlayer ? roomPlayer.points : player.points
         });
         
         // КРИТИЧНО: Відправляємо повний оновлений стан гри всім гравцям

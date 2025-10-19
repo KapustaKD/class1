@@ -622,15 +622,8 @@ io.on('connection', (socket) => {
         // Перевірка на інші події (скорочення шляху тощо)
         // Тут можна додати інші перевірки подій
         
-        // Якщо події немає, передаємо хід наступному гравцю
-        if (!hasEvent) {
-            passTurnToNextPlayer(room);
-        } else {
-            console.log(`Гравець ${currentPlayer.name} потрапив на подію, хід не передається`);
-            // Зберігаємо ID гравця, який потрапив на подію
-            room.currentEventPlayerId = currentPlayer.id;
-            // НЕ передаємо хід - він буде переданий після завершення події
-        }
+        // Передаємо хід наступному гравцю (навіть якщо є подія)
+        passTurnToNextPlayer(room);
     });
     
         // Обробляємо подію гравця
@@ -642,13 +635,15 @@ io.on('connection', (socket) => {
             const room = rooms.get(data.roomId);
             if (!room || room.gameState !== 'playing') return;
 
-            // Перевіряємо, чи це справді гравець, який потрапив на подію
-            if (room.currentEventPlayerId !== player.id) {
+            // Перевіряємо, чи це справді поточний гравець
+            const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+            if (currentPlayer.id !== player.id) {
                 console.log('Не той гравець намагається активувати подію');
                 return;
             }
 
             // Зберігаємо інформацію про поточну подію
+            room.currentEventPlayerId = player.id;
             room.currentEventData = data.eventData;
 
             console.log(`${player.name} потрапив на подію ${data.eventType}`);
@@ -896,8 +891,10 @@ io.on('connection', (socket) => {
         
         console.log('Відправлено результат події всім гравцям');
         
-        // Завжди передаємо хід після завершення події
-        passTurnToNextPlayer(room);
+        // Якщо це був перехід між секціями, продовжуємо гру
+        if (shouldContinue) {
+            passTurnToNextPlayer(room);
+        }
     });
     
     // Гравець покидає кімнату

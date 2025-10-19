@@ -1550,6 +1550,11 @@ class MultiplayerGame extends EducationalPathGame {
     
     submitTimedTextResult() {
         const textInput = document.getElementById('text-input');
+        if (!textInput) {
+            console.error('Поле вводу тексту не знайдено');
+            return;
+        }
+        
         const text = textInput.value.trim();
         const wordsCount = text.split(/\s+/).filter(word => word.length > 0).length;
         

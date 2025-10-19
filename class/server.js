@@ -3,6 +3,37 @@ const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
 
+// Функція для передачі ходу наступному гравцю
+function passTurnToNextPlayer(room) {
+    // Переходимо до наступного гравця
+    console.log('Старий currentPlayerIndex:', room.gameData.currentPlayerIndex);
+    room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+    console.log('Новий currentPlayerIndex:', room.gameData.currentPlayerIndex);
+    
+    // Пропускаємо гравців, які вибули
+    while (room.gameData.players[room.gameData.currentPlayerIndex].hasWon || 
+           room.gameData.players[room.gameData.currentPlayerIndex].hasLost) {
+        room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+        console.log('Пропущено вибулого гравця, новий індекс:', room.gameData.currentPlayerIndex);
+    }
+    
+    // Повідомляємо всіх про зміну черги
+    const nextPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+    console.log('Наступний гравець:', nextPlayer.name, 'ID:', nextPlayer.id);
+    
+    io.to(room.id).emit('turn_update', {
+        currentPlayerIndex: room.gameData.currentPlayerIndex,
+        currentPlayerId: nextPlayer.id,
+        currentPlayerName: nextPlayer.name
+    });
+    
+    console.log('Відправлено подію turn_update всім гравцям:', {
+        currentPlayerIndex: room.gameData.currentPlayerIndex,
+        currentPlayerId: nextPlayer.id,
+        currentPlayerName: nextPlayer.name
+    });
+}
+
 // Імпортуємо дані міні-ігор
 const { pvpGames, creativeGames, madLibsQuestions, webNovella } = require('./questsData.js');
 
@@ -593,33 +624,7 @@ io.on('connection', (socket) => {
         
         // Якщо події немає, передаємо хід наступному гравцю
         if (!hasEvent) {
-            // Переходимо до наступного гравця
-            console.log('Старий currentPlayerIndex:', room.gameData.currentPlayerIndex);
-            room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
-            console.log('Новий currentPlayerIndex:', room.gameData.currentPlayerIndex);
-            
-            // Пропускаємо гравців, які вибули
-            while (room.gameData.players[room.gameData.currentPlayerIndex].hasWon || 
-                   room.gameData.players[room.gameData.currentPlayerIndex].hasLost) {
-                room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
-                console.log('Пропущено вибулого гравця, новий індекс:', room.gameData.currentPlayerIndex);
-            }
-            
-            // Повідомляємо всіх про зміну черги
-            const nextPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
-            console.log('Наступний гравець:', nextPlayer.name, 'ID:', nextPlayer.id);
-            
-            io.to(room.id).emit('turn_update', {
-                currentPlayerIndex: room.gameData.currentPlayerIndex,
-                currentPlayerId: nextPlayer.id,
-                currentPlayerName: nextPlayer.name
-            });
-            
-            console.log('Відправлено подію turn_update всім гравцям:', {
-                currentPlayerIndex: room.gameData.currentPlayerIndex,
-                currentPlayerId: nextPlayer.id,
-                currentPlayerName: nextPlayer.name
-            });
+            passTurnToNextPlayer(room);
         } else {
             console.log(`Гравець ${currentPlayer.name} потрапив на подію, хід не передається`);
         }
@@ -867,25 +872,7 @@ io.on('connection', (socket) => {
         
         // Якщо це був перехід між секціями, продовжуємо гру
         if (shouldContinue) {
-            // Переходимо до наступного гравця
-            room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
-            
-            // Пропускаємо гравців, які вибули
-            while (room.gameData.players[room.gameData.currentPlayerIndex].hasWon || 
-                   room.gameData.players[room.gameData.currentPlayerIndex].hasLost) {
-                room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
-            }
-            
-            // Повідомляємо всіх про зміну черги
-            const nextPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
-            io.to(room.id).emit('turn_update', {
-                currentPlayerIndex: room.gameData.currentPlayerIndex,
-                currentPlayerId: nextPlayer.id,
-                currentPlayerName: nextPlayer.name
-            });
-            
-            // КРИТИЧНО: Відправляємо оновлений стан гри після передачі ходу
-            io.to(room.id).emit('game_state_update', room.gameData);
+            passTurnToNextPlayer(room);
         }
     });
     

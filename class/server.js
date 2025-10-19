@@ -629,6 +629,7 @@ io.on('connection', (socket) => {
             console.log(`Гравець ${currentPlayer.name} потрапив на подію, хід не передається`);
             // Зберігаємо ID гравця, який потрапив на подію
             room.currentEventPlayerId = currentPlayer.id;
+            // НЕ передаємо хід - він буде переданий після завершення події
         }
     });
     
@@ -895,10 +896,8 @@ io.on('connection', (socket) => {
         
         console.log('Відправлено результат події всім гравцям');
         
-        // Якщо це був перехід між секціями, продовжуємо гру
-        if (shouldContinue) {
-            passTurnToNextPlayer(room);
-        }
+        // Завжди передаємо хід після завершення події
+        passTurnToNextPlayer(room);
     });
     
     // Гравець покидає кімнату

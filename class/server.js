@@ -604,21 +604,16 @@ io.on('connection', (socket) => {
         }
         
         // Повідомляємо всіх про кидання кубика та нову позицію
-        io.to(room.id).emit('dice_result', {
+        // (результат буде відправлений нижче з інформацією про події)
+        
+        // Зберігаємо інформацію про можливі події для відправки після анімації
+        const eventInfo = {
+            hasEvent: false,
+            eventType: null,
+            eventData: null,
             playerId: currentPlayer.id,
-            roll,
-            move,
-            newPosition: currentPlayer.position,
-            newPoints: currentPlayer.points,
-            newClass: currentPlayer.class,
-            currentPlayerIndex: room.gameData.currentPlayerIndex
-        });
-        
-        console.log('Відправлено подію dice_result всім гравцям');
-        
-        // КРИТИЧНО: Перевіряємо події на новій позиції ПЕРЕД передачею ходу
-        // Тут має бути перевірка на події (реінкарнація, скорочення шляху тощо)
-        // Якщо є подія - НЕ передаємо хід, а відправляємо подію тільки поточному гравцю
+            playerName: currentPlayer.name
+        };
         
         // Перевіряємо, чи є подія на новій позиції
         let hasEvent = false;
@@ -626,36 +621,37 @@ io.on('connection', (socket) => {
         // Перевірка на реінкарнацію (зупинка на межі епохи)
         if (stopMove) {
             hasEvent = true;
-            // Відправляємо подію реінкарнації тільки поточному гравцю
-            socket.emit('show_event_prompt', {
-                playerId: currentPlayer.id,
-                playerName: currentPlayer.name,
-                eventType: 'reincarnation',
-                eventData: {
-                    nextEpoch: newEpoch,
-                    points: 30
-                },
-                activePlayerId: currentPlayer.id
-            });
-            console.log(`Відправлено подію реінкарнації гравцю ${currentPlayer.name}`);
+            eventInfo.hasEvent = true;
+            eventInfo.eventType = 'reincarnation';
+            eventInfo.eventData = {
+                nextEpoch: newEpoch,
+                points: 30
+            };
+            console.log(`Гравець ${currentPlayer.name} потрапив на межу епохи ${currentPlayer.position}, буде реінкарнація`);
         }
         
         // Перевірка на інші події (скорочення шляху тощо)
         const specialCell = SPECIAL_CELLS[currentPlayer.position];
         if (specialCell && !hasEvent) {
             hasEvent = true;
+            eventInfo.hasEvent = true;
+            eventInfo.eventType = specialCell.type;
+            eventInfo.eventData = specialCell;
             console.log(`Гравець ${currentPlayer.name} потрапив на спеціальну клітинку ${currentPlayer.position}: ${specialCell.type}`);
-            
-            // Відправляємо подію тільки поточному гравцю
-            socket.emit('show_event_prompt', {
-                playerId: currentPlayer.id,
-                playerName: currentPlayer.name,
-                eventType: specialCell.type,
-                eventData: specialCell,
-                activePlayerId: currentPlayer.id
-            });
-            console.log(`Відправлено подію ${specialCell.type} гравцю ${currentPlayer.name}`);
         }
+        
+        // Відправляємо інформацію про події разом з результатом кубика
+        io.to(room.id).emit('dice_result', {
+            playerId: currentPlayer.id,
+            playerName: currentPlayer.name,
+            roll,
+            move,
+            newPosition: currentPlayer.position,
+            newPoints: currentPlayer.points,
+            newClass: currentPlayer.class,
+            currentPlayerIndex: room.gameData.currentPlayerIndex,
+            eventInfo: eventInfo
+        });
         
         // Якщо є подія, не передаємо хід одразу - чекаємо на обробку події
         if (hasEvent) {

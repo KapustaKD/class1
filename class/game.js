@@ -579,7 +579,17 @@ class EducationalPathGame {
                 pawn.style.borderRadius = '50%';
             }
     
-            startCell.appendChild(pawn);
+            // Додаємо фішку до дошки замість клітинки
+            this.gameBoard.appendChild(pawn);
+            
+            // Позиціонуємо фішку абсолютно
+            const cellRect = startCell.getBoundingClientRect();
+            const boardRect = this.gameBoard.getBoundingClientRect();
+            
+            pawn.style.position = 'absolute';
+            pawn.style.left = `${cellRect.left - boardRect.left + cellRect.width / 2 - 37.5}px`;
+            pawn.style.top = `${cellRect.top - boardRect.top + cellRect.height / 2 - 37.5}px`;
+            pawn.style.zIndex = '10';
     
         });
         
@@ -1137,21 +1147,29 @@ class EducationalPathGame {
     
        
     
-        updatePawnPosition(player) {
-    
-            const pawn = document.getElementById(`pawn-${player.id}`);
-    
-            const cell = document.getElementById(`cell-${player.position}`);
-    
-            if (cell && pawn) {
-    
-                cell.appendChild(pawn);
-    
-                this.centerViewOn(cell);
-    
-            }
-    
-        }
+    updatePawnPosition(player) {
+
+        const pawn = document.getElementById(`pawn-${player.id}`);
+
+        const cell = document.getElementById(`cell-${player.position}`);
+
+        if (cell && pawn) {
+
+            // Отримуємо позицію клітинки відносно дошки
+            const cellRect = cell.getBoundingClientRect();
+            const boardRect = this.gameBoard.getBoundingClientRect();
+            
+            // Позиціонуємо фішку абсолютно відносно дошки
+            pawn.style.position = 'absolute';
+            pawn.style.left = `${cellRect.left - boardRect.left + cellRect.width / 2 - 37.5}px`;
+            pawn.style.top = `${cellRect.top - boardRect.top + cellRect.height / 2 - 37.5}px`;
+            pawn.style.zIndex = '10';
+
+            this.centerViewOn(cell);
+
+        }
+
+    }
     
        
     
@@ -1298,9 +1316,15 @@ class EducationalPathGame {
     
                
     
-                // Переміщуємо фішку в нову клітинку
-    
-                targetCell.appendChild(pawn);
+            // Отримуємо позицію клітинки відносно дошки
+            const cellRect = targetCell.getBoundingClientRect();
+            const boardRect = this.gameBoard.getBoundingClientRect();
+            
+            // Позиціонуємо фішку абсолютно відносно дошки
+            pawn.style.position = 'absolute';
+            pawn.style.left = `${cellRect.left - boardRect.left + cellRect.width / 2 - 37.5}px`;
+            pawn.style.top = `${cellRect.top - boardRect.top + cellRect.height / 2 - 37.5}px`;
+            pawn.style.zIndex = '10';
     
                
     

@@ -2,9 +2,13 @@
 
 class EducationalPathGame {
 
-        constructor() {
-    
+    constructor() {
+
             this.BOARD_SIZE = 101;
+            
+            // Ініціалізуємо звуки
+            this.diceSound = new Audio('sound/dice/dice.mp3');
+            this.diceSound.preload = 'auto';
     
             this.WIN_CONDITION_POINTS = 300;
     
@@ -732,11 +736,26 @@ class EducationalPathGame {
     
        
     
-        // Ігрова логіка
+    // Ігрова логіка
     
-        async rollTheDice() {
-    
-            this.rollDiceBtn.disabled = true;
+    // Функція для відтворення звуку кидка кубика
+    playDiceSound() {
+        try {
+            this.diceSound.currentTime = 0; // Скидаємо до початку
+            this.diceSound.play().catch(e => {
+                console.log('Не вдалося відтворити звук кубика:', e);
+            });
+        } catch (e) {
+            console.log('Помилка відтворення звуку кубика:', e);
+        }
+    }
+
+    async rollTheDice() {
+
+        this.rollDiceBtn.disabled = true;
+        
+        // Відтворюємо звук кидка кубика
+        this.playDiceSound();
     
             let roll = Math.floor(Math.random() * 6) + 1;
     

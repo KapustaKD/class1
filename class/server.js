@@ -645,6 +645,16 @@ io.on('connection', (socket) => {
         if (specialCell && !hasEvent) {
             hasEvent = true;
             console.log(`Гравець ${currentPlayer.name} потрапив на спеціальну клітинку ${currentPlayer.position}: ${specialCell.type}`);
+            
+            // Відправляємо подію тільки поточному гравцю
+            socket.emit('show_event_prompt', {
+                playerId: currentPlayer.id,
+                playerName: currentPlayer.name,
+                eventType: specialCell.type,
+                eventData: specialCell,
+                activePlayerId: currentPlayer.id
+            });
+            console.log(`Відправлено подію ${specialCell.type} гравцю ${currentPlayer.name}`);
         }
         
         // Якщо є подія, не передаємо хід одразу - чекаємо на обробку події
@@ -820,16 +830,17 @@ io.on('connection', (socket) => {
                 });
 
             } else {
-                // Для інших подій використовуємо стару логіку
-                io.to(room.id).emit('show_event_prompt', {
+                // Для інших подій відправляємо тільки поточному гравцю
+                socket.emit('show_event_prompt', {
                     playerId: player.id,
                     playerName: player.name,
                     eventType: data.eventType,
-                    eventData: data.eventData
+                    eventData: data.eventData,
+                    activePlayerId: player.id
                 });
             }
 
-            console.log('Відправлено подію всім гравцям');
+            console.log('Відправлено подію поточному гравцю');
         });
     
     // Обробляємо вибір гравця в події
@@ -1339,11 +1350,21 @@ io.on('connection', (socket) => {
         room.creativeWritingState.votes[player.id] = data.submissionIndex;
 
         // Перевіряємо, чи всі проголосували
-        // В творчих іграх голосують ВСІ гравці (включно з активним)
+        // В творчих іграх голосують ВСІ гравці (крім тих, хто не може голосувати за свою роботу)
         const totalVoters = room.gameData.players.length;
         const votesCount = Object.keys(room.creativeWritingState.votes).length;
+        
+        // Перевіряємо, чи всі можливі гравці проголосували
+        // Гравець не може голосувати за свою роботу, тому перевіряємо це
+        let canVoteCount = 0;
+        room.gameData.players.forEach(p => {
+            const submission = room.creativeWritingState.submissions.find(s => s.playerId === p.id);
+            if (submission) {
+                canVoteCount++; // Гравець може голосувати за інших
+            }
+        });
 
-        if (votesCount >= totalVoters) {
+        if (votesCount >= canVoteCount) {
             // Підраховуємо голоси
             const voteCounts = {};
             Object.values(room.creativeWritingState.votes).forEach(index => {

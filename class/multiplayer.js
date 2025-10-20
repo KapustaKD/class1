@@ -11,6 +11,9 @@ class MultiplayerGame extends EducationalPathGame {
         this.spectators = [];
         this.storyTimer = null; // Змінна для зберігання таймера спільної історії
         
+        // Встановлюємо випадковий фон для мультиплеєра
+        this.setRandomBackground();
+        
         // Спочатку налаштовуємо елементи мультиплеєра
         this.setupMultiplayerElements();
         // Потім обробники подій мультиплеєра (перезаписують базові)

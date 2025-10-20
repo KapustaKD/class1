@@ -970,6 +970,9 @@ class MultiplayerGame extends EducationalPathGame {
             currentPlayer: this.players?.[this.currentPlayerIndex]
         });
         
+        // Відтворюємо звук кидка кубика
+        this.playDiceSound();
+        
         if (this.isOnlineMode) {
             // В онлайн режимі тільки поточний гравець може кидати кубик
             const currentPlayer = this.players[this.currentPlayerIndex];
@@ -1016,6 +1019,9 @@ class MultiplayerGame extends EducationalPathGame {
         console.log('Обробляємо кидання кубика для гравця:', player.name);
         
         this.rollDiceBtn.disabled = true;
+        
+        // Відтворюємо звук кидка кубика
+        this.playDiceSound();
         
         const rotations = {
             1: 'rotateY(0deg)',
@@ -1071,6 +1077,9 @@ class MultiplayerGame extends EducationalPathGame {
         // Показуємо анімацію кубика
         this.rollDiceBtn.disabled = true;
         
+        // Відтворюємо звук кидка кубика для всіх гравців
+        this.playDiceSound();
+        
         const rotations = {
             1: 'rotateY(0deg)',
             2: 'rotateY(-90deg)',
@@ -1097,6 +1106,18 @@ class MultiplayerGame extends EducationalPathGame {
             }
             if (data.newClass !== undefined) {
                 player.class = data.newClass;
+            }
+            
+            // Після завершення анімації перевіряємо події
+            if (data.eventInfo && data.eventInfo.hasEvent) {
+                console.log('Показуємо подію після завершення анімації:', data.eventInfo);
+                this.showEventPrompt({
+                    playerId: data.eventInfo.playerId,
+                    playerName: data.eventInfo.playerName,
+                    eventType: data.eventInfo.eventType,
+                    eventData: data.eventInfo.eventData,
+                    activePlayerId: data.eventInfo.playerId
+                });
             }
             
         }, 1000);

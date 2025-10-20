@@ -42,6 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Додаємо глобальні обробники подій
     setupGlobalEventListeners();
     
+    // Додаємо обробники кнопок режимів
+    setupModeButtons();
+    
     console.log('🎮 Освітній Шлях: Революція завантажено!');
 });
 
@@ -105,10 +108,31 @@ function setupGlobalEventListeners() {
     });
 }
 
+function setupModeButtons() {
+    // Обробник для локальної гри (тепер це гра проти ботів)
+    const localModeBtn = document.getElementById('local-mode-btn');
+    if (localModeBtn) {
+        localModeBtn.addEventListener('click', () => {
+            window.startLocalGame();
+        });
+    }
+    
+    // Обробник для онлайн гри
+    const onlineModeBtn = document.getElementById('online-mode-btn');
+    if (onlineModeBtn) {
+        onlineModeBtn.addEventListener('click', () => {
+            window.startOnlineGame();
+        });
+    }
+}
+
 // Глобальні функції для використання в HTML
 window.startLocalGame = function() {
-    if (window.game) {
-        window.game.startLocalMode();
+    if (window.botGame) {
+        window.botGame.startLocalBotGame();
+    } else {
+        window.botGame = new BotGame();
+        window.botGame.startLocalBotGame();
     }
 };
 

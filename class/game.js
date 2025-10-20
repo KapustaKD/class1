@@ -9,8 +9,18 @@ class EducationalPathGame {
             // Ініціалізуємо звуки
             this.diceSound = new Audio('sound/dice/dice.mp3');
             this.diceSound.preload = 'auto';
+            
+            // Доступні фони для гравців
+            this.availableBackgrounds = [
+                'image/fon/fon1.png',
+                'image/fon/fon2.png',
+                'image/fon/fon3.png'
+            ];
+            
+            // Встановлюємо випадковий фон для поточного гравця
+            this.setRandomBackground();
     
-            this.WIN_CONDITION_POINTS = 300;
+        this.WIN_CONDITION_POINTS = 300;
     
             this.playerColors = ['#e53e3e', '#38b2ac', '#ed8936'];
     
@@ -747,6 +757,25 @@ class EducationalPathGame {
        
     
     // Ігрова логіка
+    
+    // Функція для встановлення випадкового фону
+    setRandomBackground() {
+        // Вибираємо випадковий фон
+        const randomIndex = Math.floor(Math.random() * this.availableBackgrounds.length);
+        const selectedBackground = this.availableBackgrounds[randomIndex];
+        
+        // Зберігаємо вибраний фон в localStorage для цієї сесії
+        localStorage.setItem('playerBackground', selectedBackground);
+        
+        // Встановлюємо фон на body
+        document.body.style.backgroundImage = `url('${selectedBackground}')`;
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundRepeat = 'no-repeat';
+        document.body.style.backgroundAttachment = 'fixed';
+        
+        console.log('Встановлено фон:', selectedBackground);
+    }
     
     // Функція для відтворення звуку кидка кубика
     playDiceSound() {

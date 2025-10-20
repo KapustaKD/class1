@@ -1934,7 +1934,7 @@ class MultiplayerGame extends EducationalPathGame {
         data.submissions.forEach((submission, index) => {
             // Перевіряємо, чи це робота поточного гравця
             const isMyWork = submission.playerId === this.playerId;
-            const clickHandler = isMyWork ? '' : `onclick="game.voteForCreative(${index})"`;
+            const clickHandler = isMyWork ? '' : `onclick="window.game.voteForCreative(${index})"`;
             const cursorStyle = isMyWork ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-200';
             
             modalContent += `

@@ -273,7 +273,7 @@ class MultiplayerGame extends EducationalPathGame {
             document.getElementById('lobby-section').classList.remove('hidden');
             
             // Оновлюємо UI лоббі
-            document.getElementById('room-code-text').textContent = data.roomCode;
+            document.getElementById('room-code-text').textContent = data.roomId;
             this.updatePlayersList(data.players);
             
             // Зберігаємо стан гри
@@ -295,7 +295,7 @@ class MultiplayerGame extends EducationalPathGame {
             document.getElementById('lobby-section').classList.remove('hidden');
             
             // Оновлюємо UI лоббі
-            document.getElementById('room-code-text').textContent = data.roomCode;
+            document.getElementById('room-code-text').textContent = data.roomId;
             this.updatePlayersList(data.players);
             
             // Зберігаємо стан гри
@@ -1264,8 +1264,7 @@ class MultiplayerGame extends EducationalPathGame {
         
         this.questModal.classList.add('hidden');
         
-        // Передаємо хід наступному гравцю
-        this.socket.emit('next_turn', { roomId: this.roomId });
+        // Не передаємо хід автоматично - хід передається тільки після кидка кубика
     }
     
     syncGameState(data) {

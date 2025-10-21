@@ -376,6 +376,17 @@ io.on('connection', (socket) => {
         }));
         room.gameData.currentPlayerIndex = 0;
         
+        // Призначаємо гравців до кожної події для презентації
+        room.gameData.eventAssignments = {};
+        const eventCells = [3, 10, 21, 32, 40, 55, 61, 69, 81, 90, 96, 99]; // Всі клітинки з подіями
+        const shuffledPlayers = [...room.players].sort(() => 0.5 - Math.random());
+        
+        eventCells.forEach((cellNumber, index) => {
+            const assignedPlayer = shuffledPlayers[index % shuffledPlayers.length];
+            room.gameData.eventAssignments[cellNumber] = assignedPlayer.id;
+            console.log(`Подія на клітинці ${cellNumber} призначена гравцю ${assignedPlayer.name}`);
+        });
+        
         // Додаємо нові поля для вибору аватарів
         room.gameData.avatarSelections = {};
         room.gameData.readyPlayers = [];
@@ -684,6 +695,14 @@ io.on('connection', (socket) => {
             room.currentEventData = data.eventData;
 
             console.log(`${player.name} потрапив на подію ${data.eventType}`);
+            
+            // Перевіряємо, чи гравець призначений до цієї події для презентації
+            const isAssignedPlayer = room.gameData.eventAssignments && 
+                                   room.gameData.eventAssignments[data.cellNumber] === player.id;
+            
+            if (isAssignedPlayer) {
+                console.log(`Гравець ${player.name} призначений до події на клітинці ${data.cellNumber} - автоматично активуємо`);
+            }
 
             // Обробляємо різні типи подій
             if (data.eventType === 'pvp-quest') {
@@ -811,16 +830,18 @@ io.on('connection', (socket) => {
                 });
 
             } else if (data.eventType === 'webnovella-quest') {
-                // Вебновела "Халепа!"
+                // Вебновела "Халепа!" - вибираємо новелу залежно від клітинки
+                const novellaStart = data.cellNumber === 81 ? 'start_event_2' : 'start_event_1';
+                
                 room.webNovellaState = {
-                    currentEvent: 'start_event_1',
+                    currentEvent: novellaStart,
                     playerId: player.id,
                     gameActive: true
                 };
                 
                 // Відправляємо першу подію
                 io.to(player.id).emit('webnovella_event', {
-                    event: webNovella['start_event_1'],
+                    event: webNovella[novellaStart],
                     gameState: room.webNovellaState,
                     activePlayerId: player.id
                 });
@@ -1474,7 +1495,13 @@ io.on('connection', (socket) => {
             // Всі питання відповідені - формуємо фінальну історію
             const story = room.madLibsState.answers
                 .sort((a, b) => a.questionIndex - b.questionIndex)
-                .map(answer => answer.answer)
+                .map((answer, index) => {
+                    // Додаємо "і в підсумку" між питаннями 4 і 5 (індекси 4 і 5)
+                    if (index === 4) {
+                        return answer.answer + ' і в підсумку';
+                    }
+                    return answer.answer;
+                })
                 .join(' ');
 
             console.log('Фінальна історія:', story);

@@ -70,7 +70,7 @@ const SPECIAL_CELLS = {
     69: { type: 'mad-libs' },
     80: { type: 'alternative-path', target: 91, cost: 30 },
     81: { type: 'webnovella' },
-    90: { type: 'creative-quest' },
+    90: { type: 'webnovella' },
     96: { type: 'pvp-quest' },
     99: { type: 'mad-libs' }
 };
@@ -831,7 +831,12 @@ io.on('connection', (socket) => {
 
             } else if (data.eventType === 'webnovella-quest') {
                 // Вебновела "Халепа!" - вибираємо новелу залежно від клітинки
-                const novellaStart = data.cellNumber === 81 ? 'start_event_2' : 'start_event_1';
+                let novellaStart = 'start_event_1'; // за замовчуванням
+                if (data.cellNumber === 81) {
+                    novellaStart = 'start_event_2';
+                } else if (data.cellNumber === 90) {
+                    novellaStart = 'start_event_3';
+                }
                 
                 room.webNovellaState = {
                     currentEvent: novellaStart,

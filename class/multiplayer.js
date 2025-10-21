@@ -43,11 +43,11 @@ class MultiplayerGame extends EducationalPathGame {
         this.statusText = document.getElementById('status-text');
         
         this.customRoomCodeInput = document.getElementById('custom-room-code');
-        this.playerNameInput = document.getElementById('player-name');
+        this.playerNameInput = document.getElementById('player-name-create');
         this.createRoomBtn = document.getElementById('create-room-btn');
         
-        this.roomCodeInput = document.getElementById('room-code');
-        this.joinPlayerNameInput = document.getElementById('join-player-name');
+        this.roomCodeInput = document.getElementById('room-code-join');
+        this.joinPlayerNameInput = document.getElementById('player-name-join');
         this.joinRoomBtn = document.getElementById('join-room-btn');
         
         this.playersList = document.getElementById('players-list');
@@ -71,7 +71,7 @@ class MultiplayerGame extends EducationalPathGame {
         
         // Додаємо елементи для початку гри
         this.startGameSection = document.getElementById('start-game-section');
-        this.startGameBtn = document.getElementById('start-game-btn');
+        this.startGameBtn = document.getElementById('start-game-btn-lobby');
         
         // Додаємо елемент для виходу з кімнати
         this.leaveRoomBtn = document.getElementById('leave-room-btn');
@@ -267,10 +267,14 @@ class MultiplayerGame extends EducationalPathGame {
             console.log('Отримано подію room_created:', data);
             this.roomId = data.roomId;
             this.isHost = true;
+            
+            // Нова логіка відображення
+            document.getElementById('join-create-section').classList.add('hidden');
+            document.getElementById('lobby-section').classList.remove('hidden');
+            
+            // Оновлюємо UI лоббі
+            document.getElementById('room-code-text').textContent = data.roomCode;
             this.updatePlayersList(data.players);
-            this.showPlayersList();
-            this.showChat();
-            this.showRoomCode(data.roomId);
             
             // Зберігаємо стан гри
             sessionStorage.setItem('activeGameRoom', JSON.stringify({ 
@@ -280,17 +284,19 @@ class MultiplayerGame extends EducationalPathGame {
             
             // Показуємо кнопку виходу
             this.leaveRoomBtn.classList.remove('hidden');
-            
-            // Показуємо код кімнати в модальному вікні
-            this.showRoomCodeModal(data.roomId, data.roomName);
         });
         
         this.socket.on('room_joined', (data) => {
             this.roomId = data.roomId;
             this.isHost = false;
+            
+            // Нова логіка відображення
+            document.getElementById('join-create-section').classList.add('hidden');
+            document.getElementById('lobby-section').classList.remove('hidden');
+            
+            // Оновлюємо UI лоббі
+            document.getElementById('room-code-text').textContent = data.roomCode;
             this.updatePlayersList(data.players);
-            this.showPlayersList();
-            this.showChat();
             
             // Зберігаємо стан гри
             sessionStorage.setItem('activeGameRoom', JSON.stringify({ 
@@ -656,11 +662,11 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     showPlayersList() {
-        this.playersList.classList.remove('hidden');
+        // Тепер не потрібно, оскільки все в одній панелі lobby-section
     }
     
     showChat() {
-        this.chatContainer.classList.remove('hidden');
+        // Тепер не потрібно, оскільки все в одній панелі lobby-section
     }
     
     showRoomCode(roomCode) {

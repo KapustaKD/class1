@@ -97,24 +97,24 @@
         </div>
         
         <div class="flex justify-center">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full max-w-4xl">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full max-w-6xl">
             <!-- Створення кімнати -->
-            <div class="bg-gray-800 p-4 rounded-lg">
-                <h3 class="text-xl font-bold mb-4">Створити кімнату</h3>
-                <div class="space-y-3">
-                    <input id="custom-room-code" type="text" placeholder="Придумайте код кімнати (тільки цифри)" class="w-full p-2 border border-gray-300 rounded text-black">
-                    <input id="player-name" type="text" placeholder="Ваше ім'я" class="w-full p-2 border border-gray-300 rounded text-black">
-                    <button id="create-room-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Створити</button>
+            <div class="bg-gray-800 p-6 rounded-lg">
+                <h3 class="text-2xl font-bold mb-6">Створити кімнату</h3>
+                <div class="space-y-4">
+                    <input id="custom-room-code" type="text" placeholder="Придумайте код кімнати (тільки цифри)" class="w-full p-3 border border-gray-300 rounded text-black text-lg">
+                    <input id="player-name" type="text" placeholder="Ваше ім'я" class="w-full p-3 border border-gray-300 rounded text-black text-lg">
+                    <button id="create-room-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded text-lg">Створити</button>
                 </div>
             </div>
             
             <!-- Приєднання до кімнати -->
-            <div class="bg-gray-800 p-4 rounded-lg">
-                <h3 class="text-xl font-bold mb-4">Приєднатися до кімнати</h3>
-                <div class="space-y-3">
-                    <input id="room-code" type="text" placeholder="Код кімнати" class="w-full p-2 border border-gray-300 rounded text-black">
-                    <input id="join-player-name" type="text" placeholder="Ваше ім'я" class="w-full p-2 border border-gray-300 rounded text-black">
-                    <button id="join-room-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Приєднатися</button>
+            <div class="bg-gray-800 p-6 rounded-lg">
+                <h3 class="text-2xl font-bold mb-6">Приєднатися до кімнати</h3>
+                <div class="space-y-4">
+                    <input id="room-code" type="text" placeholder="Код кімнати" class="w-full p-3 border border-gray-300 rounded text-black text-lg">
+                    <input id="join-player-name" type="text" placeholder="Ваше ім'я" class="w-full p-3 border border-gray-300 rounded text-black text-lg">
+                    <button id="join-room-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded text-lg">Приєднатися</button>
                 </div>
             </div>
             </div>
@@ -122,11 +122,11 @@
         
         <!-- Код кімнати -->
         <div id="room-code-display" class="mt-6 hidden flex justify-center">
-            <div class="max-w-md w-full">
-            <h3 class="text-xl font-bold mb-4">Код кімнати</h3>
+            <div class="max-w-lg w-full">
+            <h3 class="text-2xl font-bold mb-6">Код кімнати</h3>
             <div class="bg-gray-800 p-4 rounded-lg text-center">
                 <div class="text-3xl font-bold text-yellow-300 mb-2" id="room-code-text">-</div>
-                <button id="copy-room-code-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                <button id="copy-room-code-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded text-lg">
                     📋 Скопіювати код
                 </button>
             </div>
@@ -136,8 +136,8 @@
         <!-- Список гравців та чат -->
         <div class="flex justify-center gap-6 mt-6">
             <!-- Список гравців -->
-            <div id="players-list" class="hidden max-w-md">
-                <h3 class="text-xl font-bold mb-4">Гравці в кімнаті</h3>
+            <div id="players-list" class="hidden max-w-lg">
+                <h3 class="text-2xl font-bold mb-6">Гравці в кімнаті</h3>
                 <div id="players-container" class="grid grid-cols-2 gap-2"></div>
                 
                 <!-- Кнопка почати гру -->
@@ -149,12 +149,12 @@
             </div>
             
             <!-- Чат -->
-            <div id="chat-container" class="hidden max-w-md">
-                <h3 class="text-xl font-bold mb-4">Чат</h3>
-                <div id="chat-messages" class="bg-gray-800 rounded-lg p-3 h-32 overflow-y-auto mb-3"></div>
+            <div id="chat-container" class="hidden max-w-lg">
+                <h3 class="text-2xl font-bold mb-6">Чат</h3>
+                <div id="chat-messages" class="bg-gray-800 rounded-lg p-4 h-40 overflow-y-auto mb-3"></div>
                 <div class="flex gap-2">
-                    <input id="chat-input" type="text" placeholder="Повідомлення..." class="flex-1 p-2 border border-gray-300 rounded text-black">
-                    <button id="send-message-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Відправити</button>
+                    <input id="chat-input" type="text" placeholder="Повідомлення..." class="flex-1 p-3 border border-gray-300 rounded text-black text-lg">
+                    <button id="send-message-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded text-lg">Відправити</button>
                 </div>
             </div>
         </div>

@@ -7,8 +7,11 @@ class EducationalPathGame {
             this.BOARD_SIZE = 101;
             
             // Ініціалізуємо звуки
-            this.diceSound = new Audio('sound/dice/dice.mp3');
+            this.diceSound = new Audio('sound/dice/dice_metal.mp3');
             this.diceSound.preload = 'auto';
+            
+            // Лічильник кидків для спеціального звуку
+            this.diceRollCount = 0;
             
             // Доступні фони для гравців
             this.availableBackgrounds = [
@@ -792,6 +795,9 @@ class EducationalPathGame {
     async rollTheDice() {
 
         this.rollDiceBtn.disabled = true;
+        
+        // Збільшуємо лічильник кидків
+        this.diceRollCount++;
         
         // Відтворюємо звук кидка кубика
         this.playDiceSound();

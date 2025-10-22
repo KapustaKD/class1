@@ -259,16 +259,31 @@ if (window.APP_CONFIG && !window.APP_CONFIG.isProduction) {
 }
 
 function setupMusicController() {
+    const audioToggleBtn = document.getElementById('audio-toggle-btn');
+    const audioPanel = document.getElementById('audio-panel');
+    const audioIcon = document.getElementById('audio-icon');
+    
     const musicToggleBtn = document.getElementById('music-toggle-btn');
     const musicSwitchBtn = document.getElementById('music-switch-btn');
     const musicVolumeSlider = document.getElementById('music-volume-slider');
     const musicVolumeText = document.getElementById('music-volume-text');
     const musicIcon = document.getElementById('music-icon');
     
-    if (!musicToggleBtn || !musicSwitchBtn || !musicVolumeSlider || !musicVolumeText || !musicIcon) {
+    if (!audioToggleBtn || !audioPanel || !audioIcon) {
         console.log('Контролер музики не знайдено');
         return;
     }
+    
+    // Кнопка відкриття/закриття панелі
+    audioToggleBtn.addEventListener('click', () => {
+        if (audioPanel.classList.contains('hidden')) {
+            audioPanel.classList.remove('hidden');
+            audioIcon.textContent = '🔇';
+        } else {
+            audioPanel.classList.add('hidden');
+            audioIcon.textContent = '🔊';
+        }
+    });
     
     // Ініціалізуємо фонову музику
     let backgroundMusic1 = new Audio('sound/fon/main_fon.m4a');

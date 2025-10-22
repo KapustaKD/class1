@@ -37,8 +37,9 @@ class EducationalPathGame {
             this.backgroundMusic2.volume = 0.05; // 5% гучності
             this.currentBackgroundMusic = this.backgroundMusic1;
             
-            // Лічильник кидків для спеціального звуку
-            this.diceRollCount = 0;
+            // Система відсоткової вірогідності для металевого звуку
+            this.metalSoundChance = 1; // Початковий шанс 1%
+            this.metalSoundTriggered = false; // Чи спрацював металевий звук
             
             // Доступні фони для гравців
             this.availableBackgrounds = [
@@ -358,6 +359,22 @@ class EducationalPathGame {
            
     
         this.setupPlayerInputs();
+        
+        // Додаємо обробник клавіш для заборони Enter на кидок кубика
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && this.rollDiceBtn && !this.rollDiceBtn.disabled) {
+                // Перевіряємо, чи не знаходимося в модальному вікні з текстовим полем
+                const activeElement = document.activeElement;
+                if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+                    // Дозволяємо Enter в текстових полях
+                    return;
+                }
+                
+                // Блокуємо Enter для кидка кубика
+                e.preventDefault();
+                console.log('🚫 Enter заблоковано для кидка кубика');
+            }
+        });
         
         // ВИДАЛЕНО: Масштабування тепер встановлюється в createBoard()
         // this.setInitialScale();
@@ -943,8 +960,22 @@ class EducationalPathGame {
         // Збільшуємо лічильник кидків
         this.diceRollCount++;
         
-        // Відтворюємо звук кидка кубика (металевий кожен 10-й раз)
-        if (this.diceRollCount % 10 === 0) {
+        // Відсоткова система для металевого звуку
+        const randomChance = Math.random() * 100;
+        let playMetalSound = false;
+        
+        if (randomChance <= this.metalSoundChance) {
+            playMetalSound = true;
+            this.metalSoundTriggered = true;
+            this.metalSoundChance = 1; // Скидаємо шанс до 1%
+            console.log('🎲 Металевий звук спрацював! Шанс був:', this.metalSoundChance + '%');
+        } else {
+            // Збільшуємо шанс на 5% за кожен кидок
+            this.metalSoundChance = Math.min(this.metalSoundChance + 5, 50); // Максимум 50%
+        }
+        
+        // Відтворюємо звук кидка кубика
+        if (playMetalSound) {
             try {
                 this.diceMetalSound.currentTime = 0;
                 this.diceMetalSound.play().catch(e => {

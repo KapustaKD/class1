@@ -1,7 +1,23 @@
 /* Основний CSS для гри */
+:root {
+    /* Система адаптивного масштабування */
+    --scale-factor: 1;
+    --base-font-size: 16px;
+    --scaled-font-size: calc(var(--base-font-size) * var(--scale-factor));
+    --base-padding: 1rem;
+    --scaled-padding: calc(var(--base-padding) * var(--scale-factor));
+    --base-margin: 1rem;
+    --scaled-margin: calc(var(--base-margin) * var(--scale-factor));
+    --base-border-radius: 0.5rem;
+    --scaled-border-radius: calc(var(--base-border-radius) * var(--scale-factor));
+    --base-gap: 1rem;
+    --scaled-gap: calc(var(--base-gap) * var(--scale-factor));
+}
+
 body { 
     font-family: 'Montserrat', sans-serif; 
     touch-action: none; 
+    font-size: var(--scaled-font-size);
 }
 
 /* Контейнер ігрового поля */
@@ -688,12 +704,65 @@ body.bg-gray-800 {
 /* Стилі для модальних вікон поверх фону */
 .modal-backdrop {
     background-color: rgba(0, 0, 0, 0.7);
+    padding: var(--scaled-padding);
+    border-radius: var(--scaled-border-radius);
 }
 
-/* Стилі для панелей поверх фону */
-.panel-overlay {
-    background-color: rgba(55, 65, 81, 1);
-    backdrop-filter: none;
+.modal-content {
+    padding: var(--scaled-padding);
+    border-radius: var(--scaled-border-radius);
+    gap: var(--scaled-gap);
+}
+
+/* Кнопки з адаптивним масштабуванням */
+button {
+    padding: calc(var(--scaled-padding) * 0.5) var(--scaled-padding);
+    border-radius: var(--scaled-border-radius);
+    font-size: var(--scaled-font-size);
+}
+
+/* Ігрове поле з адаптивним масштабуванням */
+.board-cell {
+    border-radius: var(--scaled-border-radius);
+}
+
+/* Картки гравців з адаптивним масштабуванням */
+.player-card {
+    padding: var(--scaled-padding);
+    border-radius: var(--scaled-border-radius);
+    gap: var(--scaled-gap);
+}
+
+/* Панель інформації з адаптивним масштабуванням */
+.player-info-panel {
+    padding: var(--scaled-padding);
+    border-radius: var(--scaled-border-radius);
+    gap: var(--scaled-gap);
+}
+
+/* Адаптивні розміри для різних екранів */
+@media (max-width: 1366px) {
+    :root {
+        --scale-factor: 0.8;
+    }
+}
+
+@media (max-width: 1024px) {
+    :root {
+        --scale-factor: 0.7;
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --scale-factor: 0.6;
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --scale-factor: 0.5;
+    }
 }
 
 /* Відступ для ігрового поля */

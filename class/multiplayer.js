@@ -21,7 +21,7 @@ class MultiplayerGame extends EducationalPathGame {
         // Обробники подій для аватарів встановлюються при показі модального вікна
         
         // Ініціалізуємо звуки
-        this.startGameSound = new Audio('sound/start_game.mp3');
+        this.startGameSound = new Audio('sound/start_game.m4a');
         this.startGameSound.preload = 'auto';
         this.notificationSound = new Audio('sound/notification.mp3');
         this.notificationSound.preload = 'auto';

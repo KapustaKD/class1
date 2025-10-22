@@ -42,6 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Додаємо глобальні обробники подій
     setupGlobalEventListeners();
     
+    // Налаштовуємо контролер музики
+    setupMusicController();
+    
     // Додаємо обробники кнопок режимів
     setupModeButtons();
     
@@ -250,4 +253,81 @@ if (window.APP_CONFIG && !window.APP_CONFIG.isProduction) {
     };
     
     console.log('🔧 Режим відладки активний. Використовуйте window.debugGame для тестування.');
+}
+
+function setupMusicController() {
+    const musicToggleBtn = document.getElementById('music-toggle-btn');
+    const musicSwitchBtn = document.getElementById('music-switch-btn');
+    const musicVolumeSlider = document.getElementById('music-volume-slider');
+    const musicVolumeText = document.getElementById('music-volume-text');
+    const musicIcon = document.getElementById('music-icon');
+    
+    if (!musicToggleBtn || !musicSwitchBtn || !musicVolumeSlider || !musicVolumeText || !musicIcon) {
+        console.log('Контролер музики не знайдено');
+        return;
+    }
+    
+    // Ініціалізуємо фонову музику
+    let backgroundMusic1 = new Audio('sound/main_fon.mp3');
+    backgroundMusic1.preload = 'auto';
+    backgroundMusic1.loop = true;
+    backgroundMusic1.volume = 0.05;
+    
+    let backgroundMusic2 = new Audio('sound/rumbling_fon_2.mp3');
+    backgroundMusic2.preload = 'auto';
+    backgroundMusic2.loop = true;
+    backgroundMusic2.volume = 0.05;
+    
+    let currentMusic = backgroundMusic1;
+    let isPlaying = false;
+    
+    // Кнопка вмикання/вимикання музики
+    musicToggleBtn.addEventListener('click', () => {
+        if (isPlaying) {
+            currentMusic.pause();
+            musicIcon.textContent = '🔇';
+            isPlaying = false;
+        } else {
+            currentMusic.play().catch(e => {
+                console.log('Не вдалося відтворити музику:', e);
+            });
+            musicIcon.textContent = '🎵';
+            isPlaying = true;
+        }
+    });
+    
+    // Кнопка перемикання музики
+    musicSwitchBtn.addEventListener('click', () => {
+        const wasPlaying = isPlaying;
+        if (wasPlaying) {
+            currentMusic.pause();
+        }
+        
+        currentMusic = currentMusic === backgroundMusic1 ? backgroundMusic2 : backgroundMusic1;
+        
+        if (wasPlaying) {
+            currentMusic.play().catch(e => {
+                console.log('Не вдалося відтворити музику:', e);
+            });
+        }
+    });
+    
+    // Слайдер гучності
+    musicVolumeSlider.addEventListener('input', (e) => {
+        const volume = e.target.value / 100;
+        backgroundMusic1.volume = volume;
+        backgroundMusic2.volume = volume;
+        musicVolumeText.textContent = e.target.value + '%';
+    });
+    
+    // Автоматично запускаємо музику при завантаженні
+    setTimeout(() => {
+        currentMusic.play().catch(e => {
+            console.log('Не вдалося автоматично відтворити музику:', e);
+        });
+        musicIcon.textContent = '🎵';
+        isPlaying = true;
+    }, 1000);
+    
+    console.log('🎵 Контролер музики налаштовано');
 }

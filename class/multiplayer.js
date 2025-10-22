@@ -20,6 +20,16 @@ class MultiplayerGame extends EducationalPathGame {
         this.setupMultiplayerEventListeners();
         // Обробники подій для аватарів встановлюються при показі модального вікна
         
+        // Ініціалізуємо звуки
+        this.startGameSound = new Audio('sound/start_game.mp3');
+        this.startGameSound.preload = 'auto';
+        this.notificationSound = new Audio('sound/notification.mp3');
+        this.notificationSound.preload = 'auto';
+        this.timerSound = new Audio('sound/clock_timer.mp3');
+        this.timerSound.preload = 'auto';
+        this.pvpSound = new Audio('sound/during_the_quest.mp3');
+        this.pvpSound.preload = 'auto';
+        
         // Перевіряємо збережену гру
         this.checkForSavedGame();
     }
@@ -727,6 +737,8 @@ class MultiplayerGame extends EducationalPathGame {
     // Перевизначення методів для мультиплеєру
     initializeGame() {
         if (this.isOnlineMode) {
+            // Відтворюємо звук початку гри
+            this.playStartGameSound();
             // В онлайн режимі гра ініціалізується сервером
             this.socket.emit('start_game', { roomId: this.roomId });
         } else {
@@ -2339,6 +2351,51 @@ class MultiplayerGame extends EducationalPathGame {
                 alert('Помилка при створенні карти. Спробуйте перезавантажити сторінку.');
             }
         }, 100);
+    }
+    
+    // Методи для відтворення звуків
+    playStartGameSound() {
+        try {
+            this.startGameSound.currentTime = 0;
+            this.startGameSound.play().catch(e => {
+                console.log('Не вдалося відтворити звук початку гри:', e);
+            });
+        } catch (e) {
+            console.log('Помилка відтворення звуку початку гри:', e);
+        }
+    }
+    
+    playNotificationSound() {
+        try {
+            this.notificationSound.currentTime = 0;
+            this.notificationSound.play().catch(e => {
+                console.log('Не вдалося відтворити звук сповіщення:', e);
+            });
+        } catch (e) {
+            console.log('Помилка відтворення звуку сповіщення:', e);
+        }
+    }
+    
+    playTimerSound() {
+        try {
+            this.timerSound.currentTime = 0;
+            this.timerSound.play().catch(e => {
+                console.log('Не вдалося відтворити звук таймера:', e);
+            });
+        } catch (e) {
+            console.log('Помилка відтворення звуку таймера:', e);
+        }
+    }
+    
+    playPvpSound() {
+        try {
+            this.pvpSound.currentTime = 0;
+            this.pvpSound.play().catch(e => {
+                console.log('Не вдалося відтворити звук PvP:', e);
+            });
+        } catch (e) {
+            console.log('Помилка відтворення звуку PvP:', e);
+        }
     }
 }
 

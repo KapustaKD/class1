@@ -1574,6 +1574,9 @@ class MultiplayerGame extends EducationalPathGame {
         const submitBtn = document.getElementById('submit-result-btn');
         const textInput = document.getElementById('text-input');
         
+        // Відтворюємо звук таймера
+        this.playTimerSound();
+        
         let timeLeft = seconds;
         
         const timer = setInterval(() => {
@@ -1838,6 +1841,10 @@ class MultiplayerGame extends EducationalPathGame {
     
     startCreativeTimer(seconds) {
         const timerElement = document.getElementById('creative-timer');
+        
+        // Відтворюємо звук таймера
+        this.playTimerSound();
+        
         let timeLeft = seconds;
         
         const timer = setInterval(() => {

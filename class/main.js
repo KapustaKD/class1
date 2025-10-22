@@ -42,6 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Додаємо глобальні обробники подій
     setupGlobalEventListeners();
     
+    // Налаштовуємо звуки
+    setupGlobalSounds();
+    
     // Налаштовуємо контролер музики
     setupMusicController();
     
@@ -268,7 +271,7 @@ function setupMusicController() {
     }
     
     // Ініціалізуємо фонову музику
-    let backgroundMusic1 = new Audio('sound/main_fon.mp3');
+    let backgroundMusic1 = new Audio('sound/main_fon.m4a');
     backgroundMusic1.preload = 'auto';
     backgroundMusic1.loop = true;
     backgroundMusic1.volume = 0.05;
@@ -320,14 +323,88 @@ function setupMusicController() {
         musicVolumeText.textContent = e.target.value + '%';
     });
     
-    // Автоматично запускаємо музику при завантаженні
-    setTimeout(() => {
-        currentMusic.play().catch(e => {
-            console.log('Не вдалося автоматично відтворити музику:', e);
+    // Кнопка тестування звуків
+    const testSoundsBtn = document.getElementById('test-sounds-btn');
+    if (testSoundsBtn) {
+        testSoundsBtn.addEventListener('click', () => {
+            console.log('🔊 Тестуємо звуки...');
+            
+            // Тестуємо звук клікання
+            const clickSound = new Audio('sound/click.mp3');
+            clickSound.play().catch(e => console.log('Помилка звуку клікання:', e));
+            
+            setTimeout(() => {
+                // Тестуємо звук сповіщення
+                const notificationSound = new Audio('sound/notification.mp3');
+                notificationSound.play().catch(e => console.log('Помилка звуку сповіщення:', e));
+            }, 500);
+            
+            setTimeout(() => {
+                // Тестуємо звук руху фішки
+                const chipMoveSound = new Audio('sound/chip_move.mp3');
+                chipMoveSound.play().catch(e => console.log('Помилка звуку руху фішки:', e));
+            }, 1000);
+            
+            setTimeout(() => {
+                // Тестуємо звук кубика
+                const diceSound = new Audio('sound/dice/normal_dice.mp3');
+                diceSound.play().catch(e => console.log('Помилка звуку кубика:', e));
+            }, 1500);
         });
-        musicIcon.textContent = '🎵';
-        isPlaying = true;
-    }, 1000);
+    }
     
     console.log('🎵 Контролер музики налаштовано');
+}
+
+function setupGlobalSounds() {
+    // Ініціалізуємо звук клікання
+    const clickSound = new Audio('sound/click.mp3');
+    clickSound.preload = 'auto';
+    
+    // Ініціалізуємо звук сповіщення
+    const notificationSound = new Audio('sound/notification.mp3');
+    notificationSound.preload = 'auto';
+    
+    // Додаємо обробник кліків для всіх кнопок
+    document.addEventListener('click', (e) => {
+        // Перевіряємо, чи це кнопка
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+            try {
+                clickSound.currentTime = 0;
+                clickSound.play().catch(err => {
+                    console.log('Не вдалося відтворити звук клікання:', err);
+                });
+            } catch (err) {
+                console.log('Помилка відтворення звуку клікання:', err);
+            }
+        }
+    });
+    
+    // Додаємо обробник для модальних вікон
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                const target = mutation.target;
+                if (target.classList.contains('modal-backdrop') && !target.classList.contains('hidden')) {
+                    // Модальне вікно відкрилося
+                    try {
+                        notificationSound.currentTime = 0;
+                        notificationSound.play().catch(err => {
+                            console.log('Не вдалося відтворити звук сповіщення:', err);
+                        });
+                    } catch (err) {
+                        console.log('Помилка відтворення звуку сповіщення:', err);
+                    }
+                }
+            }
+        });
+    });
+    
+    // Спостерігаємо за змінами в модальних вікнах
+    const modalElements = document.querySelectorAll('.modal-backdrop');
+    modalElements.forEach(modal => {
+        observer.observe(modal, { attributes: true });
+    });
+    
+    console.log('🔊 Глобальні звуки налаштовано');
 }

@@ -370,22 +370,30 @@
     </script>
     
     <!-- Контролер музики -->
-    <div id="music-controller" class="fixed bottom-4 right-4 bg-gray-800 bg-opacity-80 p-3 rounded-lg shadow-lg z-50">
-        <div class="flex items-center gap-3">
-            <button id="music-toggle-btn" class="text-white hover:text-yellow-300 transition-colors">
-                <span id="music-icon">🎵</span>
-            </button>
-            <button id="music-switch-btn" class="text-white hover:text-yellow-300 transition-colors">
-                🔄
-            </button>
-            <div class="flex items-center gap-2">
-                <span class="text-white text-sm">🔊</span>
-                <input id="music-volume-slider" type="range" min="0" max="100" value="5" class="w-20">
-                <span id="music-volume-text" class="text-white text-sm">5%</span>
+    <div id="audio-control-panel" class="fixed bottom-4 left-4 z-50">
+        <!-- Кнопка відкриття/закриття панелі -->
+        <button id="audio-toggle-btn" class="w-12 h-12 bg-gray-800 bg-opacity-80 rounded-lg shadow-lg flex items-center justify-center text-white hover:text-yellow-300 transition-colors">
+            <span id="audio-icon">🔊</span>
+        </button>
+        
+        <!-- Панель налаштувань звуку (прихована за замовчуванням) -->
+        <div id="audio-panel" class="hidden mt-2 bg-gray-800 bg-opacity-80 p-3 rounded-lg shadow-lg">
+            <div class="flex items-center gap-3">
+                <button id="music-toggle-btn" class="text-white hover:text-yellow-300 transition-colors">
+                    <span id="music-icon">🎵</span>
+                </button>
+                <button id="music-switch-btn" class="text-white hover:text-yellow-300 transition-colors">
+                    🔄
+                </button>
+                <div class="flex items-center gap-2">
+                    <span class="text-white text-sm">🔊</span>
+                    <input id="music-volume-slider" type="range" min="0" max="100" value="5" class="w-20">
+                    <span id="music-volume-text" class="text-white text-sm">5%</span>
+                </div>
+                <button id="test-sounds-btn" class="text-white hover:text-yellow-300 transition-colors text-sm">
+                    🔊 Тест
+                </button>
             </div>
-            <button id="test-sounds-btn" class="text-white hover:text-yellow-300 transition-colors text-sm">
-                🔊 Тест
-            </button>
         </div>
     </div>
     

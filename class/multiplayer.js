@@ -1564,11 +1564,6 @@ class MultiplayerGame extends EducationalPathGame {
         
         this.showQuestModal('PvP-квест', modalContent, []);
         
-        // Оновлюємо масштаб для нового модального вікна
-        if (window.updateGameScaling) {
-            setTimeout(() => window.updateGameScaling(), 100);
-        }
-        
         if (isParticipant) {
             this.startTimedTextQuestTimer(data.gameState.timer);
         }

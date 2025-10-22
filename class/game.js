@@ -11,27 +11,27 @@ class EducationalPathGame {
             this.diceSound.preload = 'auto';
             this.diceMetalSound = new Audio('sound/dice/dice_metal.mp3');
             this.diceMetalSound.preload = 'auto';
-            this.clickSound = new Audio('sound/click.mp3');
+            this.clickSound = new Audio('sound/button_click/click.mp3');
             this.clickSound.preload = 'auto';
-            this.chipMoveSound = new Audio('sound/chip_move.mp3');
+            this.chipMoveSound = new Audio('sound/chips/chip_move.mp3');
             this.chipMoveSound.preload = 'auto';
-            this.notificationSound = new Audio('sound/notification.mp3');
+            this.notificationSound = new Audio('sound/notification/notification.mp3');
             this.notificationSound.preload = 'auto';
-            this.timerSound = new Audio('sound/clock_timer.mp3');
+            this.timerSound = new Audio('sound/quests/clock_timer.mp3');
             this.timerSound.preload = 'auto';
-            this.correctAnswerSound = new Audio('sound/correct_answer.mp3');
+            this.correctAnswerSound = new Audio('sound/quests/correct_answer.mp3');
             this.correctAnswerSound.preload = 'auto';
-            this.pvpSound = new Audio('sound/during_the_quest.mp3');
+            this.pvpSound = new Audio('sound/quests/during_the_quest.mp3');
             this.pvpSound.preload = 'auto';
-            this.startGameSound = new Audio('sound/start_game.m4a');
+            this.startGameSound = new Audio('sound/start/start_game.m4a');
             this.startGameSound.preload = 'auto';
             
             // Фонова музика
-            this.backgroundMusic1 = new Audio('sound/main_fon.m4a');
+            this.backgroundMusic1 = new Audio('sound/fon/main_fon.m4a');
             this.backgroundMusic1.preload = 'auto';
             this.backgroundMusic1.loop = true;
             this.backgroundMusic1.volume = 0.05; // 5% гучності
-            this.backgroundMusic2 = new Audio('sound/rumbling_fon_2.mp3');
+            this.backgroundMusic2 = new Audio('sound/fon/rumbling_fon_2.mp3');
             this.backgroundMusic2.preload = 'auto';
             this.backgroundMusic2.loop = true;
             this.backgroundMusic2.volume = 0.05; // 5% гучності

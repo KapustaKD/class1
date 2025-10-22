@@ -11,6 +11,9 @@ class MultiplayerGame extends EducationalPathGame {
         this.spectators = [];
         this.storyTimer = null; // Змінна для зберігання таймера спільної історії
         
+        // Ініціалізуємо адаптивність
+        this.initResponsiveDesign();
+        
         // Встановлюємо випадковий фон для мультиплеєра
         this.setRandomBackground();
         
@@ -1476,6 +1479,11 @@ class MultiplayerGame extends EducationalPathGame {
                 this.setInitialScale();
                 this.applyTransform();
                 console.log('Масштаб карти встановлено (друга функція)');
+                
+                // Налаштовуємо touch-контроли для мобільних пристроїв
+                if (this.isMobile) {
+                    this.setupTouchControls();
+                }
             }, 100);
             
             console.log('Ігровий інтерфейс показано успішно');
@@ -1563,6 +1571,11 @@ class MultiplayerGame extends EducationalPathGame {
         }
         
         this.showQuestModal('PvP-квест', modalContent, []);
+        
+        // Оновлюємо масштаб для нового модального вікна
+        if (window.updateGameScaling) {
+            setTimeout(() => window.updateGameScaling(), 100);
+        }
         
         if (isParticipant) {
             this.startTimedTextQuestTimer(data.gameState.timer);
@@ -2403,6 +2416,285 @@ class MultiplayerGame extends EducationalPathGame {
         } catch (e) {
             console.log('Помилка відтворення звуку PvP:', e);
         }
+    }
+    
+    // Методи для адаптивного дизайну
+    initResponsiveDesign() {
+        this.isMobile = this.detectMobile();
+        this.isTablet = this.detectTablet();
+        this.screenSize = this.getScreenSize();
+        
+        // Встановлюємо початковий масштаб
+        this.updateScaleFactor();
+        
+        // Додаємо обробник зміни розміру вікна
+        window.addEventListener('resize', () => {
+            this.handleResize();
+        });
+        
+        // Додаємо обробник зміни орієнтації
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                this.handleOrientationChange();
+            }, 100);
+        });
+        
+        console.log('Адаптивний дизайн ініціалізовано:', {
+            isMobile: this.isMobile,
+            isTablet: this.isTablet,
+            screenSize: this.screenSize
+        });
+    }
+    
+    detectMobile() {
+        return window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+    
+    detectTablet() {
+        return window.innerWidth > 768 && window.innerWidth <= 1024;
+    }
+    
+    getScreenSize() {
+        const width = window.innerWidth;
+        if (width <= 480) return 'xs';
+        if (width <= 768) return 'sm';
+        if (width <= 1024) return 'md';
+        if (width <= 1366) return 'lg';
+        if (width <= 1920) return 'xl';
+        return 'xxl';
+    }
+    
+    updateScaleFactor() {
+        const width = window.innerWidth;
+        let scaleFactor = 1;
+        
+        if (width <= 480) {
+            scaleFactor = 0.5;
+        } else if (width <= 768) {
+            scaleFactor = 0.6;
+        } else if (width <= 1024) {
+            scaleFactor = 0.7;
+        } else if (width <= 1366) {
+            scaleFactor = 0.8;
+        } else if (width <= 1920) {
+            scaleFactor = 0.9;
+        }
+        
+        document.documentElement.style.setProperty('--scale-factor', scaleFactor);
+        this.scaleFactor = scaleFactor;
+        
+        console.log('Масштаб оновлено:', { width, scaleFactor });
+    }
+    
+    handleResize() {
+        const oldScreenSize = this.screenSize;
+        this.screenSize = this.getScreenSize();
+        this.isMobile = this.detectMobile();
+        this.isTablet = this.detectTablet();
+        
+        this.updateScaleFactor();
+        
+        // Оновлюємо ігрове поле, якщо воно існує
+        if (this.gameBoardContainer) {
+            this.adjustGameBoard();
+        }
+        
+        // Оновлюємо модальні вікна
+        this.adjustModals();
+        
+        console.log('Розмір екрану змінився:', {
+            oldScreenSize,
+            newScreenSize: this.screenSize,
+            isMobile: this.isMobile,
+            isTablet: this.isTablet
+        });
+    }
+    
+    handleOrientationChange() {
+        console.log('Орієнтація змінилася');
+        this.handleResize();
+        
+        // Додаткова логіка для зміни орієнтації
+        if (this.gameBoardContainer) {
+            setTimeout(() => {
+                this.setInitialScale();
+                this.applyTransform();
+            }, 200);
+        }
+    }
+    
+    adjustGameBoard() {
+        if (!this.gameBoardContainer) return;
+        
+        const container = this.gameContainer;
+        const gameBoardWrapper = document.getElementById('game-board-wrapper');
+        
+        if (this.isMobile) {
+            // На мобільних пристроях робимо ігрове поле вертикальним
+            container.style.flexDirection = 'column';
+            if (gameBoardWrapper) {
+                gameBoardWrapper.style.width = '100%';
+                gameBoardWrapper.style.height = '60vh';
+                gameBoardWrapper.style.minHeight = '300px';
+            }
+        } else if (this.isTablet) {
+            // На планшетах адаптуємо розміри
+            container.style.flexDirection = 'row';
+            if (gameBoardWrapper) {
+                gameBoardWrapper.style.width = '70%';
+                gameBoardWrapper.style.height = '80vh';
+            }
+        } else {
+            // На десктопі стандартні розміри
+            container.style.flexDirection = 'row';
+            if (gameBoardWrapper) {
+                gameBoardWrapper.style.width = 'auto';
+                gameBoardWrapper.style.height = 'auto';
+            }
+        }
+        
+        // Оновлюємо масштаб карти
+        setTimeout(() => {
+            this.setInitialScale();
+            this.applyTransform();
+        }, 100);
+    }
+    
+    adjustModals() {
+        const modals = document.querySelectorAll('.modal-content');
+        modals.forEach(modal => {
+            if (this.isMobile) {
+                modal.style.width = '95%';
+                modal.style.maxWidth = '95%';
+                modal.style.margin = '1rem';
+                modal.style.padding = '1rem';
+            } else if (this.isTablet) {
+                modal.style.width = '80%';
+                modal.style.maxWidth = '80%';
+                modal.style.margin = '2rem';
+                modal.style.padding = '1.5rem';
+            } else {
+                modal.style.width = '600px';
+                modal.style.maxWidth = '90%';
+                modal.style.margin = 'auto';
+                modal.style.padding = '1.5rem';
+            }
+        });
+    }
+    
+    // Перевизначення методу setInitialScale для адаптивності
+    setInitialScale() {
+        if (!this.gameBoardContainer) return;
+        
+        const container = this.gameBoardContainer.parentElement;
+        const containerRect = container.getBoundingClientRect();
+        
+        // Базові розміри карти
+        const mapWidth = 1273;
+        const mapHeight = 806;
+        
+        // Розраховуємо масштаб для різних пристроїв
+        let scaleX, scaleY, scale;
+        
+        if (this.isMobile) {
+            // На мобільних пристроях використовуємо більший масштаб для кращої видимості
+            scaleX = (containerRect.width - 20) / mapWidth;
+            scaleY = (containerRect.height - 20) / mapHeight;
+            scale = Math.min(scaleX, scaleY) * 0.9; // Трохи менше для відступів
+        } else if (this.isTablet) {
+            // На планшетах середній масштаб
+            scaleX = (containerRect.width - 40) / mapWidth;
+            scaleY = (containerRect.height - 40) / mapHeight;
+            scale = Math.min(scaleX, scaleY) * 0.95;
+        } else {
+            // На десктопі стандартний масштаб
+            scaleX = containerRect.width / mapWidth;
+            scaleY = containerRect.height / mapHeight;
+            scale = Math.min(scaleX, scaleY);
+        }
+        
+        // Обмежуємо масштаб
+        scale = Math.max(0.1, Math.min(scale, 2));
+        
+        this.scale = scale;
+        this.scaleX = scale;
+        this.scaleY = scale;
+        
+        console.log('Адаптивний масштаб встановлено:', {
+            scale,
+            containerWidth: containerRect.width,
+            containerHeight: containerRect.height,
+            isMobile: this.isMobile,
+            isTablet: this.isTablet
+        });
+    }
+    
+    // Додаємо підтримку touch-жестів
+    setupTouchControls() {
+        if (!this.gameBoardContainer) return;
+        
+        let startX, startY, startScale, startTranslateX, startTranslateY;
+        let isPinching = false;
+        let initialDistance = 0;
+        
+        // Обробник початку дотику
+        this.gameBoardContainer.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                // Одиночний дотик - початок переміщення
+                const touch = e.touches[0];
+                startX = touch.clientX;
+                startY = touch.clientY;
+                startTranslateX = this.translateX;
+                startTranslateY = this.translateY;
+            } else if (e.touches.length === 2) {
+                // Подвійний дотик - початок масштабування
+                isPinching = true;
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                initialDistance = Math.sqrt(
+                    Math.pow(touch2.clientX - touch1.clientX, 2) +
+                    Math.pow(touch2.clientY - touch1.clientY, 2)
+                );
+                startScale = this.scale;
+            }
+        });
+        
+        // Обробник руху дотику
+        this.gameBoardContainer.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            
+            if (e.touches.length === 1 && !isPinching) {
+                // Переміщення одним пальцем
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - startX;
+                const deltaY = touch.clientY - startY;
+                
+                this.translateX = startTranslateX + deltaX / this.scale;
+                this.translateY = startTranslateY + deltaY / this.scale;
+                this.applyTransform();
+            } else if (e.touches.length === 2 && isPinching) {
+                // Масштабування двома пальцями
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const currentDistance = Math.sqrt(
+                    Math.pow(touch2.clientX - touch1.clientX, 2) +
+                    Math.pow(touch2.clientY - touch1.clientY, 2)
+                );
+                
+                const scaleChange = currentDistance / initialDistance;
+                this.scale = Math.max(0.1, Math.min(startScale * scaleChange, 3));
+                this.scaleX = this.scale;
+                this.scaleY = this.scale;
+                this.applyTransform();
+            }
+        });
+        
+        // Обробник завершення дотику
+        this.gameBoardContainer.addEventListener('touchend', (e) => {
+            isPinching = false;
+        });
+        
+        console.log('Touch-контроли налаштовано');
     }
 }
 

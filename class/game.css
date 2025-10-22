@@ -1,7 +1,23 @@
 /* Основний CSS для гри */
+:root {
+    /* Система адаптивного масштабування */
+    --scale-factor: 1;
+    --base-font-size: 16px;
+    --scaled-font-size: calc(var(--base-font-size) * var(--scale-factor));
+    --base-padding: 1rem;
+    --scaled-padding: calc(var(--base-padding) * var(--scale-factor));
+    --base-margin: 1rem;
+    --scaled-margin: calc(var(--base-margin) * var(--scale-factor));
+    --base-border-radius: 0.5rem;
+    --scaled-border-radius: calc(var(--base-border-radius) * var(--scale-factor));
+    --base-gap: 1rem;
+    --scaled-gap: calc(var(--base-gap) * var(--scale-factor));
+}
+
 body { 
     font-family: 'Montserrat', sans-serif; 
     touch-action: none; 
+    font-size: var(--scaled-font-size);
 }
 
 /* Контейнер ігрового поля */
@@ -688,15 +704,374 @@ body.bg-gray-800 {
 /* Стилі для модальних вікон поверх фону */
 .modal-backdrop {
     background-color: rgba(0, 0, 0, 0.7);
+    padding: var(--scaled-padding);
+    border-radius: var(--scaled-border-radius);
 }
 
-/* Стилі для панелей поверх фону */
-.panel-overlay {
-    background-color: rgba(55, 65, 81, 1);
-    backdrop-filter: none;
+.modal-content {
+    padding: var(--scaled-padding);
+    border-radius: var(--scaled-border-radius);
+    gap: var(--scaled-gap);
 }
 
-/* Відступ для ігрового поля */
+/* Кнопки з адаптивним масштабуванням */
+button {
+    padding: calc(var(--scaled-padding) * 0.5) var(--scaled-padding);
+    border-radius: var(--scaled-border-radius);
+    font-size: var(--scaled-font-size);
+}
+
+/* Ігрове поле з адаптивним масштабуванням */
+.board-cell {
+    border-radius: var(--scaled-border-radius);
+}
+
+/* Картки гравців з адаптивним масштабуванням */
+.player-card {
+    padding: var(--scaled-padding);
+    border-radius: var(--scaled-border-radius);
+    gap: var(--scaled-gap);
+}
+
+/* Панель інформації з адаптивним масштабуванням */
+.player-info-panel {
+    padding: var(--scaled-padding);
+    border-radius: var(--scaled-border-radius);
+    gap: var(--scaled-gap);
+}
+
+/* Адаптивні розміри для різних екранів */
+@media (max-width: 1920px) {
+    :root {
+        --scale-factor: 0.9;
+    }
+}
+
+@media (max-width: 1366px) {
+    :root {
+        --scale-factor: 0.8;
+    }
+}
+
+@media (max-width: 1024px) {
+    :root {
+        --scale-factor: 0.7;
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --scale-factor: 0.6;
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --scale-factor: 0.5;
+    }
+}
+
+/* Адаптивні стилі для ігрового контейнера */
 #game-container {
-    margin-left: 50px;
+    margin-left: 0;
+    padding: 1rem;
+}
+
+@media (min-width: 1024px) {
+    #game-container {
+        margin-left: 50px;
+        padding: 0;
+    }
+}
+
+/* Адаптивні стилі для ігрового поля */
+@media (max-width: 1024px) {
+    #game-container {
+        flex-direction: column !important;
+        height: auto !important;
+    }
+    
+    #game-container > div:first-child {
+        width: 100% !important;
+        height: 60vh !important;
+        min-height: 400px;
+    }
+    
+    #game-container > div:last-child {
+        width: 100% !important;
+        margin-top: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    #game-container > div:first-child {
+        height: 50vh !important;
+        min-height: 300px;
+    }
+    
+    .game-viewport {
+        min-height: 250px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #game-container > div:first-child {
+        height: 40vh !important;
+        min-height: 250px;
+    }
+    
+    .game-viewport {
+        min-height: 200px !important;
+    }
+}
+
+/* Адаптивні стилі для модальних вікон */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95% !important;
+        max-width: 95% !important;
+        margin: 1rem;
+        padding: 1rem;
+    }
+    
+    .modal-backdrop {
+        padding: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-content {
+        width: 98% !important;
+        max-width: 98% !important;
+        margin: 0.5rem;
+        padding: 0.75rem;
+    }
+    
+    .modal-backdrop {
+        padding: 0.25rem;
+    }
+}
+
+/* Адаптивні стилі для онлайн панелі */
+@media (max-width: 768px) {
+    #online-panel .w-full.max-w-4xl {
+        max-width: 95% !important;
+        margin: 0.5rem;
+        padding: 1rem;
+    }
+    
+    #online-panel .grid-cols-1.md\\:grid-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #online-panel .w-full.max-w-4xl {
+        max-width: 98% !important;
+        margin: 0.25rem;
+        padding: 0.75rem;
+    }
+}
+
+/* Адаптивні стилі для кнопок */
+@media (max-width: 768px) {
+    button {
+        padding: 0.75rem 1rem !important;
+        font-size: 1rem !important;
+    }
+    
+    .text-2xl {
+        font-size: 1.25rem !important;
+    }
+    
+    .text-3xl {
+        font-size: 1.5rem !important;
+    }
+    
+    .text-4xl {
+        font-size: 1.75rem !important;
+    }
+    
+    .text-5xl {
+        font-size: 2rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    button {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.875rem !important;
+    }
+    
+    .text-2xl {
+        font-size: 1.125rem !important;
+    }
+    
+    .text-3xl {
+        font-size: 1.25rem !important;
+    }
+    
+    .text-4xl {
+        font-size: 1.5rem !important;
+    }
+    
+    .text-5xl {
+        font-size: 1.75rem !important;
+    }
+}
+
+/* Адаптивні стилі для кубика */
+@media (max-width: 768px) {
+    .dice {
+        width: 60px !important;
+        height: 60px !important;
+    }
+    
+    .dice-face {
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 2rem !important;
+    }
+    
+    .face-1, .face-2, .face-3, .face-4, .face-5, .face-6 {
+        transform: rotateY(0deg) translateZ(30px) !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .dice {
+        width: 50px !important;
+        height: 50px !important;
+    }
+    
+    .dice-face {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 1.5rem !important;
+    }
+    
+    .face-1, .face-2, .face-3, .face-4, .face-5, .face-6 {
+        transform: rotateY(0deg) translateZ(25px) !important;
+    }
+}
+
+/* Адаптивні стилі для фішок гравців */
+@media (max-width: 768px) {
+    .player-pawn {
+        width: 50px !important;
+        height: 50px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .player-pawn {
+        width: 40px !important;
+        height: 40px !important;
+    }
+}
+
+/* Адаптивні стилі для клітинок дошки */
+@media (max-width: 768px) {
+    .board-cell {
+        width: 25px !important;
+        height: 25px !important;
+        font-size: 0.6rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .board-cell {
+        width: 20px !important;
+        height: 20px !important;
+        font-size: 0.5rem !important;
+    }
+}
+
+/* Адаптивні стилі для чату */
+@media (max-width: 768px) {
+    #chat-messages {
+        height: 20vh !important;
+        min-height: 100px;
+    }
+}
+
+@media (max-width: 480px) {
+    #chat-messages {
+        height: 15vh !important;
+        min-height: 80px;
+    }
+}
+
+/* Адаптивні стилі для вибору аватарів */
+@media (max-width: 768px) {
+    #avatar-selection-modal .max-w-2xl {
+        max-width: 95% !important;
+    }
+    
+    #avatar-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+    
+    .avatar-item img {
+        width: 48px !important;
+        height: 48px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #avatar-selection-modal .max-w-2xl {
+        max-width: 98% !important;
+    }
+    
+    #avatar-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+    
+    .avatar-item img {
+        width: 40px !important;
+        height: 40px !important;
+    }
+}
+
+/* Адаптивні стилі для панелі керування */
+@media (max-width: 1024px) {
+    #game-container > div:last-child {
+        width: 100% !important;
+        max-width: none !important;
+    }
+}
+
+/* Touch-friendly стилі для мобільних пристроїв */
+@media (max-width: 768px) {
+    button, input, select {
+        min-height: 44px; /* Мінімальний розмір для touch */
+    }
+    
+    .board-cell {
+        min-width: 30px;
+        min-height: 30px;
+    }
+    
+    .player-pawn {
+        min-width: 50px;
+        min-height: 50px;
+    }
+}
+
+/* Стилі для горизонтальної орієнтації на мобільних */
+@media (max-width: 768px) and (orientation: landscape) {
+    #game-container {
+        flex-direction: row !important;
+    }
+    
+    #game-container > div:first-child {
+        width: 70% !important;
+        height: 100vh !important;
+    }
+    
+    #game-container > div:last-child {
+        width: 30% !important;
+        height: 100vh !important;
+        margin-top: 0 !important;
+    }
 }

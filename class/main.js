@@ -45,6 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Налаштовуємо звуки
     setupGlobalSounds();
     
+    // Налаштовуємо адаптивне масштабування
+    setupResponsiveScaling();
+    
     // Налаштовуємо контролер музики
     setupMusicController();
     
@@ -423,3 +426,103 @@ function setupGlobalSounds() {
     
     console.log('🔊 Глобальні звуки налаштовано');
 }
+
+function setupResponsiveScaling() {
+    // Функція для розрахунку оптимального масштабу
+    function calculateOptimalScale() {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        
+        // Базові розміри для яких гра розроблена
+        const baseWidth = 1920;
+        const baseHeight = 1080;
+        
+        // Розраховуємо масштаб на основі ширини та висоти
+        const scaleX = screenWidth / baseWidth;
+        const scaleY = screenHeight / baseHeight;
+        
+        // Використовуємо менший масштаб для забезпечення поміщення
+        let scale = Math.min(scaleX, scaleY);
+        
+        // Обмежуємо масштаб в межах розумних значень
+        scale = Math.max(0.5, Math.min(scale, 2.0));
+        
+        // Округляємо до 2 знаків після коми
+        scale = Math.round(scale * 100) / 100;
+        
+        return scale;
+    }
+    
+    // Функція для застосування масштабу
+    function applyScale(scale) {
+        document.documentElement.style.setProperty('--scale-factor', scale);
+        
+        // Додатково масштабуємо специфічні елементи
+        const gameContainer = document.getElementById('game-container');
+        if (gameContainer) {
+            gameContainer.style.transform = `scale(${scale})`;
+            gameContainer.style.transformOrigin = 'top left';
+        }
+        
+        // Масштабуємо модальні вікна
+        const modals = document.querySelectorAll('.modal-backdrop');
+        modals.forEach(modal => {
+            modal.style.transform = `scale(${scale})`;
+            modal.style.transformOrigin = 'center';
+        });
+        
+        // Масштабуємо аудіо панель
+        const audioPanel = document.getElementById('audio-control-panel');
+        if (audioPanel) {
+            audioPanel.style.transform = `scale(${scale})`;
+            audioPanel.style.transformOrigin = 'bottom left';
+        }
+        
+        console.log(`📏 Масштаб встановлено: ${scale} (${Math.round(scale * 100)}%)`);
+    }
+    
+    // Початкове масштабування
+    const initialScale = calculateOptimalScale();
+    applyScale(initialScale);
+    
+    // Обробник зміни розміру вікна
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            const newScale = calculateOptimalScale();
+            applyScale(newScale);
+        }, 250); // Затримка для оптимізації
+    });
+    
+    // Обробник зміни орієнтації (для мобільних пристроїв)
+    window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+            const newScale = calculateOptimalScale();
+            applyScale(newScale);
+        }, 500);
+    });
+    
+    console.log('📏 Адаптивне масштабування налаштовано');
+}
+
+// Глобальна функція для оновлення масштабу після створення нових елементів
+window.updateGameScaling = function() {
+    const scale = document.documentElement.style.getPropertyValue('--scale-factor') || '1';
+    
+    // Масштабуємо нові модальні вікна
+    const modals = document.querySelectorAll('.modal-backdrop');
+    modals.forEach(modal => {
+        modal.style.transform = `scale(${scale})`;
+        modal.style.transformOrigin = 'center';
+    });
+    
+    // Масштабуємо аудіо панель
+    const audioPanel = document.getElementById('audio-control-panel');
+    if (audioPanel) {
+        audioPanel.style.transform = `scale(${scale})`;
+        audioPanel.style.transformOrigin = 'bottom left';
+    }
+    
+    console.log('📏 Масштаб оновлено для нових елементів');
+};

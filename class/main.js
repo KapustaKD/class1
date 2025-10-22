@@ -271,12 +271,12 @@ function setupMusicController() {
     }
     
     // Ініціалізуємо фонову музику
-    let backgroundMusic1 = new Audio('sound/main_fon.m4a');
+    let backgroundMusic1 = new Audio('sound/fon/main_fon.m4a');
     backgroundMusic1.preload = 'auto';
     backgroundMusic1.loop = true;
     backgroundMusic1.volume = 0.05;
     
-    let backgroundMusic2 = new Audio('sound/rumbling_fon_2.mp3');
+    let backgroundMusic2 = new Audio('sound/fon/rumbling_fon_2.mp3');
     backgroundMusic2.preload = 'auto';
     backgroundMusic2.loop = true;
     backgroundMusic2.volume = 0.05;
@@ -330,18 +330,18 @@ function setupMusicController() {
             console.log('🔊 Тестуємо звуки...');
             
             // Тестуємо звук клікання
-            const clickSound = new Audio('sound/click.mp3');
+            const clickSound = new Audio('sound/button_click/click.mp3');
             clickSound.play().catch(e => console.log('Помилка звуку клікання:', e));
             
             setTimeout(() => {
                 // Тестуємо звук сповіщення
-                const notificationSound = new Audio('sound/notification.mp3');
+                const notificationSound = new Audio('sound/notification/notification.mp3');
                 notificationSound.play().catch(e => console.log('Помилка звуку сповіщення:', e));
             }, 500);
             
             setTimeout(() => {
                 // Тестуємо звук руху фішки
-                const chipMoveSound = new Audio('sound/chip_move.mp3');
+                const chipMoveSound = new Audio('sound/chips/chip_move.mp3');
                 chipMoveSound.play().catch(e => console.log('Помилка звуку руху фішки:', e));
             }, 1000);
             
@@ -358,11 +358,11 @@ function setupMusicController() {
 
 function setupGlobalSounds() {
     // Ініціалізуємо звук клікання
-    const clickSound = new Audio('sound/click.mp3');
+    const clickSound = new Audio('sound/button_click/click.mp3');
     clickSound.preload = 'auto';
     
     // Ініціалізуємо звук сповіщення
-    const notificationSound = new Audio('sound/notification.mp3');
+    const notificationSound = new Audio('sound/notification/notification.mp3');
     notificationSound.preload = 'auto';
     
     // Додаємо обробник кліків для всіх кнопок

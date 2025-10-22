@@ -23,11 +23,11 @@ class EducationalPathGame {
             this.correctAnswerSound.preload = 'auto';
             this.pvpSound = new Audio('sound/during_the_quest.mp3');
             this.pvpSound.preload = 'auto';
-            this.startGameSound = new Audio('sound/start_game.mp3');
+            this.startGameSound = new Audio('sound/start_game.m4a');
             this.startGameSound.preload = 'auto';
             
             // Фонова музика
-            this.backgroundMusic1 = new Audio('sound/main_fon.mp3');
+            this.backgroundMusic1 = new Audio('sound/main_fon.m4a');
             this.backgroundMusic1.preload = 'auto';
             this.backgroundMusic1.loop = true;
             this.backgroundMusic1.volume = 0.05; // 5% гучності
@@ -1516,8 +1516,10 @@ class EducationalPathGame {
             pawn.style.top = `${cellRect.top - boardRect.top + cellRect.height / 2 - 37.5}px`;
             pawn.style.zIndex = '10';
             
-            // Відтворюємо звук руху фішки
-            this.playChipMoveSound();
+            // Відтворюємо звук руху фішки з невеликою затримкою
+            setTimeout(() => {
+                this.playChipMoveSound();
+            }, 100);
     
                
     

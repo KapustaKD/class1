@@ -37,11 +37,11 @@
     </div>
 
     <!-- Основна гра (прихована спочатку) -->
-    <div id="game-container" class="hidden w-full max-w-screen-2xl flex flex-col lg:flex-row gap-8 lg:h-[85vh] justify-start">
+    <div id="game-container" class="hidden w-full max-w-screen-2xl flex flex-col lg:flex-row gap-4 lg:gap-8 lg:h-[85vh] justify-start p-2 lg:p-0">
         <!-- Ігрове поле -->
-        <div class="bg-gray-700 panel-overlay p-2 rounded-2xl shadow-2xl" style="width: 1289px; height: 822px;">
+        <div class="bg-gray-700 panel-overlay p-2 rounded-2xl shadow-2xl flex-1 min-h-[50vh] lg:min-h-0" id="game-board-wrapper">
             <div class="game-viewport w-full h-full" id="game-viewport">
-                <div id="game-board-container" style="position: relative; width: 1273px; height: 806px; cursor: crosshair;">
+                <div id="game-board-container" style="position: relative; width: 100%; height: 100%; cursor: crosshair;">
                     <img src="map_background.png" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;">
                     
                     <svg id="path-svg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;"></svg>
@@ -52,15 +52,15 @@
         </div>
 
         <!-- Панель керування -->
-        <div class="w-full lg:w-96 bg-gray-700 panel-overlay p-6 rounded-2xl shadow-2xl flex flex-col gap-4 shrink-0">
+        <div class="w-full lg:w-96 bg-gray-700 panel-overlay p-4 lg:p-6 rounded-2xl shadow-2xl flex flex-col gap-4 shrink-0">
             <div>
-                <h2 class="text-2xl font-bold border-b-2 border-yellow-300 pb-2 mb-2">Інформація</h2>
-                <div id="player-info" class="text-lg">Хід гравця: <span id="current-player-name" class="font-bold"></span></div>
-                <div id="player-class-info" class="text-md text-gray-300">Клас: <span id="current-player-class"></span></div>
-                <div id="player-points-info" class="text-lg font-bold">Очки Освіти: <span id="current-player-points" class="text-yellow-300"></span></div>
+                <h2 class="text-xl lg:text-2xl font-bold border-b-2 border-yellow-300 pb-2 mb-2">Інформація</h2>
+                <div id="player-info" class="text-base lg:text-lg">Хід гравця: <span id="current-player-name" class="font-bold"></span></div>
+                <div id="player-class-info" class="text-sm lg:text-md text-gray-300">Клас: <span id="current-player-class"></span></div>
+                <div id="player-points-info" class="text-base lg:text-lg font-bold">Очки Освіти: <span id="current-player-points" class="text-yellow-300"></span></div>
             </div>
             <div id="leaderboard"></div>
-            <div class="flex justify-center items-center my-4 h-24">
+            <div class="flex justify-center items-center my-2 lg:my-4 h-16 lg:h-24">
                 <div class="dice" id="dice">
                     <div class="dice-inner" id="dice-inner">
                         <div class="dice-face face-1">1</div>
@@ -72,14 +72,14 @@
                     </div>
                 </div>
             </div>
-            <button id="roll-dice-btn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition duration-300 shadow-lg text-xl">Кинути кубик</button>
-            <button id="exit-game-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 shadow-lg text-lg mt-2" onclick="window.exitGame()">Вийти з гри</button>
+            <button id="roll-dice-btn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 lg:py-3 px-4 rounded-lg transition duration-300 shadow-lg text-lg lg:text-xl">Кинути кубик</button>
+            <button id="exit-game-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 shadow-lg text-base lg:text-lg mt-2" onclick="window.exitGame()">Вийти з гри</button>
         </div>
     </div>
 
     <!-- Онлайн панель (прихована спочатку) -->
-    <div id="online-panel" class="hidden flex items-center justify-center min-h-screen">
-        <div class="w-full max-w-4xl mx-auto bg-gray-800 bg-opacity-80 p-8 rounded-2xl shadow-2xl flex flex-col gap-6">
+    <div id="online-panel" class="hidden flex items-center justify-center min-h-screen p-2">
+        <div class="w-full max-w-4xl mx-auto bg-gray-800 bg-opacity-80 p-4 lg:p-8 rounded-2xl shadow-2xl flex flex-col gap-4 lg:gap-6">
 
             <div id="join-create-section">
                 <h2 class="text-3xl font-bold text-center mb-6">Онлайн гра</h2>
@@ -144,14 +144,14 @@
     <!-- Модальні вікна -->
     <div id="rules-modal" class="modal-backdrop hidden">
         <div class="modal-content text-gray-800">
-            <h2 class="text-3xl font-bold mb-4 text-center">Класи та Перемога</h2>
-            <p class="text-center mb-4">Мета гри - першим набрати <strong>300 Очок Освіти (ОО)</strong>.</p>
-            <div class="space-y-4 text-left">
-                <div><h3 class="text-xl font-bold text-yellow-600">⚜️ Аристократ</h3><p><strong>Старт:</strong> 50 ОО. <strong>Здібність:</strong> Завжди ходить на 1 клітинку більше.</p></div>
-                <div><h3 class="text-xl font-bold text-gray-600">⚖️ Міщанин</h3><p><strong>Старт:</strong> 20 ОО. <strong>Здібність:</strong> Нейтральний клас без бонусів.</p></div>
-                <div><h3 class="text-xl font-bold text-green-600">🌱 Селянин</h3><p><strong>Старт:</strong> 0 ОО. <strong>Здібність:</strong> Завжди ходить на 1 клітинку менше (мін. 1).</p></div>
+            <h2 class="text-2xl lg:text-3xl font-bold mb-4 text-center">Класи та Перемога</h2>
+            <p class="text-center mb-4 text-sm lg:text-base">Мета гри - першим набрати <strong>300 Очок Освіти (ОО)</strong>.</p>
+            <div class="space-y-3 lg:space-y-4 text-left">
+                <div><h3 class="text-lg lg:text-xl font-bold text-yellow-600">⚜️ Аристократ</h3><p class="text-sm lg:text-base"><strong>Старт:</strong> 50 ОО. <strong>Здібність:</strong> Завжди ходить на 1 клітинку більше.</p></div>
+                <div><h3 class="text-lg lg:text-xl font-bold text-gray-600">⚖️ Міщанин</h3><p class="text-sm lg:text-base"><strong>Старт:</strong> 20 ОО. <strong>Здібність:</strong> Нейтральний клас без бонусів.</p></div>
+                <div><h3 class="text-lg lg:text-xl font-bold text-green-600">🌱 Селянин</h3><p class="text-sm lg:text-base"><strong>Старт:</strong> 0 ОО. <strong>Здібність:</strong> Завжди ходить на 1 клітинку менше (мін. 1).</p></div>
             </div>
-            <button id="show-setup-btn" class="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 text-xl">Зрозуміло!</button>
+            <button id="show-setup-btn" class="w-full mt-4 lg:mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 lg:py-3 px-4 rounded-lg transition duration-300 text-lg lg:text-xl">Зрозуміло!</button>
         </div>
     </div>
     
@@ -175,18 +175,18 @@
     </div>
 
     <!-- Модальне вікно вибору аватарів -->
-    <div id="avatar-selection-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-gray-800 rounded-2xl p-8 max-w-2xl w-full mx-4">
-            <h2 class="text-3xl font-bold text-center mb-6 text-white">Оберіть свій аватар</h2>
+    <div id="avatar-selection-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
+        <div class="bg-gray-800 rounded-2xl p-4 lg:p-8 max-w-2xl w-full mx-2 lg:mx-4">
+            <h2 class="text-2xl lg:text-3xl font-bold text-center mb-4 lg:mb-6 text-white">Оберіть свій аватар</h2>
             
-            <div id="avatar-grid" class="grid grid-cols-3 gap-4 mb-6">
+            <div id="avatar-grid" class="grid grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
                 <!-- Аватари будуть додані динамічно -->
             </div>
             
-            <div id="ready-counter" class="text-center text-lg text-gray-300 mb-4">Готово: 0 / 0</div>
+            <div id="ready-counter" class="text-center text-base lg:text-lg text-gray-300 mb-4">Готово: 0 / 0</div>
             
             <div class="text-center">
-                <button id="player-ready-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 shadow-lg text-xl">Готово</button>
+                <button id="player-ready-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 lg:py-3 px-4 lg:px-6 rounded-lg transition duration-300 shadow-lg text-lg lg:text-xl">Готово</button>
             </div>
         </div>
     </div>
@@ -194,7 +194,7 @@
     <style>
         .avatar-item {
             cursor: pointer;
-            padding: 8px;
+            padding: 6px;
             border-radius: 8px;
             border: 2px solid #4a5568;
             transition: all 0.3s ease;
@@ -212,11 +212,22 @@
         }
         
         .avatar-item img {
-            width: 64px;
-            height: 64px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             object-fit: cover;
             margin: 0 auto;
+        }
+        
+        @media (min-width: 1024px) {
+            .avatar-item {
+                padding: 8px;
+            }
+            
+            .avatar-item img {
+                width: 64px;
+                height: 64px;
+            }
         }
     </style>
 

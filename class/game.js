@@ -7,8 +7,35 @@ class EducationalPathGame {
             this.BOARD_SIZE = 101;
             
             // Ініціалізуємо звуки
-            this.diceSound = new Audio('sound/dice/dice_metal.mp3');
+            this.diceSound = new Audio('sound/dice/normal_dice.mp3');
             this.diceSound.preload = 'auto';
+            this.diceMetalSound = new Audio('sound/dice/dice_metal.mp3');
+            this.diceMetalSound.preload = 'auto';
+            this.clickSound = new Audio('sound/click.mp3');
+            this.clickSound.preload = 'auto';
+            this.chipMoveSound = new Audio('sound/chip_move.mp3');
+            this.chipMoveSound.preload = 'auto';
+            this.notificationSound = new Audio('sound/notification.mp3');
+            this.notificationSound.preload = 'auto';
+            this.timerSound = new Audio('sound/clock_timer.mp3');
+            this.timerSound.preload = 'auto';
+            this.correctAnswerSound = new Audio('sound/correct_answer.mp3');
+            this.correctAnswerSound.preload = 'auto';
+            this.pvpSound = new Audio('sound/during_the_quest.mp3');
+            this.pvpSound.preload = 'auto';
+            this.startGameSound = new Audio('sound/start_game.mp3');
+            this.startGameSound.preload = 'auto';
+            
+            // Фонова музика
+            this.backgroundMusic1 = new Audio('sound/main_fon.mp3');
+            this.backgroundMusic1.preload = 'auto';
+            this.backgroundMusic1.loop = true;
+            this.backgroundMusic1.volume = 0.05; // 5% гучності
+            this.backgroundMusic2 = new Audio('sound/rumbling_fon_2.mp3');
+            this.backgroundMusic2.preload = 'auto';
+            this.backgroundMusic2.loop = true;
+            this.backgroundMusic2.volume = 0.05; // 5% гучності
+            this.currentBackgroundMusic = this.backgroundMusic1;
             
             // Лічильник кидків для спеціального звуку
             this.diceRollCount = 0;
@@ -783,12 +810,129 @@ class EducationalPathGame {
     // Функція для відтворення звуку кидка кубика
     playDiceSound() {
         try {
-            this.diceSound.currentTime = 0; // Скидаємо до початку
+            // Відтворюємо нормальний звук кубика
+            this.diceSound.currentTime = 0;
             this.diceSound.play().catch(e => {
                 console.log('Не вдалося відтворити звук кубика:', e);
             });
         } catch (e) {
             console.log('Помилка відтворення звуку кубика:', e);
+        }
+    }
+    
+    playClickSound() {
+        try {
+            this.clickSound.currentTime = 0;
+            this.clickSound.play().catch(e => {
+                console.log('Не вдалося відтворити звук клікання:', e);
+            });
+        } catch (e) {
+            console.log('Помилка відтворення звуку клікання:', e);
+        }
+    }
+    
+    playChipMoveSound() {
+        try {
+            this.chipMoveSound.currentTime = 0;
+            this.chipMoveSound.play().catch(e => {
+                console.log('Не вдалося відтворити звук руху фішки:', e);
+            });
+        } catch (e) {
+            console.log('Помилка відтворення звуку руху фішки:', e);
+        }
+    }
+    
+    playNotificationSound() {
+        try {
+            this.notificationSound.currentTime = 0;
+            this.notificationSound.play().catch(e => {
+                console.log('Не вдалося відтворити звук сповіщення:', e);
+            });
+        } catch (e) {
+            console.log('Помилка відтворення звуку сповіщення:', e);
+        }
+    }
+    
+    playTimerSound() {
+        try {
+            this.timerSound.currentTime = 0;
+            this.timerSound.play().catch(e => {
+                console.log('Не вдалося відтворити звук таймера:', e);
+            });
+        } catch (e) {
+            console.log('Помилка відтворення звуку таймера:', e);
+        }
+    }
+    
+    playCorrectAnswerSound() {
+        try {
+            this.correctAnswerSound.currentTime = 0;
+            this.correctAnswerSound.play().catch(e => {
+                console.log('Не вдалося відтворити звук правильної відповіді:', e);
+            });
+        } catch (e) {
+            console.log('Помилка відтворення звуку правильної відповіді:', e);
+        }
+    }
+    
+    playPvpSound() {
+        try {
+            this.pvpSound.currentTime = 0;
+            this.pvpSound.play().catch(e => {
+                console.log('Не вдалося відтворити звук PvP:', e);
+            });
+        } catch (e) {
+            console.log('Помилка відтворення звуку PvP:', e);
+        }
+    }
+    
+    playStartGameSound() {
+        try {
+            this.startGameSound.currentTime = 0;
+            this.startGameSound.play().catch(e => {
+                console.log('Не вдалося відтворити звук початку гри:', e);
+            });
+        } catch (e) {
+            console.log('Помилка відтворення звуку початку гри:', e);
+        }
+    }
+    
+    startBackgroundMusic() {
+        try {
+            this.currentBackgroundMusic.play().catch(e => {
+                console.log('Не вдалося відтворити фонову музику:', e);
+            });
+        } catch (e) {
+            console.log('Помилка відтворення фонової музики:', e);
+        }
+    }
+    
+    stopBackgroundMusic() {
+        try {
+            this.currentBackgroundMusic.pause();
+            this.currentBackgroundMusic.currentTime = 0;
+        } catch (e) {
+            console.log('Помилка зупинки фонової музики:', e);
+        }
+    }
+    
+    switchBackgroundMusic() {
+        try {
+            this.stopBackgroundMusic();
+            this.currentBackgroundMusic = this.currentBackgroundMusic === this.backgroundMusic1 ? 
+                this.backgroundMusic2 : this.backgroundMusic1;
+            this.startBackgroundMusic();
+        } catch (e) {
+            console.log('Помилка перемикання фонової музики:', e);
+        }
+    }
+    
+    setBackgroundVolume(volume) {
+        try {
+            this.backgroundMusic1.volume = volume;
+            this.backgroundMusic2.volume = volume;
+        } catch (e) {
+            console.log('Помилка встановлення гучності:', e);
         }
     }
 
@@ -799,8 +943,19 @@ class EducationalPathGame {
         // Збільшуємо лічильник кидків
         this.diceRollCount++;
         
-        // Відтворюємо звук кидка кубика
-        this.playDiceSound();
+        // Відтворюємо звук кидка кубика (металевий кожен 10-й раз)
+        if (this.diceRollCount % 10 === 0) {
+            try {
+                this.diceMetalSound.currentTime = 0;
+                this.diceMetalSound.play().catch(e => {
+                    console.log('Не вдалося відтворити металевий звук кубика:', e);
+                });
+            } catch (e) {
+                console.log('Помилка відтворення металевого звуку кубика:', e);
+            }
+        } else {
+            this.playDiceSound();
+        }
     
             let roll = Math.floor(Math.random() * 6) + 1;
     
@@ -1360,6 +1515,9 @@ class EducationalPathGame {
             pawn.style.left = `${cellRect.left - boardRect.left + cellRect.width / 2 - 37.5}px`;
             pawn.style.top = `${cellRect.top - boardRect.top + cellRect.height / 2 - 37.5}px`;
             pawn.style.zIndex = '10';
+            
+            // Відтворюємо звук руху фішки
+            this.playChipMoveSound();
     
                
     

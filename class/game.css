@@ -567,10 +567,13 @@ body {
 .tic-tac-toe-grid { 
     display: grid; 
     grid-template-columns: repeat(3, 1fr); 
-    gap: 2px; 
-    width: 150px; 
-    height: 150px; 
+    gap: 4px; 
+    width: 180px; 
+    height: 180px; 
     margin: 0 auto; 
+    background: #1f2937;
+    padding: 8px;
+    border-radius: 8px;
 }
 
 .tic-tac-toe-cell { 
@@ -581,17 +584,30 @@ body {
     align-items: center; 
     justify-content: center; 
     font-size: 2rem; 
+    font-weight: bold;
     cursor: pointer; 
     background: white; 
+    border-radius: 4px;
+    transition: all 0.2s ease;
 }
 
 .tic-tac-toe-cell:hover { 
     background: #f7fafc; 
+    border-color: #60a5fa;
+    transform: scale(1.05);
 }
 
 .tic-tac-toe-cell.disabled { 
     cursor: not-allowed; 
     opacity: 0.5; 
+}
+
+.tic-tac-toe-cell.x {
+    color: #ef4444;
+}
+
+.tic-tac-toe-cell.o {
+    color: #3b82f6;
 }
 
 /* Онлайн панель */

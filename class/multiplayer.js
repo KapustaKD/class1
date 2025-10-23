@@ -285,6 +285,9 @@ class MultiplayerGame extends EducationalPathGame {
             this.roomId = data.roomId;
             this.isHost = true;
             
+            // Показуємо модальне вікно створення кімнати
+            this.showRoomCreatedModal(data.roomId);
+            
             // Нова логіка відображення
             document.getElementById('join-create-section').classList.add('hidden');
             document.getElementById('lobby-section').classList.remove('hidden');
@@ -306,6 +309,9 @@ class MultiplayerGame extends EducationalPathGame {
         this.socket.on('room_joined', (data) => {
             this.roomId = data.roomId;
             this.isHost = false;
+            
+            // Показуємо модальне вікно приєднання до кімнати
+            this.showRoomJoinedModal(data.roomId);
             
             // Нова логіка відображення
             document.getElementById('join-create-section').classList.add('hidden');
@@ -1556,6 +1562,90 @@ class MultiplayerGame extends EducationalPathGame {
         }
     }
     
+    // Показуємо модальне вікно створення кімнати
+    showRoomCreatedModal(roomCode) {
+        const modalContent = `
+            <div class="text-center">
+                <p class="mb-4 text-lg font-bold text-green-600">Вітаю! Ви створили кімнату, як боженька Землю.</p>
+                <p class="mb-4">Поділіться цим кодом з іншими гравцями:</p>
+                <div class="bg-gray-100 p-4 rounded-lg mb-4 text-center">
+                    <span class="text-3xl font-bold text-blue-600">${roomCode}</span>
+                </div>
+                <button id="copy-code-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mb-2">
+                    📋 Скопіювати код
+                </button>
+                <button id="close-room-modal-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
+                    Закрити
+                </button>
+            </div>
+        `;
+        
+        if (window.gameUI) {
+            window.gameUI.showQuestModal('Кімната створена', modalContent, [], 'image/modal_window/room_creation.png');
+            
+            // Додаємо обробники подій
+            setTimeout(() => {
+                const copyBtn = document.getElementById('copy-code-btn');
+                const closeBtn = document.getElementById('close-room-modal-btn');
+                
+                if (copyBtn) {
+                    copyBtn.addEventListener('click', () => {
+                        navigator.clipboard.writeText(roomCode).then(() => {
+                            if (window.gameUI) {
+                                window.gameUI.showNotification('Код скопійовано!', 'success');
+                            }
+                        });
+                    });
+                }
+                
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => {
+                        if (window.gameUI) {
+                            window.gameUI.hideModal('quest');
+                        }
+                    });
+                }
+            }, 100);
+        } else {
+            console.error('window.gameUI не знайдено');
+        }
+    }
+    
+    // Показуємо модальне вікно приєднання до кімнати
+    showRoomJoinedModal(roomCode) {
+        const modalContent = `
+            <div class="text-center">
+                <p class="mb-4 text-lg font-bold text-green-600">Вітаю! Ви зайшли у кімнату, створену гравцем, як Земля Боженькою.</p>
+                <p class="mb-4">Код кімнати:</p>
+                <div class="bg-gray-100 p-4 rounded-lg mb-4 text-center">
+                    <span class="text-3xl font-bold text-blue-600">${roomCode}</span>
+                </div>
+                <button id="close-room-modal-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
+                    Закрити
+                </button>
+            </div>
+        `;
+        
+        if (window.gameUI) {
+            window.gameUI.showQuestModal('Приєднано до кімнати', modalContent, [], 'image/modal_window/room_creation.png');
+            
+            // Додаємо обробник події
+            setTimeout(() => {
+                const closeBtn = document.getElementById('close-room-modal-btn');
+                
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => {
+                        if (window.gameUI) {
+                            window.gameUI.hideModal('quest');
+                        }
+                    });
+                }
+            }, 100);
+        } else {
+            console.error('window.gameUI не знайдено');
+        }
+    }
+    
     // Нові міні-ігри
     showTimedTextQuest(data) {
         const isParticipant = data.gameState.players.includes(this.playerId);
@@ -1569,12 +1659,32 @@ class MultiplayerGame extends EducationalPathGame {
         `;
         
         if (isParticipant) {
-            if (gameData.gameType === 'tic_tac_toe') {
+            if (gameData.gameType === 'tic_tac_toe' || gameData.gameType === 'cross_early') {
                 // Спеціальний інтерфейс для хрестиків-нуликів
                 modalContent += `
                     <div class="mb-4">
                         <div id="tic-tac-toe-board" class="tic-tac-toe-grid mx-auto mb-4"></div>
                         <div id="game-status" class="text-center text-lg font-bold mb-2">Ваш хід!</div>
+                        <div id="timer" class="text-2xl font-bold text-red-500 text-center">${data.gameState.timer}</div>
+                    </div>
+                    <button id="submit-result-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" disabled>
+                        Завершити гру
+                    </button>
+                `;
+            } else if (gameData.gameType === 'rock_paper_scissors') {
+                // Спеціальний інтерфейс для камінь-ножиці-папір
+                modalContent += `
+                    <div class="mb-4">
+                        <div id="rps-game" class="text-center mb-4">
+                            <div id="rps-round" class="text-lg font-bold mb-2">Раунд 1 з 3</div>
+                            <div id="rps-score" class="text-lg mb-4">Ваші перемоги: 0 | Перемоги суперника: 0</div>
+                            <div class="flex justify-center gap-4 mb-4">
+                                <button id="rps-rock" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">🪨 Камінь</button>
+                                <button id="rps-paper" class="bg-white hover:bg-gray-100 text-gray-800 font-bold py-2 px-4 rounded border-2 border-gray-300">📄 Папір</button>
+                                <button id="rps-scissors" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">✂️ Ножиці</button>
+                            </div>
+                            <div id="rps-result" class="text-lg font-bold mb-2"></div>
+                        </div>
                         <div id="timer" class="text-2xl font-bold text-red-500 text-center">${data.gameState.timer}</div>
                     </div>
                     <button id="submit-result-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" disabled>
@@ -1605,7 +1715,9 @@ class MultiplayerGame extends EducationalPathGame {
         let imagePath = null;
         if (gameData.gameType === 'pedagogobot') {
             imagePath = 'image/modal_window/robot.png';
-        } else if (gameData.gameType === 'tic_tac_toe') {
+        } else if (gameData.gameType === 'tic_tac_toe' || gameData.gameType === 'cross_early') {
+            imagePath = 'image/modal_window/rock_paper_scissor.png';
+        } else if (gameData.gameType === 'rock_paper_scissors') {
             imagePath = 'image/modal_window/rock_paper_scissor.png';
         }
         
@@ -1617,10 +1729,15 @@ class MultiplayerGame extends EducationalPathGame {
         }
         
         if (isParticipant) {
-            if (gameData.gameType === 'tic_tac_toe') {
+            if (gameData.gameType === 'tic_tac_toe' || gameData.gameType === 'cross_early') {
                 // Ініціалізуємо дошку хрестиків-нуликів
                 setTimeout(() => {
                     this.initializeTicTacToeBoard();
+                }, 100);
+            } else if (gameData.gameType === 'rock_paper_scissors') {
+                // Ініціалізуємо гру камінь-ножиці-папір
+                setTimeout(() => {
+                    this.initializeRockPaperScissors();
                 }, 100);
             }
             this.startTimedTextQuestTimer(data.gameState.timer);
@@ -2844,6 +2961,164 @@ class MultiplayerGame extends EducationalPathGame {
         cell.classList.add('x');
         
         console.log(`Хід зроблено в клітинку ${cellIndex}`);
+    }
+    
+    // Ініціалізація гри камінь-ножиці-папір
+    initializeRockPaperScissors() {
+        this.rpsGameState = {
+            round: 1,
+            playerWins: 0,
+            opponentWins: 0,
+            playerChoice: null,
+            opponentChoice: null,
+            gameFinished: false
+        };
+        
+        // Додаємо обробники подій для кнопок
+        const rockBtn = document.getElementById('rps-rock');
+        const paperBtn = document.getElementById('rps-paper');
+        const scissorsBtn = document.getElementById('rps-scissors');
+        
+        if (rockBtn) {
+            rockBtn.addEventListener('click', () => this.makeRPSChoice('rock'));
+        }
+        if (paperBtn) {
+            paperBtn.addEventListener('click', () => this.makeRPSChoice('paper'));
+        }
+        if (scissorsBtn) {
+            scissorsBtn.addEventListener('click', () => this.makeRPSChoice('scissors'));
+        }
+        
+        console.log('Гра камінь-ножиці-папір ініціалізована');
+    }
+    
+    // Обробка вибору в камінь-ножиці-папір
+    makeRPSChoice(choice) {
+        if (this.rpsGameState.gameFinished) return;
+        
+        this.rpsGameState.playerChoice = choice;
+        
+        // Показуємо вибір гравця
+        const resultDiv = document.getElementById('rps-result');
+        if (resultDiv) {
+            resultDiv.textContent = `Ви обрали: ${this.getChoiceEmoji(choice)}`;
+        }
+        
+        // Відправляємо вибір на сервер (поки що просто логуємо)
+        console.log(`Гравець обрав: ${choice}`);
+        
+        // Пока що просто симулюємо гру
+        setTimeout(() => {
+            this.simulateRPSRound();
+        }, 1000);
+    }
+    
+    // Симуляція раунду камінь-ножиці-папір
+    simulateRPSRound() {
+        const choices = ['rock', 'paper', 'scissors'];
+        const opponentChoice = choices[Math.floor(Math.random() * choices.length)];
+        
+        const playerChoice = this.rpsGameState.playerChoice;
+        const result = this.getRPSResult(playerChoice, opponentChoice);
+        
+        // Оновлюємо рахунок
+        if (result === 'win') {
+            this.rpsGameState.playerWins++;
+        } else if (result === 'lose') {
+            this.rpsGameState.opponentWins++;
+        }
+        
+        // Оновлюємо інтерфейс
+        this.updateRPSInterface(result, opponentChoice);
+        
+        // Перевіряємо чи хтось виграв
+        if (this.rpsGameState.playerWins >= 2 || this.rpsGameState.opponentWins >= 2) {
+            this.rpsGameState.gameFinished = true;
+            this.finishRPSGame();
+        } else {
+            // Переходимо до наступного раунду
+            this.rpsGameState.round++;
+            this.rpsGameState.playerChoice = null;
+            setTimeout(() => {
+                this.updateRPSInterface('next', null);
+            }, 2000);
+        }
+    }
+    
+    // Оновлення інтерфейсу камінь-ножиці-папір
+    updateRPSInterface(result, opponentChoice) {
+        const roundDiv = document.getElementById('rps-round');
+        const scoreDiv = document.getElementById('rps-score');
+        const resultDiv = document.getElementById('rps-result');
+        
+        if (roundDiv) {
+            roundDiv.textContent = `Раунд ${this.rpsGameState.round} з 3`;
+        }
+        
+        if (scoreDiv) {
+            scoreDiv.textContent = `Ваші перемоги: ${this.rpsGameState.playerWins} | Перемоги суперника: ${this.rpsGameState.opponentWins}`;
+        }
+        
+        if (resultDiv && result !== 'next') {
+            const playerEmoji = this.getChoiceEmoji(this.rpsGameState.playerChoice);
+            const opponentEmoji = this.getChoiceEmoji(opponentChoice);
+            
+            let resultText = '';
+            if (result === 'win') {
+                resultText = `Ви виграли! ${playerEmoji} перемагає ${opponentEmoji}`;
+            } else if (result === 'lose') {
+                resultText = `Ви програли! ${opponentEmoji} перемагає ${playerEmoji}`;
+            } else {
+                resultText = `Нічия! ${playerEmoji} проти ${opponentEmoji}`;
+            }
+            
+            resultDiv.textContent = resultText;
+        } else if (resultDiv && result === 'next') {
+            resultDiv.textContent = 'Оберіть свій хід для наступного раунду';
+        }
+    }
+    
+    // Завершення гри камінь-ножиці-папір
+    finishRPSGame() {
+        const resultDiv = document.getElementById('rps-result');
+        if (resultDiv) {
+            if (this.rpsGameState.playerWins >= 2) {
+                resultDiv.textContent = '🎉 Ви виграли гру!';
+            } else {
+                resultDiv.textContent = '😞 Ви програли гру!';
+            }
+        }
+        
+        // Розблоковуємо кнопку завершення
+        const submitBtn = document.getElementById('submit-result-btn');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+        }
+    }
+    
+    // Отримання емодзі для вибору
+    getChoiceEmoji(choice) {
+        const emojis = {
+            'rock': '🪨',
+            'paper': '📄',
+            'scissors': '✂️'
+        };
+        return emojis[choice] || '❓';
+    }
+    
+    // Визначення результату раунду
+    getRPSResult(playerChoice, opponentChoice) {
+        if (playerChoice === opponentChoice) {
+            return 'tie';
+        }
+        
+        const winConditions = {
+            'rock': 'scissors',
+            'paper': 'rock',
+            'scissors': 'paper'
+        };
+        
+        return winConditions[playerChoice] === opponentChoice ? 'win' : 'lose';
     }
 }
 

@@ -103,6 +103,9 @@ class EducationalPathGame {
 
         // Відстеження використаних клітинок з подіями
         this.usedEventCells = new Set();
+        
+        // Відстеження використаних типів подій для унікальності
+        this.usedEventTypes = new Set();
 
         this.specialCells = {
             // Нові міні-ігри на клітинках: 3, 10, 14, 21, 32, 36, 40, 55, 61, 69, 76, 81, 90, 96, 99
@@ -1007,13 +1010,31 @@ class EducationalPathGame {
                 continue;
             }
             
+            const cellData = this.specialCells[targetCell];
+            if (!cellData) continue;
+            
+            // Пропускаємо вже використані типи подій (крім обхідних доріг та реінкарнації)
+            if (this.usedEventTypes.has(cellData.type) && 
+                cellData.type !== 'alternative-path' && 
+                cellData.type !== 'reincarnation') {
+                continue;
+            }
+            
             const distance = targetCell - currentPosition;
             if (distance > 0 && distance <= 6) {
-                // Якщо можемо попасти на спеціальну клітинку, підлаштовуємо кубик
-                const requiredRoll = distance - player.class.moveModifier - player.moveModifier;
+                // Враховуємо модифікатори руху класу та гравця
+                const totalMoveModifier = player.class.moveModifier + player.moveModifier;
+                const requiredRoll = distance - totalMoveModifier;
+                
+                // Перевіряємо чи може гравець дійти до цієї клітинки
                 if (requiredRoll >= 1 && requiredRoll <= 6) {
+                    // Додаткова перевірка для селянина (мінімум 1 клітинка)
+                    if (player.class.id === 'peasant' && requiredRoll + totalMoveModifier < 1) {
+                        continue;
+                    }
+                    
                     roll = requiredRoll;
-                    console.log(`🎯 Кубик підлаштований! Гравець ${player.name} потрапить на клітинку ${targetCell}`);
+                    console.log(`🎯 Кубик підлаштований! Гравець ${player.name} (${player.class.name}) потрапить на клітинку ${targetCell} з подією ${cellData.type}. Потрібно ${requiredRoll}, з модифікатором ${totalMoveModifier} = ${requiredRoll + totalMoveModifier} клітинок`);
                     break;
                 }
             }
@@ -1135,6 +1156,12 @@ class EducationalPathGame {
         // Позначаємо клітинку як використану
         this.usedEventCells.add(player.position);
         console.log(`📍 Клітинка ${player.position} позначена як використана`);
+        
+        // Позначаємо тип події як використаний (крім обхідних доріг та реінкарнації)
+        if (cellData.type !== 'alternative-path' && cellData.type !== 'reincarnation') {
+            this.usedEventTypes.add(cellData.type);
+            console.log(`🎭 Тип події ${cellData.type} позначений як використаний`);
+        }
 
         switch(cellData.type) {
     

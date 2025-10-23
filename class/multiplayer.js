@@ -1226,7 +1226,7 @@ class MultiplayerGame extends EducationalPathGame {
             }
         }
         
-        this.showQuestModal('Подія', modalContent, buttons);
+        this.showQuestModal('Подія', modalContent, buttons, 'image/modal_window/bypass_road.png');
     }
     
     makeEventChoice(choice, eventType, eventData) {
@@ -1510,21 +1510,23 @@ class MultiplayerGame extends EducationalPathGame {
     showRoomCodeModal(roomCode, roomName) {
         console.log('Показуємо модальне вікно з кодом:', roomCode);
         const modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Кімната створена!</h3>
-            <p class="mb-4">Поділіться цим кодом з іншими гравцями:</p>
-            <div class="bg-gray-100 p-4 rounded-lg mb-4 text-center">
-                <span class="text-3xl font-bold text-blue-600">${roomCode}</span>
+            <div class="text-center">
+                <p class="mb-4 text-lg font-bold text-green-600">Вітаю! Ви створили кімнату, як боженька Землю.</p>
+                <p class="mb-4">Поділіться цим кодом з іншими гравцями:</p>
+                <div class="bg-gray-100 p-4 rounded-lg mb-4 text-center">
+                    <span class="text-3xl font-bold text-blue-600">${roomCode}</span>
+                </div>
+                <button id="copy-code-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mb-2">
+                    📋 Скопіювати код
+                </button>
+                <button id="close-room-modal-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
+                    Закрити
+                </button>
             </div>
-            <button id="copy-code-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mb-2">
-                📋 Скопіювати код
-            </button>
-            <button id="close-room-modal-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
-                Закрити
-            </button>
         `;
         
         if (window.gameUI) {
-            window.gameUI.showQuestModal('Кімната створена', modalContent);
+            window.gameUI.showQuestModal('Кімната створена', modalContent, [], 'image/modal_window/room_creation.png');
             
             // Додаємо обробники подій
             setTimeout(() => {
@@ -1567,24 +1569,47 @@ class MultiplayerGame extends EducationalPathGame {
         `;
         
         if (isParticipant) {
-            modalContent += `
-                <div class="mb-4">
-                    <textarea id="text-input" class="w-full h-32 p-3 border-2 border-gray-400 rounded" placeholder="Введіть якомога більше слів..."></textarea>
-                </div>
-                <div class="mb-4">
-                    <div id="timer" class="text-2xl font-bold text-red-500">${data.gameState.timer}</div>
-                </div>
-                <button id="submit-result-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" disabled>
-                    Відправити результат
-                </button>
-            `;
+            if (gameData.gameType === 'tic_tac_toe') {
+                // Спеціальний інтерфейс для хрестиків-нуликів
+                modalContent += `
+                    <div class="mb-4">
+                        <div id="tic-tac-toe-board" class="tic-tac-toe-grid mx-auto mb-4"></div>
+                        <div id="game-status" class="text-center text-lg font-bold mb-2">Ваш хід!</div>
+                        <div id="timer" class="text-2xl font-bold text-red-500 text-center">${data.gameState.timer}</div>
+                    </div>
+                    <button id="submit-result-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" disabled>
+                        Завершити гру
+                    </button>
+                `;
+            } else {
+                // Стандартний інтерфейс для текстових квестів
+                modalContent += `
+                    <div class="mb-4">
+                        <textarea id="text-input" class="w-full h-32 p-3 border-2 border-gray-400 rounded" placeholder="Введіть якомога більше слів..."></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <div id="timer" class="text-2xl font-bold text-red-500">${data.gameState.timer}</div>
+                    </div>
+                    <button id="submit-result-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" disabled>
+                        Відправити результат
+                    </button>
+                `;
+            }
         } else {
             modalContent += `
                 <p class="text-center text-gray-600">Спостерігайте за грою</p>
             `;
         }
         
-        this.showQuestModal('PvP-квест', modalContent, []);
+        // Визначаємо картинку залежно від типу гри
+        let imagePath = null;
+        if (gameData.gameType === 'pedagogobot') {
+            imagePath = 'image/modal_window/robot.png';
+        } else if (gameData.gameType === 'tic_tac_toe') {
+            imagePath = 'image/modal_window/rock_paper_scissor.png';
+        }
+        
+        this.showQuestModal('PvP-квест', modalContent, [], imagePath);
         
         // Оновлюємо масштаб для нового модального вікна
         if (window.updateGameScaling) {
@@ -1592,6 +1617,12 @@ class MultiplayerGame extends EducationalPathGame {
         }
         
         if (isParticipant) {
+            if (gameData.gameType === 'tic_tac_toe') {
+                // Ініціалізуємо дошку хрестиків-нуликів
+                setTimeout(() => {
+                    this.initializeTicTacToeBoard();
+                }, 100);
+            }
             this.startTimedTextQuestTimer(data.gameState.timer);
         }
     }
@@ -1873,7 +1904,7 @@ class MultiplayerGame extends EducationalPathGame {
                 </button>
             `;
             
-            this.showQuestModal('Творчий квест', modalContent, []);
+            this.showQuestModal('Творчий квест', modalContent, [], data.gameState.gameType === 'pedagog_mom' ? 'image/modal_window/i_am_a_teacher.png' : null);
             this.startCreativeTimer(data.gameState.timer);
         }
     }
@@ -2781,6 +2812,38 @@ class MultiplayerGame extends EducationalPathGame {
         });
         
         console.log('Touch-контроли налаштовано');
+    }
+    
+    // Ініціалізація дошки хрестиків-нуликів
+    initializeTicTacToeBoard() {
+        const board = document.getElementById('tic-tac-toe-board');
+        if (!board) return;
+        
+        // Очищаємо дошку
+        board.innerHTML = '';
+        
+        // Створюємо 9 клітинок
+        for (let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'tic-tac-toe-cell';
+            cell.dataset.index = i;
+            cell.addEventListener('click', () => this.makeTicTacToeMove(i));
+            board.appendChild(cell);
+        }
+        
+        console.log('Дошка хрестиків-нуликів ініціалізована');
+    }
+    
+    // Обробка ходу в хрестиках-нуликах
+    makeTicTacToeMove(cellIndex) {
+        const cell = document.querySelector(`[data-index="${cellIndex}"]`);
+        if (!cell || cell.textContent !== '') return;
+        
+        // Пока що просто ставимо X (пізніше додамо логіку гри)
+        cell.textContent = 'X';
+        cell.classList.add('x');
+        
+        console.log(`Хід зроблено в клітинку ${cellIndex}`);
     }
 }
 

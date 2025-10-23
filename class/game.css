@@ -536,9 +536,10 @@ body {
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     border-radius: 20px; /* Закруглені кути */
     padding: 50px; /* Внутрішні відступи для тексту */
+    overflow: hidden; /* Обрізаємо контент по закруглених краях */
 
     /* Налаштовуємо фонове зображення (якщо є) */
-    background-size: contain; /* Вписує картинку повністю */
+    background-size: cover; /* Покриває всю область */
     background-repeat: no-repeat;
     background-position: center;
 

@@ -53,7 +53,7 @@ class GameUI {
         console.log('🏠 Показано головне меню');
     }
     
-    showQuestModal(title, content, buttons = [], imagePath = null) {
+    showQuestModal(title, content, buttons = [], backgroundImageUrl = null) {
         const modalContent = document.getElementById('quest-modal-content');
         const buttonsHTML = buttons.map((btn, index) => 
             `<button id="modal-btn-${index}" class="px-4 py-2 rounded-lg text-white font-semibold transition ${
@@ -61,12 +61,15 @@ class GameUI {
             }">${btn.text}</button>`
         ).join(' ');
         
-        // Додаємо картинку якщо вказано
-        const imageHTML = imagePath ? `<img src="${imagePath}" alt="${title}" class="w-full max-w-md mx-auto mb-4 rounded-lg">` : '';
+        // Встановлюємо фонове зображення
+        if (backgroundImageUrl) {
+            modalContent.style.backgroundImage = `url('${backgroundImageUrl}')`;
+        } else {
+            modalContent.style.backgroundImage = 'none';
+        }
         
         modalContent.innerHTML = `
             <h3 class="text-2xl font-bold mb-2">${title}</h3>
-            ${imageHTML}
             <div class="text-lg mb-6">${content}</div>
             <div class="flex justify-center gap-4">${buttonsHTML}</div>
         `;

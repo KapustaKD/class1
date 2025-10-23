@@ -37,6 +37,9 @@ class MultiplayerGame extends EducationalPathGame {
         
         // Відстеження використаних клітинок з подіями
         this.usedEventCells = new Set();
+        
+        // Відстеження використаних типів подій для унікальності
+        this.usedEventTypes = new Set();
         this.pvpSound = new Audio('sound/quests/during_the_quest.mp3');
         this.pvpSound.preload = 'auto';
         
@@ -1091,6 +1094,12 @@ class MultiplayerGame extends EducationalPathGame {
         // Позначаємо клітинку як використану
         this.usedEventCells.add(player.position);
         console.log(`📍 Клітинка ${player.position} позначена як використана (мультиплеєр)`);
+        
+        // Позначаємо тип події як використаний (крім обхідних доріг та реінкарнації)
+        if (cellData.type !== 'alternative-path' && cellData.type !== 'reincarnation') {
+            this.usedEventTypes.add(cellData.type);
+            console.log(`🎭 Тип події ${cellData.type} позначений як використаний (мультиплеєр)`);
+        }
         
         if (this.isOnlineMode) {
             // В онлайн режимі відправляємо подію на сервер

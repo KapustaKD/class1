@@ -26,6 +26,8 @@ class MultiplayerGame extends EducationalPathGame {
         // Ініціалізуємо звуки
         this.startGameSound = new Audio('sound/start/start_game.m4a');
         this.startGameSound.preload = 'auto';
+        this.startGameSound.volume = 0.7; // Встановлюємо гучність
+        
         this.notificationSound = new Audio('sound/notification/notification.mp3');
         this.notificationSound.preload = 'auto';
         this.timerSound = new Audio('sound/quests/clock_timer.mp3');
@@ -1350,7 +1352,12 @@ class MultiplayerGame extends EducationalPathGame {
     // Показуємо роздачу класів гравцям
     showPlayerClassAssignment() {
         const myPlayer = this.players.find(p => p.id === this.playerId);
-        if (!myPlayer || !myPlayer.class) return;
+        if (!myPlayer || !myPlayer.class) {
+            console.log('Клас гравця не знайдено або гравець не існує');
+            return;
+        }
+        
+        console.log('Показуємо клас гравця:', myPlayer.name, myPlayer.class.name);
         
         const classInfo = myPlayer.class;
         const modalContent = `
@@ -1385,6 +1392,8 @@ class MultiplayerGame extends EducationalPathGame {
                     });
                 }
             }, 100);
+        } else {
+            console.error('window.gameUI не знайдено');
         }
     }
     
@@ -2324,16 +2333,23 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     startActualGame() {
+        console.log('🎮 Починаємо гру! Всі гравці готові.');
+        
         // Приховуємо модальне вікно вибору аватарів
         const modal = document.getElementById('avatar-selection-modal');
         if (modal) {
             modal.classList.add('hidden');
+            console.log('Модальне вікно вибору аватарів приховано');
         }
+        
+        // Спочатку програємо звук початку гри
+        console.log('🔊 Програємо звук початку гри...');
+        this.playStartGameSound();
         
         // Створюємо карту та запускаємо гру
         setTimeout(() => {
             try {
-                console.log('Створюємо карту...');
+                console.log('🗺️ Створюємо карту...');
                 this.createBoard();
                 
                 // Переходимо до ігрового інтерфейсу
@@ -2347,16 +2363,13 @@ class MultiplayerGame extends EducationalPathGame {
                 // Показуємо повідомлення
                 this.addChatMessage('system', 'Гра почалася! Перший хід за ' + this.players[this.currentPlayerIndex].name);
                 
-                // Показуємо клас кожному гравцю
-                this.showPlayerClassAssignment();
-                
                 // Фокусуємо камеру на старті
                 setTimeout(() => {
                     try {
                         const startCell = document.getElementById('cell-0');
                         if (startCell) {
                             this.centerViewOn(startCell);
-                            console.log('Камера сфокусована на старті');
+                            console.log('📷 Камера сфокусована на старті');
                         } else {
                             console.error('Не знайдено стартову клітинку cell-0');
                         }
@@ -2365,21 +2378,44 @@ class MultiplayerGame extends EducationalPathGame {
                     }
                 }, 200);
                 
-                console.log('Карта створена успішно');
+                console.log('✅ Карта створена успішно');
             } catch (error) {
-                console.error('Помилка при створенні карти:', error);
+                console.error('❌ Помилка при створенні карти:', error);
                 alert('Помилка при створенні карти. Спробуйте перезавантажити сторінку.');
             }
         }, 100);
+        
+        // Показуємо клас кожному гравцю після закінчення звуку (приблизно 1.5 секунди)
+        setTimeout(() => {
+            console.log('🎭 Показуємо клас гравця після закінчення звуку...');
+            this.showPlayerClassAssignment();
+        }, 1500);
     }
     
     // Методи для відтворення звуків
     playStartGameSound() {
         try {
+            console.log('Спроба відтворення звуку початку гри...');
+            
+            // Скидаємо час відтворення
             this.startGameSound.currentTime = 0;
-            this.startGameSound.play().catch(e => {
-                console.log('Не вдалося відтворити звук початку гри:', e);
-            });
+            
+            // Додаємо обробник завершення звуку
+            this.startGameSound.onended = () => {
+                console.log('Звук початку гри завершився');
+            };
+            
+            // Спробуємо відтворити звук
+            const playPromise = this.startGameSound.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('Звук початку гри успішно запущено');
+                }).catch(error => {
+                    console.log('Не вдалося відтворити звук початку гри:', error);
+                    // Якщо звук не може відтворитися, все одно показуємо клас через 1.5 секунди
+                });
+            }
         } catch (e) {
             console.log('Помилка відтворення звуку початку гри:', e);
         }

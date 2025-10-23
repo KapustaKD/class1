@@ -104,18 +104,20 @@ class EducationalPathGame {
            
     
             this.specialCells = {
-            // Нові міні-ігри на клітинках: 3, 10, 14, 21, 32, 40, 55, 61, 69, 81, 90, 96, 99
+            // Нові міні-ігри на клітинках: 3, 10, 14, 21, 32, 36, 40, 55, 61, 69, 76, 81, 90, 96, 99
             3: { type: 'pvp-quest' },
             10: { type: 'creative-quest' },
             14: { type: 'mad-libs-quest' },
             21: { type: 'pvp-quest' },
             32: { type: 'webnovella-quest' },
+            36: { type: 'pvp-quest', gameType: 'cross_early' },
             40: { type: 'creative-quest' },
             55: { type: 'pvp-quest' },
             61: { type: 'mad-libs-quest' },
             69: { type: 'creative-quest' },
+            76: { type: 'pvp-quest', gameType: 'rock_paper_scissors' },
             81: { type: 'webnovella-quest' },
-                90: { type: 'pvp-quest' },
+                90: { type: 'pvp-quest' },
             96: { type: 'mad-libs-quest' },
             99: { type: 'webnovella-quest' },
 
@@ -988,11 +990,30 @@ class EducationalPathGame {
             this.playDiceSound();
         }
     
-            let roll = Math.floor(Math.random() * 6) + 1;
+        let roll = Math.floor(Math.random() * 6) + 1;
+        
+        // Логіка підлаштовування кубика для попадання на спеціальні клітинки
+        const player = this.players[this.currentPlayerIndex];
+        const currentPosition = player.position;
+        
+        // Список спеціальних клітинок з подіями
+        const specialCells = [3, 10, 14, 21, 32, 36, 40, 55, 61, 69, 76, 81, 90, 96, 99];
+        
+        // Перевіряємо чи можемо попасти на спеціальну клітинку
+        for (const targetCell of specialCells) {
+            const distance = targetCell - currentPosition;
+            if (distance > 0 && distance <= 6) {
+                // Якщо можемо попасти на спеціальну клітинку, підлаштовуємо кубик
+                const requiredRoll = distance - player.class.moveModifier - player.moveModifier;
+                if (requiredRoll >= 1 && requiredRoll <= 6) {
+                    roll = requiredRoll;
+                    console.log(`🎯 Кубик підлаштований! Гравець ${player.name} потрапить на клітинку ${targetCell}`);
+                    break;
+                }
+            }
+        }
     
-            const player = this.players[this.currentPlayerIndex];
-    
-            let move = roll + player.class.moveModifier + player.moveModifier;
+        let move = roll + player.class.moveModifier + player.moveModifier;
     
         if (player.class.id === 'peasant') move = Math.max(1, move);
         

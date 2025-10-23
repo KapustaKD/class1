@@ -866,7 +866,7 @@ class MultiplayerGame extends EducationalPathGame {
         `;
         
         if (window.gameUI) {
-            window.gameUI.showQuestModal('Результати турніру', resultsHTML);
+            window.gameUI.showQuestModal('Результати турніру', resultsHTML, [], 'image/modal_window/room_creation.png');
             
             setTimeout(() => {
                 const restartBtn = document.getElementById('restart-tournament-btn');
@@ -1314,7 +1314,7 @@ class MultiplayerGame extends EducationalPathGame {
     
     handleRemoteQuest(data) {
         // Обробка віддалених квестів
-        this.showQuestModal(data.title, data.description, data.buttons);
+        this.showQuestModal(data.title, data.description, data.buttons, 'image/modal_window/i_am_a_teacher.png');
     }
     
     handleQuestVote(data) {
@@ -1390,7 +1390,7 @@ class MultiplayerGame extends EducationalPathGame {
         `;
         
         if (window.gameUI) {
-            window.gameUI.showQuestModal('Роздача класів', modalContent);
+            window.gameUI.showQuestModal('Роздача класів', modalContent, [], 'image/modal_window/room_creation.png');
             
             // Додаємо обробник події
             setTimeout(() => {
@@ -1818,7 +1818,7 @@ class MultiplayerGame extends EducationalPathGame {
             
             buttons.push({ text: 'Не обмінюватися', callback: () => this.closeMiniGame() });
             
-            this.showQuestModal('PvP-квест', modalContent, buttons);
+            this.showQuestModal('PvP-квест', modalContent, buttons, 'image/modal_window/rock_paper_scissor.png');
         } else {
             this.showQuestModal('PvP-квест', modalContent, [
                 { text: 'Закрити', callback: () => this.closeMiniGame() }
@@ -1863,7 +1863,7 @@ class MultiplayerGame extends EducationalPathGame {
             `;
         }
         
-        this.showQuestModal('Творчий квест', modalContent, []);
+        this.showQuestModal('Творчий квест', modalContent, [], 'image/modal_window/i_am_a_teacher.png');
         
         if (isMyTurn) {
             this.startStoryTimer(data.gameState.timer);
@@ -1979,7 +1979,7 @@ class MultiplayerGame extends EducationalPathGame {
             `;
         }
         
-        this.showQuestModal('Творчий квест', modalContent, []);
+        this.showQuestModal('Творчий квест', modalContent, [], 'image/modal_window/i_am_a_teacher.png');
         
         if (isMyTurn) {
             this.startStoryTimer(data.gameState.timer);
@@ -2080,7 +2080,7 @@ class MultiplayerGame extends EducationalPathGame {
             <p class="text-center text-gray-600">Очікуйте завершення</p>
         `;
         
-        this.showQuestModal('Творчий квест', modalContent, []);
+        this.showQuestModal('Творчий квест', modalContent, [], 'image/modal_window/i_am_a_teacher.png');
     }
 
     showCreativeSubmission(data) {
@@ -2098,7 +2098,7 @@ class MultiplayerGame extends EducationalPathGame {
             </button>
         `;
         
-        this.showQuestModal('Творчий квест', modalContent, []);
+        this.showQuestModal('Творчий квест', modalContent, [], 'image/modal_window/i_am_a_teacher.png');
         
         // Запускаємо таймер
         this.startCreativeSubmissionTimer(data.timer);
@@ -2169,7 +2169,7 @@ class MultiplayerGame extends EducationalPathGame {
             <p class="text-center text-gray-600">Оберіть варіант вище (не можна голосувати за свою роботу)</p>
         `;
         
-        this.showQuestModal('Голосування', modalContent, []);
+        this.showQuestModal('Голосування', modalContent, [], 'image/modal_window/i_am_a_teacher.png');
     }
     
     voteForCreative(submissionIndex) {
@@ -2224,7 +2224,7 @@ class MultiplayerGame extends EducationalPathGame {
             `;
         }
         
-        this.showQuestModal('Хто, де, коли?', modalContent, []);
+        this.showQuestModal('Хто, де, коли?', modalContent, [], 'image/modal_window/i_am_a_teacher.png');
         
         if (isMyTurn) {
             // Додаємо обробник кнопки
@@ -2252,7 +2252,7 @@ class MultiplayerGame extends EducationalPathGame {
             <p class="text-center text-gray-600">Черга гравця ${data.currentPlayer.name}</p>
         `;
         
-        this.showQuestModal('Хто, де, коли?', modalContent, []);
+        this.showQuestModal('Хто, де, коли?', modalContent, [], 'image/modal_window/i_am_a_teacher.png');
     }
     
     submitMadLibsAnswer() {
@@ -2311,7 +2311,7 @@ class MultiplayerGame extends EducationalPathGame {
             modalContent += `<p class="text-center text-gray-600">Очікуйте вибору гравця</p>`;
         }
         
-        this.showQuestModal('Вебновела', modalContent, []);
+        this.showQuestModal('Вебновела', modalContent, [], 'image/modal_window/i_am_a_teacher.png');
     }
     
     makeWebNovellaChoice(choiceIndex) {

@@ -99,11 +99,12 @@ class EducationalPathGame {
     
             // Координати клітинок для кожної епохи
     
-            this.epochCoordinates = this.generateEpochCoordinates();
-    
-           
-    
-            this.specialCells = {
+        this.epochCoordinates = this.generateEpochCoordinates();
+
+        // Відстеження використаних клітинок з подіями
+        this.usedEventCells = new Set();
+
+        this.specialCells = {
             // Нові міні-ігри на клітинках: 3, 10, 14, 21, 32, 36, 40, 55, 61, 69, 76, 81, 90, 96, 99
             3: { type: 'pvp-quest' },
             10: { type: 'creative-quest' },
@@ -999,8 +1000,13 @@ class EducationalPathGame {
         // Список спеціальних клітинок з подіями
         const specialCells = [3, 10, 14, 21, 32, 36, 40, 55, 61, 69, 76, 81, 90, 96, 99];
         
-        // Перевіряємо чи можемо попасти на спеціальну клітинку
+        // Перевіряємо чи можемо попасти на невикористану спеціальну клітинку
         for (const targetCell of specialCells) {
+            // Пропускаємо вже використані клітинки
+            if (this.usedEventCells.has(targetCell)) {
+                continue;
+            }
+            
             const distance = targetCell - currentPosition;
             if (distance > 0 && distance <= 6) {
                 // Якщо можемо попасти на спеціальну клітинку, підлаштовуємо кубик
@@ -1011,6 +1017,11 @@ class EducationalPathGame {
                     break;
                 }
             }
+        }
+        
+        // Якщо всі спеціальні клітинки використані, кидаємо випадкове число
+        if (roll === Math.floor(Math.random() * 6) + 1) {
+            console.log(`🎲 Всі спеціальні клітинки використані, кидаємо випадкове число: ${roll}`);
         }
     
         let move = roll + player.class.moveModifier + player.moveModifier;
@@ -1120,12 +1131,12 @@ class EducationalPathGame {
     
        
     
-        handleSpecialCell(player, cellData) {
-    
-    
-           
-    
-            switch(cellData.type) {
+    handleSpecialCell(player, cellData) {
+        // Позначаємо клітинку як використану
+        this.usedEventCells.add(player.position);
+        console.log(`📍 Клітинка ${player.position} позначена як використана`);
+
+        switch(cellData.type) {
     
                 case 'quest':
     

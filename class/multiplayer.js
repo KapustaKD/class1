@@ -32,6 +32,8 @@ class MultiplayerGame extends EducationalPathGame {
         this.notificationSound.preload = 'auto';
         this.timerSound = new Audio('sound/quests/clock_timer.mp3');
         this.timerSound.preload = 'auto';
+        this.timerSound.loop = true; // Зациклюємо звук таймера
+        this.timerSoundInterval = null; // Для зберігання інтервалу зациклення
         this.pvpSound = new Audio('sound/quests/during_the_quest.mp3');
         this.pvpSound.preload = 'auto';
         
@@ -1279,6 +1281,9 @@ class MultiplayerGame extends EducationalPathGame {
             this.storyTimer = null;
         }
         
+        // Зупиняємо звук таймера
+        this.stopTimerSound();
+        
         this.questModal.classList.add('hidden');
         
         // Не передаємо хід автоматично - хід передається тільки після кидка кубика
@@ -1611,6 +1616,9 @@ class MultiplayerGame extends EducationalPathGame {
                 textInput.disabled = true;
                 submitBtn.textContent = 'Відправити результат';
                 
+                // Зупиняємо звук таймера
+                this.stopTimerSound();
+                
                 // Автоматично відправляємо результат
                 this.submitTimedTextResult();
             }
@@ -1623,6 +1631,9 @@ class MultiplayerGame extends EducationalPathGame {
             console.error('Поле вводу тексту не знайдено');
             return;
         }
+        
+        // Зупиняємо звук таймера
+        this.stopTimerSound();
         
         const text = textInput.value.trim();
         const wordsCount = text.split(/\s+/).filter(word => word.length > 0).length;
@@ -1759,6 +1770,9 @@ class MultiplayerGame extends EducationalPathGame {
                 this.storyTimer = null;
             }
             
+            // Зупиняємо звук таймера
+            this.stopTimerSound();
+            
             this.socket.emit('collaborative_story_sentence', {
                 roomId: this.roomId,
                 sentence: sentence
@@ -1772,6 +1786,9 @@ class MultiplayerGame extends EducationalPathGame {
             clearInterval(this.storyTimer);
             this.storyTimer = null;
         }
+        
+        // Зупиняємо звук таймера
+        this.stopTimerSound();
         
         this.socket.emit('collaborative_story_skip', {
             roomId: this.roomId
@@ -1875,6 +1892,10 @@ class MultiplayerGame extends EducationalPathGame {
             
             if (timeLeft < 0) {
                 clearInterval(timer);
+                
+                // Зупиняємо звук таймера
+                this.stopTimerSound();
+                
                 // Автоматично відправляємо результат
                 this.submitCreativeTask();
             }
@@ -1890,6 +1911,9 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     submitCreativeTask() {
+        // Зупиняємо звук таймера
+        this.stopTimerSound();
+        
         const creativeInput = document.getElementById('creative-input');
         const text = creativeInput.value.trim();
         
@@ -2434,12 +2458,38 @@ class MultiplayerGame extends EducationalPathGame {
     
     playTimerSound() {
         try {
+            console.log('🔊 Запускаємо зациклений звук таймера...');
+            
+            // Зупиняємо попередній звук, якщо він грає
+            this.stopTimerSound();
+            
+            // Скидаємо час відтворення
             this.timerSound.currentTime = 0;
-            this.timerSound.play().catch(e => {
-                console.log('Не вдалося відтворити звук таймера:', e);
-            });
+            
+            // Запускаємо звук
+            const playPromise = this.timerSound.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('✅ Звук таймера успішно запущено (зациклений)');
+                }).catch(error => {
+                    console.log('❌ Не вдалося відтворити звук таймера:', error);
+                });
+            }
         } catch (e) {
-            console.log('Помилка відтворення звуку таймера:', e);
+            console.log('❌ Помилка відтворення звуку таймера:', e);
+        }
+    }
+    
+    stopTimerSound() {
+        try {
+            if (this.timerSound && !this.timerSound.paused) {
+                console.log('🔇 Зупиняємо звук таймера...');
+                this.timerSound.pause();
+                this.timerSound.currentTime = 0;
+            }
+        } catch (e) {
+            console.log('❌ Помилка зупинки звуку таймера:', e);
         }
     }
     

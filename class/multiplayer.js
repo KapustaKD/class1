@@ -34,6 +34,9 @@ class MultiplayerGame extends EducationalPathGame {
         this.timerSound.preload = 'auto';
         this.timerSound.loop = true; // Зациклюємо звук таймера
         this.timerSoundInterval = null; // Для зберігання інтервалу зациклення
+        
+        // Відстеження використаних клітинок з подіями
+        this.usedEventCells = new Set();
         this.pvpSound = new Audio('sound/quests/during_the_quest.mp3');
         this.pvpSound.preload = 'auto';
         
@@ -1085,6 +1088,9 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     handleSpecialCell(player, cellData) {
+        // Позначаємо клітинку як використану
+        this.usedEventCells.add(player.position);
+        console.log(`📍 Клітинка ${player.position} позначена як використана (мультиплеєр)`);
         
         if (this.isOnlineMode) {
             // В онлайн режимі відправляємо подію на сервер

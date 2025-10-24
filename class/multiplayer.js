@@ -751,16 +751,6 @@ class MultiplayerGame extends EducationalPathGame {
         messageDiv.textContent = prefix + message;
         this.chatMessages.appendChild(messageDiv);
         this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-        
-        // Відтворюємо звук сповіщення для повідомлень в чаті
-        try {
-            this.notificationSound.currentTime = 0;
-            this.notificationSound.play().catch(e => {
-                console.log('Не вдалося відтворити звук сповіщення:', e);
-            });
-        } catch (e) {
-            console.log('Помилка відтворення звуку сповіщення:', e);
-        }
     }
     
     // Перевизначення методів для мультиплеєру
@@ -1339,17 +1329,7 @@ class MultiplayerGame extends EducationalPathGame {
     
     handleRemoteQuest(data) {
         // Обробка віддалених квестів
-        let buttons = [];
-        
-        if (data.type === 'creative') {
-            // Додаємо кнопки голосування для творчого квесту
-            buttons = [
-                { text: '👍 Так', callback: () => this.voteForCreativeQuest('yes') },
-                { text: '👎 Ні', callback: () => this.voteForCreativeQuest('no') }
-            ];
-        }
-        
-        this.showQuestModal(data.title, data.description, buttons, null);
+        this.showQuestModal(data.title, data.description, data.buttons, null);
     }
     
     handleQuestVote(data) {
@@ -1730,7 +1710,7 @@ class MultiplayerGame extends EducationalPathGame {
                 // Стандартний інтерфейс для текстових квестів
                 modalContent += `
                     <div class="mb-4">
-                        <textarea id="text-input" class="w-full h-32 p-3 border-2 border-gray-400 rounded" placeholder="Введіть якомога більше принципів, розділяючи їх комами..."></textarea>
+                        <textarea id="text-input" class="w-full h-32 p-3 border-2 border-gray-400 rounded" placeholder="Введіть якомога більше слів..."></textarea>
                     </div>
                     <div class="mb-4">
                         <div id="timer" class="text-2xl font-bold text-red-500">${data.gameState.timer}</div>
@@ -1819,12 +1799,11 @@ class MultiplayerGame extends EducationalPathGame {
         this.stopTimerSound();
         
         const text = textInput.value.trim();
-        const wordsCount = text.split(',').filter(word => word.trim().length > 0).length;
+        const wordsCount = text.split(/\s+/).filter(word => word.length > 0).length;
         
         this.socket.emit('timed_text_quest_result', {
             roomId: this.roomId,
-            wordsCount: wordsCount,
-            text: text // Додаємо сам текст відповіді
+            wordsCount: wordsCount
         });
     }
     
@@ -1837,12 +1816,7 @@ class MultiplayerGame extends EducationalPathGame {
         `;
         
         Object.values(data.results).forEach(result => {
-            modalContent += `
-                <div class="mb-3 p-3 bg-gray-100 rounded">
-                    <p class="font-bold">${result.playerName}: ${result.wordsCount} слів</p>
-                    <p class="text-sm text-gray-600 mt-1">"${result.text}"</p>
-                </div>
-            `;
+            modalContent += `<p>${result.playerName}: ${result.wordsCount} слів</p>`;
         });
         
         modalContent += `</div>`;
@@ -2034,7 +2008,7 @@ class MultiplayerGame extends EducationalPathGame {
             <div class="mb-4">
                 <h4 class="font-bold">Фінальна історія:</h4>
                 <div class="bg-gray-100 p-3 rounded">
-                    <p>${data.story.map(s => s.sentence).join(' ')}</p>
+                    ${data.story.map(s => `<p>${s.playerName}: ${s.sentence}</p>`).join('')}
                 </div>
             </div>
         `;
@@ -2246,7 +2220,7 @@ class MultiplayerGame extends EducationalPathGame {
         const isMyTurn = data.activePlayerId === this.playerId;
         
         let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Хто, де, коли? - Творчий квест</h3>
+            <h3 class="text-2xl font-bold mb-4">Хто, де, коли?</h3>
             <p class="mb-4">Питання: <strong>${data.question}</strong></p>
         `;
         

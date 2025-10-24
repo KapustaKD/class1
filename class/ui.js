@@ -197,6 +197,17 @@ class GameUI {
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
+        // Відтворюємо звук сповіщення для повідомлень в чаті
+        try {
+            const notificationSound = new Audio('sound/notification/notification.mp3');
+            notificationSound.currentTime = 0;
+            notificationSound.play().catch(e => {
+                console.log('Не вдалося відтворити звук сповіщення:', e);
+            });
+        } catch (e) {
+            console.log('Помилка відтворення звуку сповіщення:', e);
+        }
+        
         // Обмежуємо кількість повідомлень
         while (chatMessages.children.length > 100) {
             chatMessages.removeChild(chatMessages.firstChild);

@@ -59,7 +59,7 @@ const SPECIAL_CELLS = {
     3: { type: 'pvp-quest' },
     5: { type: 'alternative-path', target: 11, cost: 10 },
     10: { type: 'pvp-quest' },
-    15: { type: 'alternative-path', target: 18, cost: 15 },
+    14: { type: 'alternative-path', target: 18, cost: 15 },
     21: { type: 'creative-quest' },
     26: { type: 'alternative-path', target: 33, cost: 20 },
     32: { type: 'mad-libs' },
@@ -525,7 +525,7 @@ io.on('connection', (socket) => {
         console.log('Кубик показав:', roll, 'Рух:', move);
         
         // Межі епох для системи реінкарнації
-        const EPOCH_BOUNDARIES = [12, 22, 42, 75, 97];
+        const EPOCH_BOUNDARIES = [12, 22, 42, 75, 97, 101];
         
         // Нова логіка руху з перевіркою меж епох
         const oldPosition = currentPlayer.position;
@@ -1177,7 +1177,6 @@ io.on('connection', (socket) => {
         // Зберігаємо результат гравця
         room.timedTextQuestState.results[player.id] = {
             wordsCount: data.wordsCount,
-            text: data.text, // Додаємо текст відповіді
             playerName: player.name
         };
 
@@ -1502,11 +1501,9 @@ io.on('connection', (socket) => {
             const story = room.madLibsState.answers
                 .sort((a, b) => a.questionIndex - b.questionIndex)
                 .map((answer, index) => {
-                    // Додаємо кому після питання "Де?" та змінюємо фразу
-                    if (index === 1) { // Питання "Де?" має індекс 1
-                        return answer.answer + ',';
-                    } else if (index === 4) { // Між питаннями 4 і 5
-                        return answer.answer + ' і все скінчилось';
+                    // Додаємо "і в підсумку" між питаннями 4 і 5 (індекси 4 і 5)
+                    if (index === 4) {
+                        return answer.answer + ' і в підсумку';
                     }
                     return answer.answer;
                 })

@@ -297,13 +297,7 @@ function setupMusicController() {
     backgroundMusic2.volume = 0.05;
     
     let currentMusic = backgroundMusic1;
-    let isPlaying = true; // Вмикаємо музику по дефолту
-    
-    // Автоматично запускаємо музику при завантаженні
-    currentMusic.play().catch(e => {
-        console.log('Не вдалося автоматично відтворити музику:', e);
-    });
-    musicIcon.textContent = '🎵';
+    let isPlaying = false;
     
     // Кнопка вмикання/вимикання музики
     musicToggleBtn.addEventListener('click', () => {
@@ -407,7 +401,15 @@ function setupGlobalSounds() {
             if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                 const target = mutation.target;
                 if (target.classList.contains('modal-backdrop') && !target.classList.contains('hidden')) {
-                    // Модальне вікно відкрилося - звук сповіщення тепер відтворюється тільки для повідомлень в чаті
+                    // Модальне вікно відкрилося
+                    try {
+                        notificationSound.currentTime = 0;
+                        notificationSound.play().catch(err => {
+                            console.log('Не вдалося відтворити звук сповіщення:', err);
+                        });
+                    } catch (err) {
+                        console.log('Помилка відтворення звуку сповіщення:', err);
+                    }
                 }
             }
         });

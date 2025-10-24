@@ -108,7 +108,7 @@ class EducationalPathGame {
         this.usedEventTypes = new Set();
 
         this.specialCells = {
-            // Нові міні-ігри на клітинках: 3, 10, 14, 15, 21, 32, 36, 40, 55, 61, 69, 76, 81, 90, 96, 99
+            // Нові міні-ігри на клітинках: 3, 10, 14, 21, 32, 36, 40, 55, 61, 69, 76, 81, 90, 96, 99
             3: { type: 'pvp-quest' },
             10: { type: 'creative-quest' },
             14: { type: 'mad-libs-quest' },
@@ -125,9 +125,9 @@ class EducationalPathGame {
             96: { type: 'mad-libs-quest' },
             99: { type: 'webnovella-quest' },
 
-            // Обхідні шляхи: 5→11, 15→18, 26→33, 46→57, 80→91
+            // Обхідні шляхи: 5→11, 14→18, 26→33, 46→57, 80→91
             5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
-            15: { type: 'alternative-path', target: 18, cost: 8, description: 'Обхідний шлях до клітинки 18 за 8 ОО' },
+            14: { type: 'alternative-path', target: 18, cost: 8, description: 'Обхідний шлях до клітинки 18 за 8 ОО' },
             26: { type: 'alternative-path', target: 33, cost: 12, description: 'Обхідний шлях до клітинки 33 за 12 ОО' },
             46: { type: 'alternative-path', target: 57, cost: 15, description: 'Обхідний шлях до клітинки 57 за 15 ОО' },
             80: { type: 'alternative-path', target: 91, cost: 18, description: 'Обхідний шлях до клітинки 91 за 18 ОО' },
@@ -822,7 +822,7 @@ class EducationalPathGame {
         
         // Встановлюємо фон на body
         document.body.style.backgroundImage = `url('${selectedBackground}')`;
-        document.body.style.backgroundSize = 'contain'; // Змінюємо з 'cover' на 'contain'
+        document.body.style.backgroundSize = 'cover';
         document.body.style.backgroundPosition = 'center';
         document.body.style.backgroundRepeat = 'no-repeat';
         document.body.style.backgroundAttachment = 'fixed';
@@ -1001,7 +1001,7 @@ class EducationalPathGame {
         const currentPosition = player.position;
         
         // Список спеціальних клітинок з подіями
-        const specialCells = [3, 10, 14, 15, 21, 32, 36, 40, 55, 61, 69, 76, 81, 90, 96, 99];
+        const specialCells = [3, 10, 14, 21, 32, 36, 40, 55, 61, 69, 76, 81, 90, 96, 99];
         
         // Перевіряємо чи можемо попасти на невикористану спеціальну клітинку
         for (const targetCell of specialCells) {

@@ -541,8 +541,8 @@ body {
     position: relative;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    transform: scale(0.9);
-    opacity: 0;
+    transform: scale(1);
+    opacity: 1;
 }
 
 .modal-content.show {
@@ -583,6 +583,13 @@ body {
 }
 
 /* Контент модального вікна */
+.modal-content > *:not(h3) {
+    padding: 32px;
+    color: #374151;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
 .modal-content .modal-body {
     padding: 32px;
     color: #374151;
@@ -596,6 +603,22 @@ body {
     margin-bottom: 20px;
     font-size: 1rem;
     line-height: 1.6;
+    padding: 0;
+}
+
+/* Всі елементи всередині модального вікна (крім заголовка) */
+.modal-content > div,
+.modal-content > p,
+.modal-content > input,
+.modal-content > textarea,
+.modal-content > button {
+    margin-left: 32px;
+    margin-right: 32px;
+}
+
+.modal-content > div:last-child,
+.modal-content > button:last-child {
+    margin-bottom: 32px;
 }
 
 /* Якщо є фонове зображення, робимо текст білим з тінню */
@@ -646,12 +669,14 @@ body {
 }
 
 /* Контейнер кнопок */
-.modal-content .button-container {
+.modal-content .button-container,
+.modal-content .flex {
     display: flex;
     justify-content: center;
     gap: 16px;
     margin-top: 24px;
     flex-wrap: wrap;
+    padding: 0 32px 32px 32px;
 }
 
 /* Якщо є фонове зображення, робимо кнопки з прозорістю */

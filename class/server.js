@@ -43,7 +43,7 @@ if (typeof EducationalPathGame !== 'undefined') {
 }
 
 // Межі епох для системи реінкарнації
-const EPOCH_BOUNDARIES = { 1: 12, 2: 22, 3: 42, 4: 75, 5: 97, 6: 101 };
+const EPOCH_BOUNDARIES = { 1: 12, 2: 22, 3: 42, 4: 75, 5: 97 };
 
 function getEpochForPosition(position) {
     if (position <= 12) return 1;
@@ -525,7 +525,7 @@ io.on('connection', (socket) => {
         console.log('Кубик показав:', roll, 'Рух:', move);
         
         // Межі епох для системи реінкарнації
-        const EPOCH_BOUNDARIES = [12, 22, 42, 75, 97, 101];
+        const EPOCH_BOUNDARIES = [12, 22, 42, 75, 97];
         
         // Нова логіка руху з перевіркою меж епох
         const oldPosition = currentPlayer.position;
@@ -551,6 +551,19 @@ io.on('connection', (socket) => {
             // Якщо межу не перетнули, просто ходимо
             finalPosition = Math.min(oldPosition + move, 101);
             currentPlayer.position = finalPosition;
+            
+            // Перевіряємо перемогу (досягнення клітинки 101)
+            if (finalPosition >= 101) {
+                // Гравець переміг!
+                currentPlayer.hasWon = true;
+                room.gameState = 'finished';
+                
+                io.to(room.id).emit('game_ended', {
+                    winner: currentPlayer,
+                    reason: `${currentPlayer.name} переміг, досягнувши кінця освітнього шляху!`
+                });
+                return;
+            }
         }
         
         console.log(`${currentPlayer.name} перемістився з позиції ${oldPosition} на позицію ${currentPlayer.position}`);

@@ -733,38 +733,37 @@ body {
     box-shadow: 0 0 20px rgba(16, 185, 129, 0.7); 
 }
 
-/* Хрестики-нулики */
+/* Хрестики-нулики - новий дизайн */
 .tic-tac-toe-grid { 
     display: grid; 
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 4px; 
-    width: 180px; 
-    height: 180px; 
-    margin: 0 auto; 
-    background: #1f2937;
-    padding: 8px;
-    border-radius: 8px;
+    grid-template-columns: repeat(3, 100px); 
+    grid-template-rows: repeat(3, 100px); 
+    gap: 8px; 
+    background-color: #2d3748; 
+    border-radius: 12px; 
+    padding: 8px; 
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+    margin: 0 auto;
 }
 
 .tic-tac-toe-cell { 
-    width: 50px; 
-    height: 50px; 
-    border: 2px solid #4a5568; 
+    width: 100px; 
+    height: 100px; 
+    background-color: #4a5568; 
+    border-radius: 8px; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    font-size: 2rem; 
-    font-weight: bold;
+    font-size: 3rem; 
+    font-weight: 800; 
     cursor: pointer; 
-    background: white; 
-    border-radius: 4px;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, transform 0.2s ease; 
+    color: #e2e8f0;
 }
 
 .tic-tac-toe-cell:hover { 
-    background: #f7fafc; 
-    border-color: #60a5fa;
-    transform: scale(1.05);
+    background-color: #616e7f; 
+    transform: scale(1.03);
 }
 
 .tic-tac-toe-cell.disabled { 
@@ -773,11 +772,51 @@ body {
 }
 
 .tic-tac-toe-cell.x {
-    color: #ef4444;
+    color: #63b3ed;
 }
 
 .tic-tac-toe-cell.o {
-    color: #3b82f6;
+    color: #fc8181;
+}
+
+/* SVG стилі для X і O */
+.svg-x, .svg-o {
+    width: 80px;
+    height: 80px;
+}
+
+.svg-x line, .svg-o circle, .svg-o path {
+    stroke-width: 8px;
+    stroke-linecap: round;
+    fill: none;
+}
+
+.svg-x line {
+    stroke: #63b3ed;
+    animation: drawX 0.3s ease-out forwards;
+}
+
+.svg-o circle {
+    stroke: #fc8181;
+    animation: drawO 0.3s ease-out forwards;
+}
+
+@keyframes drawX {
+    from {
+        stroke-dasharray: 0 100;
+    }
+    to {
+        stroke-dasharray: 100 0;
+    }
+}
+
+@keyframes drawO {
+    from {
+        stroke-dasharray: 0 200;
+    }
+    to {
+        stroke-dasharray: 200 0;
+    }
 }
 
 /* Онлайн панель */
@@ -1077,6 +1116,40 @@ body.glassmorphism-bg {
 
 /* Забезпечуємо, що контент буде поверх overlay */
 .glassmorphism-content-bypass > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Модальне вікно педагобота з картинкою robot */
+.glassmorphism-content-robot {
+    background-image: url('image/modal_window/robot.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+    min-height: 450px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+}
+
+/* Overlay для кращої читабельності тексту */
+.glassmorphism-content-robot::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    pointer-events: none;
+}
+
+/* Забезпечуємо, що контент буде поверх overlay */
+.glassmorphism-content-robot > * {
     position: relative;
     z-index: 1;
 }

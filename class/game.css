@@ -1034,3 +1034,40 @@ body.glassmorphism-bg {
     position: relative;
     z-index: 1;
 }
+
+/* Модальне вікно обхідної дороги з картинкою bypass_road */
+.glassmorphism-content-bypass {
+    background-image: url('image/modal_window/bypass_road.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 0;
+    min-height: 450px;
+    width: 90%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+/* Додаємо легкий overlay для кращої читабельності тексту */
+.glassmorphism-content-bypass::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    pointer-events: none;
+}
+
+/* Забезпечуємо, що контент буде поверх overlay */
+.glassmorphism-content-bypass > * {
+    position: relative;
+    z-index: 1;
+}

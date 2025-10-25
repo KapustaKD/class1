@@ -1710,7 +1710,7 @@ class MultiplayerGame extends EducationalPathGame {
                 // Стандартний інтерфейс для текстових квестів
                 modalContent += `
                     <div class="mb-4">
-                        <textarea id="text-input" class="w-full h-32 p-3 border-2 border-gray-400 rounded" placeholder="Введіть якомога більше слів..."></textarea>
+                        <textarea id="text-input" class="w-full h-32 p-3 border-2 border-gray-400 rounded" placeholder="Введіть якомога більше принципів, розділяючи їх комами..."></textarea>
                     </div>
                     <div class="mb-4">
                         <div id="timer" class="text-2xl font-bold text-red-500">${data.gameState.timer}</div>
@@ -1799,7 +1799,7 @@ class MultiplayerGame extends EducationalPathGame {
         this.stopTimerSound();
         
         const text = textInput.value.trim();
-        const wordsCount = text.split(/\s+/).filter(word => word.length > 0).length;
+        const wordsCount = text.split(',').filter(word => word.trim().length > 0).length;
         
         this.socket.emit('timed_text_quest_result', {
             roomId: this.roomId,
@@ -2220,7 +2220,7 @@ class MultiplayerGame extends EducationalPathGame {
         const isMyTurn = data.activePlayerId === this.playerId;
         
         let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Хто, де, коли?</h3>
+            <h3 class="text-2xl font-bold mb-4">Хто, де, коли? - Творчий квест</h3>
             <p class="mb-4">Питання: <strong>${data.question}</strong></p>
         `;
         
@@ -2239,7 +2239,7 @@ class MultiplayerGame extends EducationalPathGame {
             `;
         }
         
-        this.showQuestModal('Хто, де, коли?', modalContent, [], null);
+        this.showQuestModal('Хто, де, коли? - Творчий квест', modalContent, [], null);
         
         if (isMyTurn) {
             // Додаємо обробник кнопки
@@ -2262,12 +2262,12 @@ class MultiplayerGame extends EducationalPathGame {
     
     showMadLibsWaiting(data) {
         let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Хто, де, коли?</h3>
+            <h3 class="text-2xl font-bold mb-4">Хто, де, коли? - Творчий квест</h3>
             <p class="mb-4">Питання: <strong>${data.question}</strong></p>
             <p class="text-center text-gray-600">Черга гравця ${data.currentPlayer.name}</p>
         `;
         
-        this.showQuestModal('Хто, де, коли?', modalContent, [], null);
+        this.showQuestModal('Хто, де, коли? - Творчий квест', modalContent, [], null);
     }
     
     submitMadLibsAnswer() {
@@ -2293,7 +2293,7 @@ class MultiplayerGame extends EducationalPathGame {
             </div>
         `;
         
-        this.showQuestModal('Хто, де, коли?', modalContent, [
+        this.showQuestModal('Хто, де, коли? - Творчий квест', modalContent, [
             { text: 'Закрити', callback: () => this.closeMiniGame() }
         ]);
     }

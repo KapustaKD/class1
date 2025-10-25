@@ -1021,14 +1021,29 @@ io.on('connection', (socket) => {
     socket.on('test_answer', (data) => {
         console.log('Отримано відповідь на тест:', data);
         const player = players.get(socket.id);
-        if (!player) return;
+        if (!player) {
+            console.log('Гравець не знайдений');
+            return;
+        }
         
         const room = rooms.get(data.roomId);
-        if (!room) return;
+        if (!room) {
+            console.log('Кімната не знайдена');
+            return;
+        }
+        
+        console.log('Поточний стан кімнати:', {
+            currentPlayerIndex: room.currentPlayerIndex,
+            currentEventPlayerId: room.currentEventPlayerId,
+            gameState: room.gameState
+        });
         
         // Знаходимо гравця в кімнаті
         const roomPlayer = room.gameData.players.find(p => p.id === player.id);
-        if (!roomPlayer) return;
+        if (!roomPlayer) {
+            console.log('Гравець не знайдений в кімнаті');
+            return;
+        }
         
         // Перевіряємо правильність відповіді
         const questionData = require('./testQuestionsData.js')[data.cellNumber];
@@ -1078,12 +1093,19 @@ io.on('connection', (socket) => {
         // Передаємо хід наступному гравцю
         room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.gameData.players.length;
         
+        console.log('Хід передано. Новий поточний гравець:', {
+            currentPlayerIndex: room.currentPlayerIndex,
+            nextPlayerName: room.gameData.players[room.currentPlayerIndex].name
+        });
+        
         // Відправляємо оновлення стану після передачі ходу
         io.to(room.id).emit('game_state_update', {
             players: room.gameData.players,
             currentPlayerIndex: room.currentPlayerIndex,
             gameActive: room.gameState === 'playing'
         });
+        
+        console.log('Відправлено оновлення стану гри');
         
         // Відправляємо повідомлення про передачу ходу
         const nextPlayer = room.gameData.players[room.currentPlayerIndex];

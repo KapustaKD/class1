@@ -130,6 +130,13 @@ body {
     font-weight: bold;
 }
 
+/* Тестові завдання */
+.board-cell.test-question {
+    background-color: #3b82f6 !important;
+    color: white;
+    font-weight: bold;
+}
+
 @keyframes pathGlow {
     0%, 100% { 
         box-shadow: 0 0 15px #90be6d;

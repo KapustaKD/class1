@@ -932,8 +932,8 @@ body.bg-gray-800 {
 }
 
 .glassmorphism-input {
-    background-color: rgba(55, 65, 81, 0.7);
-    border: 1px solid rgba(156, 163, 175, 0.5);
+    background-color: rgba(55, 65, 81, 0.5);
+    border: 1px solid rgba(156, 163, 175, 0.3);
     color: white;
     border-radius: 8px;
     padding: 12px;
@@ -942,6 +942,7 @@ body.bg-gray-800 {
     font-size: 1.1rem;
     text-align: center;
     font-weight: bold;
+    backdrop-filter: blur(10px);
 }
 
 .glassmorphism-input::placeholder {
@@ -949,8 +950,8 @@ body.bg-gray-800 {
 }
 
 .glassmorphism-btn-primary {
-    background-color: rgba(147, 51, 234, 0.8);
-    border: none;
+    background-color: rgba(147, 51, 234, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     color: white;
     font-weight: bold;
     padding: 12px 24px;
@@ -960,16 +961,18 @@ body.bg-gray-800 {
     font-size: 1rem;
     transition: all 0.3s ease;
     cursor: pointer;
+    backdrop-filter: blur(10px);
 }
 
 .glassmorphism-btn-primary:hover {
-    background-color: rgba(147, 51, 234, 1);
+    background-color: rgba(147, 51, 234, 0.8);
     transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.5);
 }
 
 .glassmorphism-btn-secondary {
-    background-color: rgba(55, 65, 81, 0.7);
-    border: none;
+    background-color: rgba(55, 65, 81, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: white;
     font-weight: bold;
     padding: 12px 24px;
@@ -978,11 +981,13 @@ body.bg-gray-800 {
     font-size: 1rem;
     transition: all 0.3s ease;
     cursor: pointer;
+    backdrop-filter: blur(10px);
 }
 
 .glassmorphism-btn-secondary:hover {
-    background-color: rgba(55, 65, 81, 1);
+    background-color: rgba(55, 65, 81, 0.7);
     transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
 /* Фонове зображення для body */
@@ -991,4 +996,41 @@ body.glassmorphism-bg {
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
+}
+
+/* Модальне вікно з картинкою room_creation */
+.glassmorphism-content-with-image {
+    background-image: url('image/modal_window/room_creation.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 0;
+    min-height: 450px;
+    width: 90%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+/* Додаємо легкий overlay для кращої читабельності тексту */
+.glassmorphism-content-with-image::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    pointer-events: none;
+}
+
+/* Забезпечуємо, що контент буде поверх overlay */
+.glassmorphism-content-with-image > * {
+    position: relative;
+    z-index: 1;
 }

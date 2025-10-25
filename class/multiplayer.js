@@ -95,6 +95,7 @@ class MultiplayerGame extends EducationalPathGame {
         // Додаємо елементи для початку гри
         this.startGameSection = document.getElementById('start-game-section');
         this.startGameBtn = document.getElementById('start-game-btn-lobby');
+        this.testEventsBtn = document.getElementById('test-events-btn');
         
         // Додаємо елемент для виходу з кімнати
         this.leaveRoomBtn = document.getElementById('leave-room-btn');
@@ -155,6 +156,13 @@ class MultiplayerGame extends EducationalPathGame {
         // Обробник для кнопки початку гри
         if (this.startGameBtn) {
             this.startGameBtn.addEventListener('click', () => this.startOnlineGame());
+        }
+        
+        // Обробник кнопки тестування подій
+        if (this.testEventsBtn) {
+            this.testEventsBtn.addEventListener('click', () => {
+                this.showEventTestModal();
+            });
         }
         
         // Обробник для кнопки виходу з кімнати
@@ -3134,6 +3142,172 @@ class MultiplayerGame extends EducationalPathGame {
         };
         
         return winConditions[playerChoice] === opponentChoice ? 'win' : 'lose';
+    }
+    
+    // Метод для показу модального вікна тестування подій
+    showEventTestModal() {
+        if (!this.isHost) {
+            console.log('Тільки хост може тестувати події');
+            return;
+        }
+        
+        const events = [
+            { type: 'pvp-quest', name: 'Пвп квест', description: 'Тестування пвп квесту' },
+            { type: 'creative-quest', name: 'Творчий квест', description: 'Тестування творчого квесту' },
+            { type: 'mad-libs-quest', name: 'Хто, де, коли?', description: 'Тестування квесту "Хто, де, коли?"' },
+            { type: 'webnovella-quest', name: 'Вебновела', description: 'Тестування вебновели' },
+            { type: 'alternative-path', name: 'Обхідний шлях', description: 'Тестування обхідного шляху' },
+            { type: 'reincarnation', name: 'Реінкарнація', description: 'Тестування реінкарнації' }
+        ];
+        
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">🧪 Тестування подій</h3>
+            <p class="mb-4 text-gray-600">Оберіть подію для тестування:</p>
+            <div class="grid grid-cols-1 gap-3">
+        `;
+        
+        events.forEach(event => {
+            modalContent += `
+                <button class="test-event-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300" 
+                        data-event-type="${event.type}">
+                    <div class="text-left">
+                        <div class="font-bold">${event.name}</div>
+                        <div class="text-sm opacity-90">${event.description}</div>
+                    </div>
+                </button>
+            `;
+        });
+        
+        modalContent += `
+            </div>
+            <div class="mt-4 text-center">
+                <button class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="this.closest('.modal').classList.add('hidden')">
+                    Закрити
+                </button>
+            </div>
+        `;
+        
+        this.showQuestModal('Тестування подій', modalContent, [], null);
+        
+        // Додаємо обробники для кнопок тестування
+        setTimeout(() => {
+            document.querySelectorAll('.test-event-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const eventType = e.currentTarget.dataset.eventType;
+                    this.testEvent(eventType);
+                });
+            });
+        }, 100);
+    }
+    
+    // Метод для тестування конкретної події
+    testEvent(eventType) {
+        console.log(`Тестуємо подію: ${eventType}`);
+        
+        switch(eventType) {
+            case 'pvp-quest':
+                this.testPvPQuest();
+                break;
+            case 'creative-quest':
+                this.testCreativeQuest();
+                break;
+            case 'mad-libs-quest':
+                this.testMadLibsQuest();
+                break;
+            case 'webnovella-quest':
+                this.testWebNovellaQuest();
+                break;
+            case 'alternative-path':
+                this.testAlternativePath();
+                break;
+            case 'reincarnation':
+                this.testReincarnation();
+                break;
+        }
+    }
+    
+    // Тестування пвп квесту
+    testPvPQuest() {
+        const testData = {
+            title: 'Пвп квест',
+            description: 'Напишіть якомога більше принципів освіти, розділяючи їх комами',
+            timer: 30,
+            gameType: 'text'
+        };
+        
+        this.showTimedTextQuest(testData);
+    }
+    
+    // Тестування творчого квесту
+    testCreativeQuest() {
+        const testData = {
+            title: 'Творчий квест',
+            description: 'Опишіть ідеальну школу майбутнього',
+            timer: 60
+        };
+        
+        this.showCreativeQuest(testData);
+    }
+    
+    // Тестування квесту "Хто, де, коли?"
+    testMadLibsQuest() {
+        const testData = {
+            question: 'Хто?',
+            activePlayerId: this.playerId,
+            currentPlayer: { name: 'Тестовий гравець' }
+        };
+        
+        this.showMadLibsQuestion(testData);
+    }
+    
+    // Тестування вебновели
+    testWebNovellaQuest() {
+        const testData = {
+            title: 'Вебновела',
+            description: 'Продовжіть історію про подорож у часі',
+            currentSentence: 'Давним-давно в далекій галактиці...'
+        };
+        
+        this.showWebNovellaEvent(testData);
+    }
+    
+    // Тестування обхідного шляху
+    testAlternativePath() {
+        const testData = {
+            title: 'Обхідний шлях',
+            description: 'Ви можете обійти наступну клітинку за 15 ОО',
+            cost: 15,
+            target: 18
+        };
+        
+        this.showQuestModal('Обхідний шлях', `
+            <h3 class="text-2xl font-bold mb-4">🛤️ Обхідний шлях</h3>
+            <p class="mb-4">${testData.description}</p>
+            <div class="flex gap-3">
+                <button class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded" onclick="this.closest('.modal').classList.add('hidden')">
+                    Так, обійти (${testData.cost} ОО)
+                </button>
+                <button class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="this.closest('.modal').classList.add('hidden')">
+                    Ні, йти далі
+                </button>
+            </div>
+        `, [], null);
+    }
+    
+    // Тестування реінкарнації
+    testReincarnation() {
+        this.showQuestModal('Реінкарнація', `
+            <h3 class="text-2xl font-bold mb-4">🔄 Реінкарнація</h3>
+            <p class="mb-4">Ви можете повернутися на початок гри за 50 ОО</p>
+            <div class="flex gap-3">
+                <button class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded" onclick="this.closest('.modal').classList.add('hidden')">
+                    Так, повернутися (50 ОО)
+                </button>
+                <button class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="this.closest('.modal').classList.add('hidden')">
+                    Ні, залишитися
+                </button>
+            </div>
+        `, [], null);
     }
 }
 

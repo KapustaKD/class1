@@ -1362,7 +1362,7 @@ class MultiplayerGame extends EducationalPathGame {
         modalContent += `
             </div>
             <div class="mt-4 text-center">
-                <button class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="document.querySelector('.modal, .glassmorphism-modal').classList.add('hidden')">
+                <button class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="document.getElementById('quest-modal').classList.add('hidden')">
                     Закрити
                 </button>
             </div>
@@ -1426,7 +1426,7 @@ class MultiplayerGame extends EducationalPathGame {
             <h3 class="text-2xl font-bold mb-4">${data.isCorrect ? '✅ Правильно!' : '❌ Неправильно'}</h3>
             <p class="mb-4 text-lg">${data.resultMessage}</p>
             <div class="text-center">
-                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" onclick="document.querySelector('.modal, .glassmorphism-modal').classList.add('hidden')">
+                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" onclick="document.getElementById('quest-modal').classList.add('hidden')">
                     Продовжити
                 </button>
             </div>
@@ -1436,7 +1436,7 @@ class MultiplayerGame extends EducationalPathGame {
         
         // Автоматично закриваємо модальне вікно через 3 секунди
         setTimeout(() => {
-            const modal = document.querySelector('.modal, .glassmorphism-modal');
+            const modal = document.getElementById('quest-modal');
             if (modal) {
                 modal.classList.add('hidden');
             }
@@ -1530,7 +1530,7 @@ class MultiplayerGame extends EducationalPathGame {
         modalContent += `
             </div>
             <div class="mt-4 text-center">
-                <button class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="document.querySelector('.modal, .glassmorphism-modal').classList.add('hidden')">
+                <button class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="document.getElementById('quest-modal').classList.add('hidden')">
                     Закрити
                 </button>
             </div>
@@ -3405,7 +3405,7 @@ class MultiplayerGame extends EducationalPathGame {
         modalContent += `
             </div>
             <div class="mt-4 text-center">
-                <button class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="document.querySelector('.modal, .glassmorphism-modal').classList.add('hidden')">
+                <button class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="document.getElementById('quest-modal').classList.add('hidden')">
                     Закрити
                 </button>
             </div>
@@ -3588,10 +3588,10 @@ class MultiplayerGame extends EducationalPathGame {
             <h3 class="text-2xl font-bold mb-4">🔄 Реінкарнація</h3>
             <p class="mb-4">Ви можете повернутися на початок гри за 50 ОО</p>
             <div class="flex gap-3">
-                <button class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded" onclick="document.querySelector('.modal, .glassmorphism-modal').classList.add('hidden')">
+                <button class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded" onclick="document.getElementById('quest-modal').classList.add('hidden')">
                     Так, повернутися (50 ОО)
                 </button>
-                <button class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="document.querySelector('.modal, .glassmorphism-modal').classList.add('hidden')">
+                <button class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="document.getElementById('quest-modal').classList.add('hidden')">
                     Ні, залишитися
                 </button>
             </div>

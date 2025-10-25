@@ -420,6 +420,10 @@ class MultiplayerGame extends EducationalPathGame {
                 this.socket.on('quest_started', (data) => {
                     this.handleRemoteQuest(data);
                 });
+                
+                this.socket.on('test_result', (data) => {
+                    this.handleTestResult(data);
+                });
 
                 
                 // Обмін місцями
@@ -1309,6 +1313,10 @@ class MultiplayerGame extends EducationalPathGame {
             }
             
             return; // Виходимо, щоб не показувати стандартне модальне вікно
+        } else if (data.eventType === 'test-question') {
+            // Показуємо тестове завдання всім гравцям
+            this.showTestQuestionForAll(data);
+            return; // Виходимо, щоб не показувати стандартне модальне вікно
         }
         
         this.showQuestModal('Подія', modalContent, buttons, 'image/modal_window/bypass_road.png');
@@ -1323,6 +1331,62 @@ class MultiplayerGame extends EducationalPathGame {
             eventData
         });
         this.questModal.classList.add('hidden');
+    }
+    
+    // Показ тестового завдання всім гравцям
+    showTestQuestionForAll(data) {
+        const questionData = window.TEST_QUESTIONS[data.eventData.cellNumber];
+        if (!questionData) {
+            console.error(`Тестове завдання для клітинки ${data.eventData.cellNumber} не знайдено`);
+            return;
+        }
+
+        const isMyEvent = data.playerId === this.playerId;
+
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">📝 Тестове завдання</h3>
+            <p class="mb-4 text-sm text-gray-600">${data.playerName} потрапив на тестове завдання!</p>
+            <p class="mb-4 text-lg">${questionData.question}</p>
+            <div class="space-y-3">
+        `;
+
+        // Додаємо варіанти відповідей
+        Object.entries(questionData.options).forEach(([key, value]) => {
+            modalContent += `
+                <button class="w-full p-3 text-left border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors test-option-btn" data-answer="${key}">
+                    <span class="font-bold">${key})</span> ${value}
+                </button>
+            `;
+        });
+
+        modalContent += `
+            </div>
+            <div class="mt-4 text-center">
+                <button class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="this.closest('.modal').classList.add('hidden')">
+                    Закрити
+                </button>
+            </div>
+        `;
+
+        this.showQuestModal('Тестове завдання', modalContent, [], null);
+
+        // Додаємо обробники для кнопок відповідей
+        if (isMyEvent) {
+            setTimeout(() => {
+                document.querySelectorAll('.test-option-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const selectedAnswer = e.currentTarget.dataset.answer;
+                        
+                        // Відправляємо відповідь на сервер
+                        this.socket.emit('test_answer', {
+                            roomId: this.roomId,
+                            cellNumber: data.eventData.cellNumber,
+                            answer: selectedAnswer
+                        });
+                    });
+                });
+            }, 100);
+        }
     }
     
     handleEventResult(data) {
@@ -1345,6 +1409,41 @@ class MultiplayerGame extends EducationalPathGame {
         // Оновлюємо UI
         this.updatePlayerInfo();
         this.updateLeaderboard();
+    }
+    
+    // Обробка результату тестового завдання
+    handleTestResult(data) {
+        console.log('Обробляємо результат тесту:', data);
+        
+        // Оновлюємо очки гравця
+        const player = this.players.find(p => p.id === data.playerId);
+        if (player) {
+            player.points = data.newPoints;
+        }
+        
+        // Показуємо результат тесту всім гравцям
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">${data.isCorrect ? '✅ Правильно!' : '❌ Неправильно'}</h3>
+            <p class="mb-4 text-lg">${data.resultMessage}</p>
+            <div class="text-center">
+                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" onclick="this.closest('.modal').classList.add('hidden')">
+                    Продовжити
+                </button>
+            </div>
+        `;
+
+        this.showQuestModal('Результат тесту', modalContent, [], null);
+        
+        // Автоматично закриваємо модальне вікно через 3 секунди
+        setTimeout(() => {
+            const modal = document.querySelector('.modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }, 3000);
+        
+        // Оновлюємо інформацію про гравців
+        this.updatePlayerInfo();
     }
 
 

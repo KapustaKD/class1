@@ -1383,6 +1383,12 @@ class MultiplayerGame extends EducationalPathGame {
                             cellNumber: data.eventData.cellNumber,
                             answer: selectedAnswer
                         });
+                        
+                        // Закриваємо модальне вікно з тестом
+                        const modal = document.getElementById('quest-modal');
+                        if (modal) {
+                            modal.classList.add('hidden');
+                        }
                     });
                 });
             }, 100);
@@ -1478,7 +1484,8 @@ class MultiplayerGame extends EducationalPathGame {
         this.currentPlayerIndex = data.currentPlayerIndex;
         this.gameActive = data.gameActive;
         
-        this.updateUI();
+        this.updatePlayerInfo();
+        this.updateDiceButtonState();
         
         // Оновлюємо позиції фішок
         this.players.forEach(player => {

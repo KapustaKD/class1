@@ -2041,7 +2041,7 @@ class EducationalPathGame {
         modalContent += `
             </div>
             <div class="mt-4 text-center">
-                <button class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="document.querySelector('.modal, .glassmorphism-modal').classList.add('hidden')">
+                <button class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="document.getElementById('quest-modal').classList.add('hidden')">
                     Закрити
                 </button>
             </div>
@@ -2073,7 +2073,7 @@ class EducationalPathGame {
             <h3 class="text-2xl font-bold mb-4">${isCorrect ? '✅ Правильно!' : '❌ Неправильно'}</h3>
             <p class="mb-4 text-lg">${resultText}</p>
             <div class="text-center">
-                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" onclick="document.querySelector('.modal, .glassmorphism-modal').classList.add('hidden')">
+                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" onclick="document.getElementById('quest-modal').classList.add('hidden')">
                     Продовжити
                 </button>
             </div>

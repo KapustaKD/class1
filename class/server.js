@@ -1514,9 +1514,11 @@ io.on('connection', (socket) => {
             const story = room.madLibsState.answers
                 .sort((a, b) => a.questionIndex - b.questionIndex)
                 .map((answer, index) => {
-                    // Додаємо "і в підсумку" між питаннями 4 і 5 (індекси 4 і 5)
-                    if (index === 4) {
-                        return answer.answer + ' і в підсумку';
+                    // Додаємо кому після питання "Де?" та змінюємо фразу
+                    if (index === 1) { // Питання "Де?" має індекс 1
+                        return answer.answer + ',';
+                    } else if (index === 4) { // Між питаннями 4 і 5
+                        return answer.answer + ' і все скінчилось';
                     }
                     return answer.answer;
                 })

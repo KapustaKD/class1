@@ -132,7 +132,7 @@ class EducationalPathGame {
             17: { type: 'test-question' },
             20: { type: 'test-question' },
             23: { type: 'test-question' },
-            26: { type: 'alternative-path', target: 33, cost: 12, description: 'Обхідний шлях до клітинки 33 за 12 ОО' },
+            26: { type: 'test-question' },
             29: { type: 'test-question' },
             35: { type: 'test-question' },
             38: { type: 'test-question' },
@@ -149,7 +149,7 @@ class EducationalPathGame {
             71: { type: 'test-question' },
             74: { type: 'test-question' },
             77: { type: 'test-question' },
-            80: { type: 'alternative-path', target: 91, cost: 18, description: 'Обхідний шлях до клітинки 91 за 18 ОО' },
+            80: { type: 'test-question' },
             83: { type: 'test-question' },
             86: { type: 'test-question' },
             89: { type: 'test-question' },
@@ -157,12 +157,10 @@ class EducationalPathGame {
             95: { type: 'test-question' },
             98: { type: 'test-question' },
 
-            // Обхідні шляхи: 5→11, 14→18, 26→33, 46→57, 80→91
+            // Обхідні шляхи: 5→11, 14→18, 46→57
             5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
             14: { type: 'alternative-path', target: 18, cost: 8, description: 'Обхідний шлях до клітинки 18 за 8 ОО' },
-            26: { type: 'alternative-path', target: 33, cost: 12, description: 'Обхідний шлях до клітинки 33 за 12 ОО' },
             46: { type: 'alternative-path', target: 57, cost: 15, description: 'Обхідний шлях до клітинки 57 за 15 ОО' },
-            80: { type: 'alternative-path', target: 91, cost: 18, description: 'Обхідний шлях до клітинки 91 за 18 ОО' },
 
             // Реінкарнація та випадкова зміна класу: 12, 22, 43, 75, 97
             12: { type: 'reincarnation', nextEpoch: 2, points: 30 },

@@ -1636,37 +1636,51 @@ class MultiplayerGame extends EducationalPathGame {
     
     // Показуємо модальне вікно приєднання до кімнати
     showRoomJoinedModal(roomCode) {
-        const modalContent = `
-            <div class="text-center">
-                <p class="mb-4 text-lg font-bold text-green-600">Вітаю! Ви зайшли у кімнату, створену гравцем, як Земля Боженькою.</p>
-                <p class="mb-4">Код кімнати:</p>
-                <div class="bg-gray-100 p-4 rounded-lg mb-4 text-center">
-                    <span class="text-3xl font-bold text-blue-600">${roomCode}</span>
+        // Додаємо клас для фонового зображення
+        document.body.classList.add('glassmorphism-bg');
+        
+        const modalHTML = `
+            <div class="glassmorphism-modal" id="room-joined-modal">
+                <div class="glassmorphism-content-with-image">
+                    <div class="glassmorphism-header">
+                        <h2>🎉 Приєднано до кімнати!</h2>
+                        <p>Вітаю! Ви зайшли у кімнату, створену гравцем, як Земля Боженькою.</p>
+                    </div>
+                    
+                    <div class="glassmorphism-spacer"></div>
+                    
+                    <div class="glassmorphism-actions">
+                        <button class="glassmorphism-btn-primary" id="close-room-modal-btn">
+                            Ай, шайтаан. Добре!
+                        </button>
+                    </div>
                 </div>
-                <button id="close-room-modal-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
-                    Закрити
-                </button>
             </div>
         `;
         
-        if (window.gameUI) {
-            window.gameUI.showQuestModal('Приєднано до кімнати', modalContent, [], 'image/modal_window/room_creation.png');
-            
-            // Додаємо обробник події
-            setTimeout(() => {
-                const closeBtn = document.getElementById('close-room-modal-btn');
-                
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', () => {
-                        if (window.gameUI) {
-                            window.gameUI.hideModal('quest');
-                        }
-                    });
-                }
-            }, 100);
-        } else {
-            console.error('window.gameUI не знайдено');
+        // Видаляємо існуюче модальне вікно, якщо є
+        const existingModal = document.getElementById('room-joined-modal');
+        if (existingModal) {
+            existingModal.remove();
         }
+        
+        // Додаємо нове модальне вікно
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Додаємо обробник події
+        setTimeout(() => {
+            const closeBtn = document.getElementById('close-room-modal-btn');
+            
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    const modal = document.getElementById('room-joined-modal');
+                    if (modal) {
+                        modal.remove();
+                        document.body.classList.remove('glassmorphism-bg');
+                    }
+                });
+            }
+        }, 100);
     }
     
     // Нові міні-ігри

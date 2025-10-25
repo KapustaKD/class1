@@ -10,10 +10,14 @@ function passTurnToNextPlayer(room) {
     room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
     console.log('Новий currentPlayerIndex:', room.gameData.currentPlayerIndex);
     
+    // Синхронізуємо з room.currentPlayerIndex
+    room.currentPlayerIndex = room.gameData.currentPlayerIndex;
+    
     // Пропускаємо гравців, які вибули
     while (room.gameData.players[room.gameData.currentPlayerIndex].hasWon || 
            room.gameData.players[room.gameData.currentPlayerIndex].hasLost) {
         room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+        room.currentPlayerIndex = room.gameData.currentPlayerIndex; // Синхронізуємо
         console.log('Пропущено вибулого гравця, новий індекс:', room.gameData.currentPlayerIndex);
     }
     
@@ -407,6 +411,7 @@ io.on('connection', (socket) => {
             moveModifier: 0
         }));
         room.gameData.currentPlayerIndex = 0;
+        room.currentPlayerIndex = 0; // Синхронізуємо
         
         // Призначаємо гравців до кожної події для презентації
         room.gameData.eventAssignments = {};
@@ -536,9 +541,16 @@ io.on('connection', (socket) => {
         console.log('Поточний гравець:', currentPlayer.name, 'ID:', currentPlayer.id);
         console.log('Гравець, який кидає:', player.name, 'ID:', player.id);
         
-        if (currentPlayer.id !== player.id) {
+        // Перевіряємо, чи це хід цього гравця (з урахуванням можливого перепідключення)
+        if (currentPlayer.id !== player.id && currentPlayer.name !== player.name) {
             console.log('Не хід цього гравця');
             return;
+        }
+        
+        // Якщо ID не співпадають, але імена співпадають, оновлюємо ID
+        if (currentPlayer.id !== player.id && currentPlayer.name === player.name) {
+            console.log('Оновлюємо ID гравця після перепідключення');
+            currentPlayer.id = player.id;
         }
         
         console.log('Обробляємо кидання кубика для гравця:', currentPlayer.name);
@@ -1091,28 +1103,7 @@ io.on('connection', (socket) => {
         });
         
         // Передаємо хід наступному гравцю
-        room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.gameData.players.length;
-        
-        console.log('Хід передано. Новий поточний гравець:', {
-            currentPlayerIndex: room.currentPlayerIndex,
-            nextPlayerName: room.gameData.players[room.currentPlayerIndex].name
-        });
-        
-        // Відправляємо оновлення стану після передачі ходу
-        io.to(room.id).emit('game_state_update', {
-            players: room.gameData.players,
-            currentPlayerIndex: room.currentPlayerIndex,
-            gameActive: room.gameState === 'playing'
-        });
-        
-        console.log('Відправлено оновлення стану гри');
-        
-        // Відправляємо повідомлення про передачу ходу
-        const nextPlayer = room.gameData.players[room.currentPlayerIndex];
-        io.to(room.id).emit('chat_message', {
-            type: 'system',
-            message: `Хід передано гравцю ${nextPlayer.name}`
-        });
+        passTurnToNextPlayer(room);
     });
     
     // Гравець покидає кімнату
@@ -1360,6 +1351,9 @@ io.on('connection', (socket) => {
 
             // Очищуємо стан гри
             room.timedTextQuestState = null;
+            
+            // Передаємо хід наступному гравцю
+            passTurnToNextPlayer(room);
         }
     });
 

@@ -72,7 +72,39 @@ const SPECIAL_CELLS = {
     81: { type: 'webnovella' },
     90: { type: 'webnovella' },
     96: { type: 'pvp-quest' },
-    99: { type: 'mad-libs' }
+    99: { type: 'mad-libs' },
+    
+    // Тестові завдання: 2, 8, 11, 17, 20, 23, 26, 29, 35, 38, 41, 44, 47, 50, 53, 56, 59, 62, 65, 68, 71, 74, 77, 80, 83, 86, 89, 92, 95, 98
+    2: { type: 'test-question' },
+    8: { type: 'test-question' },
+    11: { type: 'test-question' },
+    17: { type: 'test-question' },
+    20: { type: 'test-question' },
+    23: { type: 'test-question' },
+    26: { type: 'test-question' },
+    29: { type: 'test-question' },
+    35: { type: 'test-question' },
+    38: { type: 'test-question' },
+    41: { type: 'test-question' },
+    44: { type: 'test-question' },
+    47: { type: 'test-question' },
+    50: { type: 'test-question' },
+    53: { type: 'test-question' },
+    56: { type: 'test-question' },
+    59: { type: 'test-question' },
+    62: { type: 'test-question' },
+    65: { type: 'test-question' },
+    68: { type: 'test-question' },
+    71: { type: 'test-question' },
+    74: { type: 'test-question' },
+    77: { type: 'test-question' },
+    80: { type: 'test-question' },
+    83: { type: 'test-question' },
+    86: { type: 'test-question' },
+    89: { type: 'test-question' },
+    92: { type: 'test-question' },
+    95: { type: 'test-question' },
+    98: { type: 'test-question' }
 };
 
 const app = express();
@@ -983,6 +1015,66 @@ io.on('connection', (socket) => {
         
         // Завжди передаємо хід після завершення події
         passTurnToNextPlayer(room);
+    });
+    
+    // Обробляємо відповідь на тестове завдання
+    socket.on('test_answer', (data) => {
+        console.log('Отримано відповідь на тест:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+        
+        const room = rooms.get(data.roomId);
+        if (!room) return;
+        
+        // Знаходимо гравця в кімнаті
+        const roomPlayer = room.gameData.players.find(p => p.id === player.id);
+        if (!roomPlayer) return;
+        
+        // Перевіряємо правильність відповіді
+        const questionData = require('./testQuestionsData.js')[data.cellNumber];
+        if (!questionData) {
+            console.error(`Тестове завдання для клітинки ${data.cellNumber} не знайдено`);
+            return;
+        }
+        
+        const isCorrect = data.answer === questionData.correctAnswer;
+        let resultMessage = '';
+        
+        if (isCorrect) {
+            // Додаємо очки за правильну відповідь
+            roomPlayer.points += 5;
+            player.points += 5;
+            resultMessage = `${player.name} правильно відповів на тестове завдання! Отримано 5 ОО.`;
+        } else {
+            resultMessage = `${player.name} неправильно відповів на тестове завдання. Правильна відповідь: ${questionData.correctAnswer}`;
+        }
+        
+        // Очищуємо поточну подію
+        room.currentEventPlayerId = null;
+        room.currentEventData = null;
+        
+        // Оновлюємо стан гри
+        io.to(room.id).emit('game_state_update', {
+            players: room.gameData.players,
+            currentPlayerIndex: room.currentPlayerIndex,
+            gameActive: room.gameState === 'playing'
+        });
+        
+        // Відправляємо повідомлення в чат
+        io.to(room.id).emit('chat_message', {
+            type: 'system',
+            message: resultMessage
+        });
+        
+        // Передаємо хід наступному гравцю
+        room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.gameData.players.length;
+        
+        // Відправляємо оновлення стану
+        io.to(room.id).emit('game_state_update', {
+            players: room.gameData.players,
+            currentPlayerIndex: room.currentPlayerIndex,
+            gameActive: room.gameState === 'playing'
+        });
     });
     
     // Гравець покидає кімнату

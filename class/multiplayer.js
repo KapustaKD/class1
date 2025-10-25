@@ -1850,7 +1850,7 @@ class MultiplayerGame extends EducationalPathGame {
             <div class="mb-4">
                 <h4 class="font-bold">Історія:</h4>
                 <div id="story-content" class="bg-gray-100 p-3 rounded min-h-20">
-                    ${data.gameState.story.map(s => `<p>${s.playerName}: ${s.sentence}</p>`).join('')}
+                    <p>${data.gameState.story.map(s => s.sentence).join(' ')}</p>
                 </div>
             </div>
         `;
@@ -1966,7 +1966,7 @@ class MultiplayerGame extends EducationalPathGame {
             <div class="mb-4">
                 <h4 class="font-bold">Історія:</h4>
                 <div id="story-content" class="bg-gray-100 p-3 rounded min-h-20">
-                    ${data.gameState.story.map(s => `<p>${s.playerName}: ${s.sentence}</p>`).join('')}
+                    <p>${data.gameState.story.map(s => s.sentence).join(' ')}</p>
                 </div>
             </div>
         `;
@@ -2008,7 +2008,7 @@ class MultiplayerGame extends EducationalPathGame {
             <div class="mb-4">
                 <h4 class="font-bold">Фінальна історія:</h4>
                 <div class="bg-gray-100 p-3 rounded">
-                    ${data.story.map(s => `<p>${s.playerName}: ${s.sentence}</p>`).join('')}
+                    <p>${data.story.map(s => s.sentence).join(' ')}</p>
                 </div>
             </div>
         `;

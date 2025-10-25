@@ -1595,24 +1595,14 @@ class MultiplayerGame extends EducationalPathGame {
                 <div class="glassmorphism-content-with-image">
                     <div class="glassmorphism-header">
                         <h2>🎉 Кімната створена!</h2>
-                        <p>Поділіться цим кодом з іншими гравцями</p>
+                        <p>Вітаю! Ви створили кімнату, як боженька Землю.</p>
                     </div>
                     
                     <div class="glassmorphism-spacer"></div>
                     
                     <div class="glassmorphism-actions">
-                        <input type="text" 
-                               value="${roomCode}" 
-                               readonly 
-                               class="glassmorphism-input"
-                               id="room-code-display">
-                        
-                        <button class="glassmorphism-btn-primary" id="copy-code-btn">
-                            📋 Скопіювати код
-                        </button>
-                        
-                        <button class="glassmorphism-btn-secondary" id="close-room-modal-btn">
-                            Закрити
+                        <button class="glassmorphism-btn-primary" id="close-room-modal-btn">
+                            Ай, шайтаан. Добре!
                         </button>
                     </div>
                 </div>
@@ -1628,29 +1618,9 @@ class MultiplayerGame extends EducationalPathGame {
         // Додаємо нове модальне вікно
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         
-        // Додаємо обробники подій
+        // Додаємо обробник події
         setTimeout(() => {
-            const copyBtn = document.getElementById('copy-code-btn');
             const closeBtn = document.getElementById('close-room-modal-btn');
-            
-            if (copyBtn) {
-                copyBtn.addEventListener('click', () => {
-                    navigator.clipboard.writeText(roomCode).then(() => {
-                        // Змінюємо текст кнопки на короткий час
-                        const originalText = copyBtn.innerHTML;
-                        copyBtn.innerHTML = '✅ Скопійовано!';
-                        copyBtn.style.backgroundColor = 'rgba(34, 197, 94, 0.8)';
-                        
-                        setTimeout(() => {
-                            copyBtn.innerHTML = originalText;
-                            copyBtn.style.backgroundColor = 'rgba(147, 51, 234, 0.8)';
-                        }, 2000);
-                    }).catch(err => {
-                        console.error('Помилка копіювання:', err);
-                        alert('Не вдалося скопіювати код');
-                    });
-                });
-            }
             
             if (closeBtn) {
                 closeBtn.addEventListener('click', () => {

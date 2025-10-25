@@ -1078,11 +1078,18 @@ io.on('connection', (socket) => {
         // Передаємо хід наступному гравцю
         room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.gameData.players.length;
         
-        // Відправляємо оновлення стану
+        // Відправляємо оновлення стану після передачі ходу
         io.to(room.id).emit('game_state_update', {
             players: room.gameData.players,
             currentPlayerIndex: room.currentPlayerIndex,
             gameActive: room.gameState === 'playing'
+        });
+        
+        // Відправляємо повідомлення про передачу ходу
+        const nextPlayer = room.gameData.players[room.currentPlayerIndex];
+        io.to(room.id).emit('chat_message', {
+            type: 'system',
+            message: `Хід передано гравцю ${nextPlayer.name}`
         });
     });
     

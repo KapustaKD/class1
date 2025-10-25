@@ -1393,12 +1393,67 @@ class MultiplayerGame extends EducationalPathGame {
     
     handleRemoteQuest(data) {
         // Обробка віддалених квестів
-        this.showQuestModal(data.title, data.description, data.buttons, null);
+        if (data.eventType === 'test-question') {
+            this.showTestQuestion(data);
+        } else {
+            this.showQuestModal(data.title, data.description, data.buttons, null);
+        }
     }
     
     handleQuestVote(data) {
         // Обробка голосування в квестах
         this.addChatMessage('system', `${data.player.name} проголосував за "${data.choice}"`);
+    }
+    
+    // Показ тестового завдання в мультиплеєрі
+    showTestQuestion(data) {
+        const questionData = window.TEST_QUESTIONS[data.cellNumber];
+        if (!questionData) {
+            console.error(`Тестове завдання для клітинки ${data.cellNumber} не знайдено`);
+            return;
+        }
+
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">📝 Тестове завдання</h3>
+            <p class="mb-4 text-lg">${questionData.question}</p>
+            <div class="space-y-3">
+        `;
+
+        // Додаємо варіанти відповідей
+        Object.entries(questionData.options).forEach(([key, value]) => {
+            modalContent += `
+                <button class="w-full p-3 text-left border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors test-option-btn" data-answer="${key}">
+                    <span class="font-bold">${key})</span> ${value}
+                </button>
+            `;
+        });
+
+        modalContent += `
+            </div>
+            <div class="mt-4 text-center">
+                <button class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="this.closest('.modal').classList.add('hidden')">
+                    Закрити
+                </button>
+            </div>
+        `;
+
+        this.showQuestModal('Тестове завдання', modalContent, [], null);
+
+        // Додаємо обробники для кнопок відповідей
+        setTimeout(() => {
+            document.querySelectorAll('.test-option-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const selectedAnswer = e.currentTarget.dataset.answer;
+                    
+                    // Відправляємо відповідь на сервер
+                    this.socket.emit('test_answer', {
+                        roomId: this.roomId,
+                        cellNumber: data.cellNumber,
+                        answer: selectedAnswer
+                    });
+                });
+            });
+        }, 100);
     }
     
     handleRemoteGameEnd(data) {

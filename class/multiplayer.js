@@ -1408,9 +1408,17 @@ class MultiplayerGame extends EducationalPathGame {
         }
         
         // Показуємо повідомлення всім
+        this.addChatMessage('system', data.resultMessage);
         
         // Закриваємо модальне вікно для всіх гравців
         this.questModal.classList.add('hidden');
+        
+        // Закриваємо glassmorphism модальне вікно обхідної дороги
+        const bypassModal = document.getElementById('bypass-road-modal');
+        if (bypassModal) {
+            bypassModal.remove();
+            document.body.classList.remove('glassmorphism-bg');
+        }
         
         // Оновлюємо UI
         this.updatePlayerInfo();

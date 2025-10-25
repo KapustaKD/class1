@@ -1237,22 +1237,78 @@ class MultiplayerGame extends EducationalPathGame {
                 ];
             }
         } else if (data.eventType === 'alternative-path') {
-            modalContent = `
-                <h3 class="text-2xl font-bold mb-4">Обхідна дорога!</h3>
-                <p class="mb-4">${data.playerName} знайшов обхідний шлях!</p>
-                <p class="mb-4">${data.eventData.description}</p>
+            // Використовуємо glassmorphism дизайн для обхідної дороги
+            document.body.classList.add('glassmorphism-bg');
+            
+            const modalHTML = `
+                <div class="glassmorphism-modal" id="bypass-road-modal">
+                    <div class="glassmorphism-content-bypass">
+                        <div class="glassmorphism-header">
+                            <h2>🛤️ Обхідна дорога!</h2>
+                            <p>${data.playerName} знайшов обхідний шлях!</p>
+                            <p>${data.eventData.description}</p>
+                        </div>
+                        
+                        <div class="glassmorphism-spacer"></div>
+                        
+                        <div class="glassmorphism-actions">
+                            ${isMyEvent ? `
+                                <button class="glassmorphism-btn-primary" id="bypass-yes-btn">
+                                    Так, обійти (${data.eventData.cost} ОО)
+                                </button>
+                                <button class="glassmorphism-btn-secondary" id="bypass-no-btn">
+                                    Ні, йти далі
+                                </button>
+                            ` : `
+                                <button class="glassmorphism-btn-secondary" disabled>
+                                    Очікуємо вибору...
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                </div>
             `;
             
-            if (isMyEvent) {
-                buttons = [
-                    { text: 'Так', callback: () => this.makeEventChoice('yes', data.eventType, data.eventData) },
-                    { text: 'Ні', callback: () => this.makeEventChoice('no', data.eventType, data.eventData) }
-                ];
-            } else {
-                buttons = [
-                    { text: 'Очікуємо вибору...', callback: () => {}, disabled: true }
-                ];
+            // Видаляємо існуюче модальне вікно, якщо є
+            const existingModal = document.getElementById('bypass-road-modal');
+            if (existingModal) {
+                existingModal.remove();
             }
+            
+            // Додаємо нове модальне вікно
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Додаємо обробники подій
+            if (isMyEvent) {
+                setTimeout(() => {
+                    const yesBtn = document.getElementById('bypass-yes-btn');
+                    const noBtn = document.getElementById('bypass-no-btn');
+                    
+                    if (yesBtn) {
+                        yesBtn.addEventListener('click', () => {
+                            const modal = document.getElementById('bypass-road-modal');
+                            if (modal) {
+                                modal.remove();
+                                document.body.classList.remove('glassmorphism-bg');
+                            }
+                            this.makeEventChoice('yes', data.eventType, data.eventData);
+                        });
+                    }
+                    
+                    if (noBtn) {
+                        noBtn.addEventListener('click', () => {
+                            const modal = document.getElementById('bypass-road-modal');
+                            if (modal) {
+                                modal.remove();
+                                document.body.classList.remove('glassmorphism-bg');
+                            }
+                            this.makeEventChoice('no', data.eventType, data.eventData);
+                        });
+                    }
+                }, 100);
+            }
+            
+            return; // Виходимо, щоб не показувати стандартне модальне вікно
         }
         
         this.showQuestModal('Подія', modalContent, buttons, 'image/modal_window/bypass_road.png');
@@ -3310,25 +3366,66 @@ class MultiplayerGame extends EducationalPathGame {
     
     // Тестування обхідного шляху
     testAlternativePath() {
-        const testData = {
-            title: 'Обхідний шлях',
-            description: 'Ви можете обійти наступну клітинку за 15 ОО',
-            cost: 15,
-            target: 18
-        };
+        // Додаємо клас для фонового зображення
+        document.body.classList.add('glassmorphism-bg');
         
-        this.showQuestModal('Обхідний шлях', `
-            <h3 class="text-2xl font-bold mb-4">🛤️ Обхідний шлях</h3>
-            <p class="mb-4">${testData.description}</p>
-            <div class="flex gap-3">
-                <button class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded" onclick="this.closest('.modal').classList.add('hidden')">
-                    Так, обійти (${testData.cost} ОО)
-                </button>
-                <button class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="this.closest('.modal').classList.add('hidden')">
-                    Ні, йти далі
-                </button>
+        const modalHTML = `
+            <div class="glassmorphism-modal" id="test-bypass-modal">
+                <div class="glassmorphism-content-bypass">
+                    <div class="glassmorphism-header">
+                        <h2>🛤️ Обхідна дорога!</h2>
+                        <p>Тестовий гравець знайшов обхідний шлях!</p>
+                        <p>Ви можете обійти наступну клітинку за 15 ОО</p>
+                    </div>
+                    
+                    <div class="glassmorphism-spacer"></div>
+                    
+                    <div class="glassmorphism-actions">
+                        <button class="glassmorphism-btn-primary" id="test-bypass-yes-btn">
+                            Так, обійти (15 ОО)
+                        </button>
+                        <button class="glassmorphism-btn-secondary" id="test-bypass-no-btn">
+                            Ні, йти далі
+                        </button>
+                    </div>
+                </div>
             </div>
-        `, [], null);
+        `;
+        
+        // Видаляємо існуюче модальне вікно, якщо є
+        const existingModal = document.getElementById('test-bypass-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Додаємо нове модальне вікно
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Додаємо обробники подій
+        setTimeout(() => {
+            const yesBtn = document.getElementById('test-bypass-yes-btn');
+            const noBtn = document.getElementById('test-bypass-no-btn');
+            
+            if (yesBtn) {
+                yesBtn.addEventListener('click', () => {
+                    const modal = document.getElementById('test-bypass-modal');
+                    if (modal) {
+                        modal.remove();
+                        document.body.classList.remove('glassmorphism-bg');
+                    }
+                });
+            }
+            
+            if (noBtn) {
+                noBtn.addEventListener('click', () => {
+                    const modal = document.getElementById('test-bypass-modal');
+                    if (modal) {
+                        modal.remove();
+                        document.body.classList.remove('glassmorphism-bg');
+                    }
+                });
+            }
+        }, 100);
     }
     
     // Тестування реінкарнації

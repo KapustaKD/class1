@@ -521,53 +521,57 @@ body {
     left: 0; 
     width: 100%; 
     height: 100%; 
-    background-color: rgba(0,0,0,0.7); 
+    background-color: rgba(0,0,0,0.8); 
     display: flex; 
     justify-content: center; 
     align-items: center; 
     z-index: 100; 
-    backdrop-filter: blur(5px); 
+    backdrop-filter: blur(8px); 
 }
 
 .modal-content { 
-    /* Білий фон за замовчуванням */
-    background-color: white;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     border: none;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    border-radius: 20px; /* Закруглені кути */
-    padding: 50px; /* Внутрішні відступи для тексту */
-    overflow: hidden; /* Обрізаємо контент по закруглених краях */
-
-    /* Налаштовуємо фонове зображення (якщо є) */
-    background-size: cover; /* Покриває всю область */
-    background-repeat: no-repeat;
-    background-position: center;
-
-    /* Розміри та центрування вмісту */
-    min-width: 600px;  /* Мінімальні розміри */
-    min-height: 400px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    
-    /* Зберігаємо старі властивості для сумісності */
-    max-width: 90%; 
-    width: 600px; 
-    max-height: 80vh; 
-    overflow-y: auto; 
-    transition: transform 0.3s ease, box-shadow 0.3s ease; 
+    box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+    border-radius: 24px;
+    padding: 0;
+    max-width: 90vw;
+    max-height: 90vh;
+    width: 500px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(1);
+    opacity: 1;
 }
 
-/* Стилі для тексту поверх фонового зображення або на білому фоні */
+.modal-content.show {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Заголовок модального вікна */
 .modal-content h3 {
-    color: #1f2937;
-    padding: 15px 25px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    font-weight: bold;
-    font-size: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 24px 32px;
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.75rem;
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    position: relative;
+}
+
+.modal-content h3::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+    pointer-events: none;
 }
 
 /* Якщо є фонове зображення, робимо текст білим з тінню */
@@ -578,12 +582,43 @@ body {
     backdrop-filter: blur(5px);
 }
 
-.modal-content p {
+/* Контент модального вікна */
+.modal-content > *:not(h3) {
+    padding: 32px;
     color: #374151;
-    padding: 10px 20px;
-    border-radius: 8px;
-    margin-bottom: 15px;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.modal-content .modal-body {
+    padding: 32px;
+    color: #374151;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+/* Параграфи */
+.modal-content p {
+    color: #4b5563;
+    margin-bottom: 20px;
     font-size: 1rem;
+    line-height: 1.6;
+    padding: 0;
+}
+
+/* Всі елементи всередині модального вікна (крім заголовка) */
+.modal-content > div,
+.modal-content > p,
+.modal-content > input,
+.modal-content > textarea,
+.modal-content > button {
+    margin-left: 32px;
+    margin-right: 32px;
+}
+
+.modal-content > div:last-child,
+.modal-content > button:last-child {
+    margin-bottom: 32px;
 }
 
 /* Якщо є фонове зображення, робимо текст білим з тінню */
@@ -594,20 +629,54 @@ body {
     backdrop-filter: blur(3px);
 }
 
+/* Кнопки - НОВИЙ ДИЗАЙН */
 .modal-content button {
-    background: #3b82f6 !important;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
     color: white !important;
-    border: 2px solid #2563eb !important;
-    text-shadow: none;
-    transition: all 0.3s ease;
-    border-radius: 8px;
-    font-weight: bold;
+    border: none !important;
+    padding: 16px 32px !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+    text-transform: none !important;
+    letter-spacing: 0.025em !important;
+    margin: 8px !important;
+    min-width: 120px !important;
 }
 
 .modal-content button:hover {
-    background: #2563eb !important;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4) !important;
+}
+
+.modal-content button:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Вторинні кнопки (Ні, Скасувати) */
+.modal-content button.secondary {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%) !important;
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3) !important;
+}
+
+.modal-content button.secondary:hover {
+    background: linear-gradient(135deg, #4b5563 0%, #374151 100%) !important;
+    box-shadow: 0 8px 20px rgba(107, 114, 128, 0.4) !important;
+}
+
+/* Контейнер кнопок */
+.modal-content .button-container,
+.modal-content .flex {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+    padding: 0 32px 32px 32px;
 }
 
 /* Якщо є фонове зображення, робимо кнопки з прозорістю */
@@ -807,4 +876,119 @@ body.bg-gray-800 {
 /* Відступ для ігрового поля */
 #game-container {
     margin-left: 50px;
+}
+
+/* Glassmorphism стилі для модального вікна створення кімнати */
+.glassmorphism-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.glassmorphism-content {
+    background-color: rgba(30, 30, 30, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 0;
+    min-height: 450px;
+    width: 90%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.glassmorphism-header {
+    padding: 24px 24px 16px 24px;
+    text-align: center;
+}
+
+.glassmorphism-header h2 {
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0 0 8px 0;
+}
+
+.glassmorphism-header p {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+}
+
+.glassmorphism-spacer {
+    flex-grow: 1;
+}
+
+.glassmorphism-actions {
+    padding: 16px 24px 24px 24px;
+}
+
+.glassmorphism-input {
+    background-color: rgba(55, 65, 81, 0.7);
+    border: 1px solid rgba(156, 163, 175, 0.5);
+    color: white;
+    border-radius: 8px;
+    padding: 12px;
+    width: 100%;
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+    text-align: center;
+    font-weight: bold;
+}
+
+.glassmorphism-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.glassmorphism-btn-primary {
+    background-color: rgba(147, 51, 234, 0.8);
+    border: none;
+    color: white;
+    font-weight: bold;
+    padding: 12px 24px;
+    border-radius: 8px;
+    width: 100%;
+    margin-bottom: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.glassmorphism-btn-primary:hover {
+    background-color: rgba(147, 51, 234, 1);
+    transform: translateY(-1px);
+}
+
+.glassmorphism-btn-secondary {
+    background-color: rgba(55, 65, 81, 0.7);
+    border: none;
+    color: white;
+    font-weight: bold;
+    padding: 12px 24px;
+    border-radius: 8px;
+    width: 100%;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.glassmorphism-btn-secondary:hover {
+    background-color: rgba(55, 65, 81, 1);
+    transform: translateY(-1px);
+}
+
+/* Фонове зображення для body */
+body.glassmorphism-bg {
+    background-image: url('image/fon/fon1.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
 }

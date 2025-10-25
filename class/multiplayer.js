@@ -1592,7 +1592,7 @@ class MultiplayerGame extends EducationalPathGame {
         
         const modalHTML = `
             <div class="glassmorphism-modal" id="room-created-modal">
-                <div class="glassmorphism-content">
+                <div class="glassmorphism-content-with-image">
                     <div class="glassmorphism-header">
                         <h2>🎉 Кімната створена!</h2>
                         <p>Поділіться цим кодом з іншими гравцями</p>

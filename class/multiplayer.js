@@ -1587,51 +1587,81 @@ class MultiplayerGame extends EducationalPathGame {
     
     // Показуємо модальне вікно створення кімнати
     showRoomCreatedModal(roomCode) {
-        const modalContent = `
-            <div class="text-center">
-                <p class="mb-4 text-lg font-bold text-green-600">Вітаю! Ви створили кімнату, як боженька Землю.</p>
-                <p class="mb-4">Поділіться цим кодом з іншими гравцями:</p>
-                <div class="bg-gray-100 p-4 rounded-lg mb-4 text-center">
-                    <span class="text-3xl font-bold text-blue-600">${roomCode}</span>
+        // Додаємо клас для фонового зображення
+        document.body.classList.add('glassmorphism-bg');
+        
+        const modalHTML = `
+            <div class="glassmorphism-modal" id="room-created-modal">
+                <div class="glassmorphism-content">
+                    <div class="glassmorphism-header">
+                        <h2>🎉 Кімната створена!</h2>
+                        <p>Поділіться цим кодом з іншими гравцями</p>
+                    </div>
+                    
+                    <div class="glassmorphism-spacer"></div>
+                    
+                    <div class="glassmorphism-actions">
+                        <input type="text" 
+                               value="${roomCode}" 
+                               readonly 
+                               class="glassmorphism-input"
+                               id="room-code-display">
+                        
+                        <button class="glassmorphism-btn-primary" id="copy-code-btn">
+                            📋 Скопіювати код
+                        </button>
+                        
+                        <button class="glassmorphism-btn-secondary" id="close-room-modal-btn">
+                            Закрити
+                        </button>
+                    </div>
                 </div>
-                <button id="copy-code-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mb-2">
-                    📋 Скопіювати код
-                </button>
-                <button id="close-room-modal-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
-                    Закрити
-                </button>
             </div>
         `;
         
-        if (window.gameUI) {
-            window.gameUI.showQuestModal('Кімната створена', modalContent, [], 'image/modal_window/room_creation.png');
-            
-            // Додаємо обробники подій
-            setTimeout(() => {
-                const copyBtn = document.getElementById('copy-code-btn');
-                const closeBtn = document.getElementById('close-room-modal-btn');
-                
-                if (copyBtn) {
-                    copyBtn.addEventListener('click', () => {
-                        navigator.clipboard.writeText(roomCode).then(() => {
-                            if (window.gameUI) {
-                                window.gameUI.showNotification('Код скопійовано!', 'success');
-                            }
-                        });
-                    });
-                }
-                
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', () => {
-                        if (window.gameUI) {
-                            window.gameUI.hideModal('quest');
-                        }
-                    });
-                }
-            }, 100);
-        } else {
-            console.error('window.gameUI не знайдено');
+        // Видаляємо існуюче модальне вікно, якщо є
+        const existingModal = document.getElementById('room-created-modal');
+        if (existingModal) {
+            existingModal.remove();
         }
+        
+        // Додаємо нове модальне вікно
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Додаємо обробники подій
+        setTimeout(() => {
+            const copyBtn = document.getElementById('copy-code-btn');
+            const closeBtn = document.getElementById('close-room-modal-btn');
+            
+            if (copyBtn) {
+                copyBtn.addEventListener('click', () => {
+                    navigator.clipboard.writeText(roomCode).then(() => {
+                        // Змінюємо текст кнопки на короткий час
+                        const originalText = copyBtn.innerHTML;
+                        copyBtn.innerHTML = '✅ Скопійовано!';
+                        copyBtn.style.backgroundColor = 'rgba(34, 197, 94, 0.8)';
+                        
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalText;
+                            copyBtn.style.backgroundColor = 'rgba(147, 51, 234, 0.8)';
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Помилка копіювання:', err);
+                        alert('Не вдалося скопіювати код');
+                    });
+                });
+            }
+            
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    const modal = document.getElementById('room-created-modal');
+                    if (modal) {
+                        modal.remove();
+                        document.body.classList.remove('glassmorphism-bg');
+                    }
+                });
+            }
+        }, 100);
     }
     
     // Показуємо модальне вікно приєднання до кімнати
@@ -3232,7 +3262,16 @@ class MultiplayerGame extends EducationalPathGame {
             title: 'Пвп квест',
             description: 'Напишіть якомога більше принципів освіти, розділяючи їх комами',
             timer: 30,
-            gameType: 'text'
+            gameType: 'text',
+            gameState: {
+                players: [this.playerId],
+                timer: 30,
+                gameData: {
+                    title: 'Пвп квест',
+                    description: 'Напишіть якомога більше принципів освіти, розділяючи їх комами'
+                }
+            },
+            activePlayerId: this.playerId
         };
         
         this.showTimedTextQuest(testData);
@@ -3243,7 +3282,16 @@ class MultiplayerGame extends EducationalPathGame {
         const testData = {
             title: 'Творчий квест',
             description: 'Опишіть ідеальну школу майбутнього',
-            timer: 60
+            timer: 60,
+            gameState: {
+                players: [this.playerId],
+                timer: 60,
+                gameData: {
+                    title: 'Творчий квест',
+                    description: 'Опишіть ідеальну школу майбутнього'
+                }
+            },
+            activePlayerId: this.playerId
         };
         
         this.showCreativeQuest(testData);
@@ -3265,7 +3313,12 @@ class MultiplayerGame extends EducationalPathGame {
         const testData = {
             title: 'Вебновела',
             description: 'Продовжіть історію про подорож у часі',
-            currentSentence: 'Давним-давно в далекій галактиці...'
+            currentSentence: 'Давним-давно в далекій галактиці...',
+            event: {
+                text: 'Продовжіть історію про подорож у часі',
+                currentSentence: 'Давним-давно в далекій галактиці...'
+            },
+            activePlayerId: this.playerId
         };
         
         this.showWebNovellaEvent(testData);

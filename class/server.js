@@ -81,7 +81,7 @@ const SPECIAL_CELLS = {
     17: { type: 'test-question' },
     20: { type: 'test-question' },
     23: { type: 'test-question' },
-    26: { type: 'test-question' },
+    26: { type: 'alternative-path', target: 33, cost: 20, description: 'Обхідний шлях до клітинки 33 за 20 ОО' },
     29: { type: 'test-question' },
     35: { type: 'test-question' },
     38: { type: 'test-question' },
@@ -98,7 +98,7 @@ const SPECIAL_CELLS = {
     71: { type: 'test-question' },
     74: { type: 'test-question' },
     77: { type: 'test-question' },
-    80: { type: 'test-question' },
+    80: { type: 'alternative-path', target: 91, cost: 30, description: 'Обхідний шлях до клітинки 91 за 30 ОО' },
     83: { type: 'test-question' },
     86: { type: 'test-question' },
     89: { type: 'test-question' },
@@ -692,7 +692,7 @@ io.on('connection', (socket) => {
             hasEvent = true;
             eventInfo.hasEvent = true;
             eventInfo.eventType = specialCell.type;
-            eventInfo.eventData = specialCell;
+            eventInfo.eventData = { ...specialCell, cellNumber: currentPlayer.position };
             console.log(`Гравець ${currentPlayer.name} потрапив на спеціальну клітинку ${currentPlayer.position}: ${specialCell.type}`);
         }
         
@@ -1064,6 +1064,15 @@ io.on('connection', (socket) => {
         io.to(room.id).emit('chat_message', {
             type: 'system',
             message: resultMessage
+        });
+        
+        // Відправляємо результат тесту всім гравцям
+        io.to(room.id).emit('test_result', {
+            playerId: player.id,
+            playerName: player.name,
+            isCorrect: isCorrect,
+            resultMessage: resultMessage,
+            newPoints: roomPlayer.points
         });
         
         // Передаємо хід наступному гравцю

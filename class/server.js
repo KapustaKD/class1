@@ -60,7 +60,7 @@ function getEpochForPosition(position) {
 
 // Спеціальні клітинки з подіями
 const SPECIAL_CELLS = {
-    3: { type: 'pvp-quest' },
+    3: { type: 'pvp-quest', gameType: 'tic_tac_toe' },
     5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
     10: { type: 'pvp-quest' },
     14: { type: 'alternative-path', target: 18, cost: 15, description: 'Обхідний шлях до клітинки 18 за 15 ОО' },
@@ -69,7 +69,7 @@ const SPECIAL_CELLS = {
     32: { type: 'mad-libs' },
     40: { type: 'webnovella' },
     46: { type: 'alternative-path', target: 57, cost: 25, description: 'Обхідний шлях до клітинки 57 за 25 ОО' },
-    55: { type: 'creative-quest' },
+    55: { type: 'pvp-quest', gameType: 'tic_tac_toe' },
     61: { type: 'pvp-quest' },
     69: { type: 'mad-libs' },
     80: { type: 'alternative-path', target: 91, cost: 30, description: 'Обхідний шлях до клітинки 91 за 30 ОО' },
@@ -597,7 +597,7 @@ io.on('connection', (socket) => {
             currentPlayer.position = finalPosition;
             
             // Перевіряємо перемогу (досягнення клітинки 101)
-            if (finalPosition >= 101) {
+            if (finalPosition >= 100) {
                 // Гравець переміг!
                 currentPlayer.hasWon = true;
                 room.gameState = 'finished';
@@ -791,7 +791,7 @@ io.on('connection', (socket) => {
                     console.log(`Використовуємо gameType з клітинки: ${selectedGameKey}`);
                 } else {
                     // Вибираємо випадкову гру
-                    const gameKeys = Object.keys(pvpGames);
+                const gameKeys = Object.keys(pvpGames);
                     selectedGameKey = gameKeys[Math.floor(Math.random() * gameKeys.length)];
                     selectedGame = pvpGames[selectedGameKey];
                     console.log(`Вибрано випадкову гру: ${selectedGameKey}`);

@@ -861,21 +861,22 @@ class MultiplayerGame extends EducationalPathGame {
         console.log('Тестуємо подію на клітинці:', cellNumber);
         
         const SPECIAL_CELLS = {
-            3: { type: 'pvp-quest', gameType: 'tic_tac_toe' },
+            3: { type: 'mad-libs', questName: 'Хто? Де? Коли?' },
             5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
-            10: { type: 'pvp-quest' },
+            10: { type: 'webnovella', questName: 'Халепа!', eventNumber: 2 },
             14: { type: 'alternative-path', target: 18, cost: 15, description: 'Обхідний шлях до клітинки 18 за 15 ОО' },
-            21: { type: 'creative-quest' },
-            32: { type: 'mad-libs' },
-            40: { type: 'webnovella' },
+            21: { type: 'pvp-quest', questName: 'Мегамозок' },
+            32: { type: 'creative-quest', questName: 'Великий Педагогічний…' },
+            40: { type: 'creative-quest', questName: 'Великий Педагогічний…' },
             46: { type: 'alternative-path', target: 57, cost: 25, description: 'Обхідний шлях до клітинки 57 за 25 ОО' },
-            55: { type: 'pvp-quest', gameType: 'tic_tac_toe' },
-            61: { type: 'pvp-quest' },
-            69: { type: 'mad-libs' },
-            81: { type: 'webnovella' },
-            90: { type: 'webnovella' },
-            96: { type: 'pvp-quest' },
-            99: { type: 'mad-libs' },
+            55: { type: 'pvp-quest', gameType: 'tic_tac_toe', questName: 'Хреститися рано!' },
+            61: { type: 'pvp-quest', questName: 'Я у мами геній' },
+            69: { type: 'webnovella', questName: 'Халепа!', eventNumber: 1 },
+            76: { type: 'creative-quest', questName: 'Я у мами педагог' },
+            81: { type: 'pvp-quest', gameType: 'pedagogobot', questName: 'Педагобот' },
+            90: { type: 'webnovella', questName: 'Халепа!', eventNumber: 3 },
+            96: { type: 'creative-quest', questName: 'Хроніки Неіснуючого Вояжу' },
+            99: { type: 'pvp-quest', gameType: 'rock_paper_scissors', questName: 'Ляпіс-форфіцес-папірус' },
             
             // Тестові завдання
             2: { type: 'test-question' },
@@ -933,20 +934,22 @@ class MultiplayerGame extends EducationalPathGame {
                     this.testTicTacToeCell();
                 } else if (cellData.gameType === 'rock_paper_scissors') {
                     this.testRockPaperScissorsCell();
+                } else if (cellData.gameType === 'pedagogobot') {
+                    this.testPvPQuest(cellNumber, cellData); // Педагобот - це текстовий PvP квест
                 } else {
-                    this.testPvPQuest(cellNumber);
+                    this.testPvPQuest(cellNumber, cellData);
                 }
                 break;
             case 'creative-quest':
-                this.testCreativeQuest(cellNumber);
+                this.testCreativeQuest(cellNumber, cellData);
                 break;
             case 'mad-libs':
             case 'mad-libs-quest':
-                this.testMadLibsQuest(cellNumber);
+                this.testMadLibsQuest(cellNumber, cellData);
                 break;
             case 'webnovella':
             case 'webnovella-quest':
-                this.testWebNovellaQuest(cellNumber);
+                this.testWebNovellaQuest(cellNumber, cellData);
                 break;
             case 'alternative-path':
                 this.testAlternativePath(cellData, cellNumber);
@@ -4092,12 +4095,27 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     // Тестування пвп квесту
-    testPvPQuest(cellNumber) {
-        const questData = window.QUESTS?.find(q => q.cell === cellNumber);
-        const description = questData ? questData.description : 'Напишіть якомога більше принципів освіти, розділяючи їх комами';
+    testPvPQuest(cellNumber, cellData) {
+        let description = '';
+        let questName = cellData.questName || 'Пвп квест';
+        
+        // Визначаємо опис залежно від назви квесту
+        switch(questName) {
+            case 'Мегамозок':
+                description = 'Вам необхідно за 30 секунд згадати та написати якомога більше принципів педагогіки.';
+                break;
+            case 'Я у мами геній':
+                description = 'Вам необхідно за 30 секунд згадати та написати якомога більше прізвищ видатних українських або зарубіжних педагогів.';
+                break;
+            case 'Педагобот':
+                description = 'Вам необхідно за 30 секунд згадати та написати якомога більше якостей гарного педагога.';
+                break;
+            default:
+                description = 'Напишіть якомога більше принципів освіти, розділяючи їх комами';
+        }
         
         const testData = {
-            title: 'Пвп квест',
+            title: questName,
             description: description,
             timer: 30,
             gameType: 'text',
@@ -4105,8 +4123,9 @@ class MultiplayerGame extends EducationalPathGame {
                 players: [this.playerId],
                 timer: 30,
                 gameData: {
-                    title: 'Пвп квест',
-                    description: description
+                    name: questName,
+                    description: description,
+                    title: questName
                 }
             },
             player1: { name: 'Тестовий гравець 1', id: this.playerId },
@@ -4118,19 +4137,34 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     // Тестування творчого квесту
-    testCreativeQuest(cellNumber) {
-        const questData = window.CREATIVE_QUESTS?.find(q => q.cell === cellNumber);
-        const description = questData ? questData.description : 'Опишіть ідеальну школу майбутнього';
+    testCreativeQuest(cellNumber, cellData) {
+        let description = '';
+        let questName = cellData.questName || 'Творчий квест';
+        
+        // Визначаємо опис залежно від назви квесту
+        switch(questName) {
+            case 'Великий Педагогічний…':
+                description = 'Вам необхідно за 1 хвилину згадати або вигадати найкращий, найсмішніший, найсечогінніший анекдот в історії людства.';
+                break;
+            case 'Я у мами педагог':
+                description = 'Вам необхідно за одну хвилину вигадати та коротко описати найкращий спосіб навчити чомусь іншого.';
+                break;
+            case 'Хроніки Неіснуючого Вояжу':
+                description = 'Вам необхідно вигадати цікаву історію. Кожному гравцеві буде надано 5 спроб написати речення, яке стане логічним продовженням речення попереднього гравця.';
+                break;
+            default:
+                description = 'Опишіть ідеальну школу майбутнього';
+        }
         
         const testData = {
-            title: 'Творчий квест',
+            title: questName,
             description: description,
             timer: 60,
             gameState: {
                 players: [this.playerId],
                 timer: 60,
                 gameData: {
-                    title: 'Творчий квест',
+                    title: questName,
                     description: description
                 }
             },
@@ -4141,12 +4175,17 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     // Тестування квесту "Хто, де, коли?"
-    testMadLibsQuest(cellNumber) {
-        const questData = window.MAD_LIBS_QUESTIONS?.find(q => q.cell === cellNumber);
-        const question = questData ? questData.questions[0] : 'Хто?';
+    testMadLibsQuest(cellNumber, cellData) {
+        let question = 'Хто?';
+        let questName = cellData.questName || 'Хто? Де? Коли?';
+        
+        if (questName === 'Хто? Де? Коли?') {
+            question = 'Хто?';
+        }
         
         const testData = {
             question: question,
+            questName: questName,
             activePlayerId: this.playerId,
             currentPlayer: { name: 'Тестовий гравець' }
         };
@@ -4155,18 +4194,37 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     // Тестування вебновели
-    testWebNovellaQuest(cellNumber) {
-        const questData = window.WEBNOVELLA_QUESTIONS?.find(q => q.cell === cellNumber);
-        const currentSentence = questData ? questData.currentSentence : 'Давним-давно в далекій галактиці...';
-        const description = questData ? questData.description : 'Продовжіть історію про подорож у часі';
+    testWebNovellaQuest(cellNumber, cellData) {
+        let description = '';
+        let questName = cellData.questName || 'Вебновела';
+        let eventNumber = cellData.eventNumber || 1;
+        
+        // Визначаємо опис залежно від номера події
+        if (questName === 'Халепа!') {
+            switch(eventNumber) {
+                case 1:
+                    description = 'Ви — класний керівник. Під час перевірки щоденників ви виявляєте, що один з учнів Дікапріардіус на останній сторінці замість підпису батьків намалював вам величезний, але досить деталізований… портрет у формі єдинорога.';
+                    break;
+                case 2:
+                    description = 'Учень Євкакій, який завжди запізнюється, вривається до класу на 15 хвилин пізніше з поясненням: "Вибачте, мене викрали інопланетяни для короткого експерименту".';
+                    break;
+                case 3:
+                    description = 'Ви виставили підсумкову оцінку 9 балів старанній учениці Серафіма, яка завжди наполегливо працює. Вона підходить до вас засмучена і каже: "Я витратила на ваш предмет більше часу, ніж на інші.';
+                    break;
+                default:
+                    description = 'Ви перебуваєте у складній педагогічній ситуації. Визначте свій фінал розвитку подій та кінець історії.';
+            }
+        } else {
+            description = 'Продовжіть історію про подорож у часі';
+        }
         
         const testData = {
-            title: 'Вебновела',
+            title: questName,
             description: description,
-            currentSentence: currentSentence,
+            currentSentence: description,
             event: {
                 text: description,
-                currentSentence: currentSentence
+                currentSentence: description
             },
             activePlayerId: this.playerId
         };

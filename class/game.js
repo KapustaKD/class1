@@ -109,14 +109,14 @@ class EducationalPathGame {
 
         this.specialCells = {
             // Нові міні-ігри на клітинках: 3, 10, 14, 21, 32, 36, 40, 55, 61, 69, 76, 81, 90, 96, 99
-            3: { type: 'pvp-quest' },
+            3: { type: 'pvp-quest', gameType: 'tic_tac_toe' },
             10: { type: 'creative-quest' },
             14: { type: 'mad-libs-quest' },
             21: { type: 'pvp-quest' },
             32: { type: 'webnovella-quest' },
             36: { type: 'pvp-quest', gameType: 'cross_early' },
             40: { type: 'creative-quest' },
-            55: { type: 'pvp-quest' },
+            55: { type: 'pvp-quest', gameType: 'tic_tac_toe' },
             61: { type: 'mad-libs-quest' },
             69: { type: 'creative-quest' },
             76: { type: 'pvp-quest', gameType: 'rock_paper_scissors' },

@@ -1127,6 +1127,7 @@ body.glassmorphism-bg {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+    background-color: transparent; /* Показує картинку */
     position: relative;
     min-height: 450px;
     display: flex;

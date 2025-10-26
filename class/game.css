@@ -1190,3 +1190,65 @@ body.glassmorphism-bg {
     position: relative;
     z-index: 1;
 }
+
+/* Модальне вікно камінь-ножиці-папір з картинкою rock_paper_scissors */
+.glassmorphism-content-rps {
+    background-image: url('image/modal_window/rock_paper_scissors.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: transparent;
+    position: relative;
+    min-height: 450px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+}
+
+/* Overlay для кращої читабельності тексту */
+.glassmorphism-content-rps::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    pointer-events: none;
+}
+
+/* Забезпечуємо, що контент буде поверх overlay */
+.glassmorphism-content-rps > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Стилі для кнопок камінь-ножиці-папір */
+.rps-choice-btn {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    font-size: 4rem;
+    cursor: pointer;
+    background-color: rgba(55, 65, 81, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rps-choice-btn:hover {
+    transform: scale(1.1);
+    background-color: rgba(75, 85, 99, 0.9);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.rps-choice-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}

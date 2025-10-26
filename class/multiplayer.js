@@ -2212,17 +2212,24 @@ class MultiplayerGame extends EducationalPathGame {
         const isParticipant = data.gameState.players.includes(this.playerId);
         const isMyEvent = data.activePlayerId === this.playerId;
         const gameData = data.gameState.gameData;
+        const isTestMode = this.isTestMode; // Перевіряємо чи це режим тестування
         
         // Додаємо клас для фонового зображення
         document.body.classList.add('glassmorphism-bg');
         
         const modalHTML = `
-            <div class="glassmorphism-modal" id="tictactoe-modal">
-                <div class="glassmorphism-content-tictactoe">
+            <div class="glassmorphism-modal glassmorphism-modal-small" id="tictactoe-modal">
+                <div class="glassmorphism-content-tictactoe-small">
                     <div class="glassmorphism-header">
                         <h2>🎯 Хреститися рано!</h2>
-                        <p>${gameData.description}</p>
-                        <p>${data.player1.name} проти ${data.player2.name}</p>
+                        ${isTestMode ? `
+                            <button class="close-test-modal-btn" onclick="document.getElementById('tictactoe-modal').remove(); document.body.classList.remove('glassmorphism-bg');">✖</button>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="glassmorphism-info-box">
+                        <p class="text-sm">${gameData.description}</p>
+                        <p class="text-sm font-bold">${data.player1.name} проти ${data.player2.name}</p>
                     </div>
                     
                     <div class="glassmorphism-spacer"></div>
@@ -2232,14 +2239,21 @@ class MultiplayerGame extends EducationalPathGame {
                             <div class="mb-4">
                                 <div id="tic-tac-toe-board" class="tic-tac-toe-grid mx-auto mb-4"></div>
                                 <div id="game-status" class="text-center text-lg font-bold mb-2">Хід гравця: <span class="x">X</span></div>
-                                <div id="timer" class="text-2xl font-bold text-red-500 text-center">${data.gameState.timer}</div>
                             </div>
                             <button id="submit-result-btn" class="glassmorphism-btn-primary w-full" disabled>
                                 Завершити гру
                             </button>
                         ` : `
-                            <p class="text-center text-gray-600">Спостерігайте за грою</p>
+                            <div class="mb-4">
+                                <div id="tic-tac-toe-board-view" class="tic-tac-toe-grid mx-auto mb-4"></div>
+                                <div id="game-status-view" class="text-center text-lg font-bold mb-2">Очікуємо хід гравця...</div>
+                            </div>
                         `}
+                        ${isTestMode ? `
+                            <button class="glassmorphism-btn-secondary w-full mt-2" onclick="document.getElementById('tictactoe-modal').remove(); document.body.classList.remove('glassmorphism-bg');">
+                                Закрити
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -2254,32 +2268,19 @@ class MultiplayerGame extends EducationalPathGame {
         // Додаємо нове модальне вікно
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         
-        // Логування для діагностики фону хрестиків-нуликів
-        setTimeout(() => {
-            const tictactoeModal = document.getElementById('tictactoe-modal');
-            const tictactoeContent = tictactoeModal?.querySelector('.glassmorphism-content-tictactoe');
-            
-            console.log('=== ДІАГНОСТИКА ФОНУ ХРЕСТИКИ-НУЛИКИ ===');
-            console.log('Modal element:', tictactoeModal);
-            console.log('Content element:', tictactoeContent);
-            
-            if (tictactoeContent) {
-                const computedStyle = window.getComputedStyle(tictactoeContent);
-                console.log('Background image:', computedStyle.backgroundImage);
-                console.log('Background color:', computedStyle.backgroundColor);
-                console.log('Background size:', computedStyle.backgroundSize);
-                console.log('Background position:', computedStyle.backgroundPosition);
-                console.log('Display:', computedStyle.display);
-                console.log('Min-height:', computedStyle.minHeight);
-            }
-            console.log('===========================================');
-        }, 200);
-        
-        // Додаємо обробники подій
+        // Ініціалізуємо дошку для всіх гравців
         if (isParticipant) {
             setTimeout(() => {
                 this.initializeTicTacToeBoard();
-                this.startTimedTextQuestTimer(data.gameState.timer);
+                // Не запускаємо таймер в режимі тестування
+                if (!isTestMode) {
+                    this.startTimedTextQuestTimer(data.gameState.timer);
+                }
+            }, 100);
+        } else {
+            // Показуємо дошку для спостерігачів
+            setTimeout(() => {
+                this.initializeTicTacToeBoardForViewers();
             }, 100);
         }
     }
@@ -3638,13 +3639,17 @@ class MultiplayerGame extends EducationalPathGame {
         const board = document.getElementById('tic-tac-toe-board');
         if (!board) return;
         
-        // Ініціалізуємо стан гри
+        // Ініціалізуємо стан гри з підтримкою 3 раундів
         this.ticTacToeState = {
             gameActive: true,
             currentPlayer: 'X',
             gameState: ['', '', '', '', '', '', '', '', ''],
             playerSymbol: 'X', // Гравець завжди X
-            opponentSymbol: 'O' // Опонент завжди O
+            opponentSymbol: 'O', // Опонент завжди O
+            rounds: [{winner: null}, {winner: null}, {winner: null}],
+            currentRound: 0,
+            playerWins: 0,
+            opponentWins: 0
         };
         
         // Очищаємо дошку
@@ -3665,6 +3670,25 @@ class MultiplayerGame extends EducationalPathGame {
         console.log('Дошка хрестиків-нуликів ініціалізована');
     }
     
+    // Ініціалізація дошки для спостерігачів
+    initializeTicTacToeBoardForViewers() {
+        const board = document.getElementById('tic-tac-toe-board-view');
+        if (!board) return;
+        
+        // Очищаємо дошку
+        board.innerHTML = '';
+        
+        // Створюємо 9 пустих клітинок для перегляду
+        for (let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'tic-tac-toe-cell';
+            cell.dataset.index = i;
+            board.appendChild(cell);
+        }
+        
+        console.log('Дошка для спостерігачів ініціалізована');
+    }
+    
     // Обробка ходу в хрестиках-нуликах
     makeTicTacToeMove(cellIndex) {
         const cell = document.querySelector(`[data-index="${cellIndex}"]`);
@@ -3681,12 +3705,40 @@ class MultiplayerGame extends EducationalPathGame {
         const result = this.checkTicTacToeResult();
         
         if (result.gameOver) {
-            this.ticTacToeState.gameActive = false;
-            this.updateTicTacToeStatus(result.message);
+            // Завершуємо поточний раунд
+            this.ticTacToeState.rounds[this.ticTacToeState.currentRound].winner = result.winner;
+            
+            if (result.winner === 'X') {
+                this.ticTacToeState.playerWins++;
+            } else if (result.winner === 'O') {
+                this.ticTacToeState.opponentWins++;
+            }
+            
+            // Оновлюємо інформацію про раунди
+            this.updateTicTacToeStatus(`Раунд ${this.ticTacToeState.currentRound + 1} завершено! ${result.message}`);
             this.disableTicTacToeBoard();
             
-            // Відправляємо результат на сервер
-            this.submitTicTacToeResult(result);
+            // Перевіряємо чи є ще раунди
+            if (this.ticTacToeState.currentRound < 2) {
+                // Переходимо до наступного раунду
+                setTimeout(() => {
+                    this.nextRound();
+                }, 2000);
+            } else {
+                // Всі 3 раунди завершені
+                this.updateTicTacToeStatus(`Гра завершена! Ви: ${this.ticTacToeState.playerWins}, Супротивник: ${this.ticTacToeState.opponentWins}`);
+                
+                // Відправляємо результат на сервер
+                setTimeout(() => {
+                    this.submitTicTacToeResult({
+                        gameOver: true,
+                        rounds: this.ticTacToeState.rounds,
+                        playerWins: this.ticTacToeState.playerWins,
+                        opponentWins: this.ticTacToeState.opponentWins,
+                        winner: this.ticTacToeState.playerWins > this.ticTacToeState.opponentWins ? 'X' : 'O'
+                    });
+                }, 2000);
+            }
         } else {
             // Змінюємо гравця
             this.ticTacToeState.currentPlayer = this.ticTacToeState.currentPlayer === 'X' ? 'O' : 'X';
@@ -3694,6 +3746,29 @@ class MultiplayerGame extends EducationalPathGame {
         }
         
         console.log(`Хід зроблено в клітинку ${cellIndex}`);
+    }
+    
+    // Перехід до наступного раунду
+    nextRound() {
+        this.ticTacToeState.currentRound++;
+        this.ticTacToeState.gameState = ['', '', '', '', '', '', '', '', ''];
+        this.ticTacToeState.currentPlayer = 'X';
+        this.ticTacToeState.gameActive = true;
+        
+        // Очищаємо дошку
+        const board = document.getElementById('tic-tac-toe-board');
+        if (board) {
+            board.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'tic-tac-toe-cell';
+                cell.dataset.index = i;
+                cell.addEventListener('click', () => this.makeTicTacToeMove(i));
+                board.appendChild(cell);
+            }
+        }
+        
+        this.updateTicTacToeStatus(`Раунд ${this.ticTacToeState.currentRound + 1} з 3`);
     }
     
     // Створення SVG для гравця

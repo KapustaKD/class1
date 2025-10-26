@@ -193,7 +193,7 @@ class MultiplayerGame extends EducationalPathGame {
                 console.log('Знайдено збережену гру:', gameData);
                 
                 // Автоматично перепідключаємось без повідомлення
-                this.reconnectToGame(gameData);
+                    this.reconnectToGame(gameData);
             } catch (error) {
                 console.error('Помилка при читанні збереженої гри:', error);
                 sessionStorage.removeItem('activeGameRoom');
@@ -866,14 +866,12 @@ class MultiplayerGame extends EducationalPathGame {
             10: { type: 'pvp-quest' },
             14: { type: 'alternative-path', target: 18, cost: 15, description: 'Обхідний шлях до клітинки 18 за 15 ОО' },
             21: { type: 'creative-quest' },
-            26: { type: 'alternative-path', target: 33, cost: 20, description: 'Обхідний шлях до клітинки 33 за 20 ОО' },
             32: { type: 'mad-libs' },
             40: { type: 'webnovella' },
             46: { type: 'alternative-path', target: 57, cost: 25, description: 'Обхідний шлях до клітинки 57 за 25 ОО' },
             55: { type: 'pvp-quest', gameType: 'tic_tac_toe' },
             61: { type: 'pvp-quest' },
             69: { type: 'mad-libs' },
-            80: { type: 'alternative-path', target: 91, cost: 30, description: 'Обхідний шлях до клітинки 91 за 30 ОО' },
             81: { type: 'webnovella' },
             90: { type: 'webnovella' },
             96: { type: 'pvp-quest' },
@@ -936,22 +934,22 @@ class MultiplayerGame extends EducationalPathGame {
                 } else if (cellData.gameType === 'rock_paper_scissors') {
                     this.testRockPaperScissorsCell();
                 } else {
-                    this.testPvPQuest();
+                    this.testPvPQuest(cellNumber);
                 }
                 break;
             case 'creative-quest':
-                this.testCreativeQuest();
+                this.testCreativeQuest(cellNumber);
                 break;
             case 'mad-libs':
             case 'mad-libs-quest':
-                this.testMadLibsQuest();
+                this.testMadLibsQuest(cellNumber);
                 break;
             case 'webnovella':
             case 'webnovella-quest':
-                this.testWebNovellaQuest();
+                this.testWebNovellaQuest(cellNumber);
                 break;
             case 'alternative-path':
-                this.testAlternativePath();
+                this.testAlternativePath(cellData, cellNumber);
                 break;
             case 'reincarnation':
                 this.testReincarnation();
@@ -1701,7 +1699,7 @@ class MultiplayerGame extends EducationalPathGame {
         if (data.eventType === 'test-question') {
             this.showTestQuestion(data);
         } else {
-            this.showQuestModal(data.title, data.description, data.buttons, null);
+        this.showQuestModal(data.title, data.description, data.buttons, null);
         }
     }
     
@@ -2012,14 +2010,14 @@ class MultiplayerGame extends EducationalPathGame {
                     <div class="glassmorphism-header">
                         <h2>🎉 Кімната створена!</h2>
                         <p>Вітаю! Ви створили кімнату, як боженька Землю.</p>
-                    </div>
+                </div>
                     
                     <div class="glassmorphism-spacer"></div>
                     
                     <div class="glassmorphism-actions">
                         <button class="glassmorphism-btn-primary" id="close-room-modal-btn">
                             Ай, шайтаан. Добре!
-                        </button>
+                </button>
                     </div>
                 </div>
             </div>
@@ -2035,19 +2033,19 @@ class MultiplayerGame extends EducationalPathGame {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         
         // Додаємо обробник події
-        setTimeout(() => {
-            const closeBtn = document.getElementById('close-room-modal-btn');
-            
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
+            setTimeout(() => {
+                const closeBtn = document.getElementById('close-room-modal-btn');
+                
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => {
                     const modal = document.getElementById('room-created-modal');
                     if (modal) {
                         modal.remove();
                         document.body.classList.remove('glassmorphism-bg');
-                    }
-                });
-            }
-        }, 100);
+                        }
+                    });
+                }
+            }, 100);
     }
     
     // Показуємо модальне вікно приєднання до кімнати
@@ -2061,14 +2059,14 @@ class MultiplayerGame extends EducationalPathGame {
                     <div class="glassmorphism-header">
                         <h2>🎉 Приєднано до кімнати!</h2>
                         <p>Вітаю! Ви зайшли у кімнату, створену гравцем, як Земля Боженькою.</p>
-                    </div>
+                </div>
                     
                     <div class="glassmorphism-spacer"></div>
                     
                     <div class="glassmorphism-actions">
                         <button class="glassmorphism-btn-primary" id="close-room-modal-btn">
                             Ай, шайтаан. Добре!
-                        </button>
+                </button>
                     </div>
                 </div>
             </div>
@@ -2082,21 +2080,21 @@ class MultiplayerGame extends EducationalPathGame {
         
         // Додаємо нове модальне вікно
         document.body.insertAdjacentHTML('beforeend', modalHTML);
-        
-        // Додаємо обробник події
-        setTimeout(() => {
-            const closeBtn = document.getElementById('close-room-modal-btn');
             
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
+            // Додаємо обробник події
+            setTimeout(() => {
+                const closeBtn = document.getElementById('close-room-modal-btn');
+                
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => {
                     const modal = document.getElementById('room-joined-modal');
                     if (modal) {
                         modal.remove();
                         document.body.classList.remove('glassmorphism-bg');
-                    }
-                });
-            }
-        }, 100);
+                        }
+                    });
+                }
+            }, 100);
     }
     
     // Нові міні-ігри
@@ -4094,10 +4092,13 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     // Тестування пвп квесту
-    testPvPQuest() {
+    testPvPQuest(cellNumber) {
+        const questData = window.QUESTS?.find(q => q.cell === cellNumber);
+        const description = questData ? questData.description : 'Напишіть якомога більше принципів освіти, розділяючи їх комами';
+        
         const testData = {
             title: 'Пвп квест',
-            description: 'Напишіть якомога більше принципів освіти, розділяючи їх комами',
+            description: description,
             timer: 30,
             gameType: 'text',
             gameState: {
@@ -4105,9 +4106,11 @@ class MultiplayerGame extends EducationalPathGame {
                 timer: 30,
                 gameData: {
                     title: 'Пвп квест',
-                    description: 'Напишіть якомога більше принципів освіти, розділяючи їх комами'
+                    description: description
                 }
             },
+            player1: { name: 'Тестовий гравець 1', id: this.playerId },
+            player2: { name: 'Тестовий гравець 2', id: 'test-player-2' },
             activePlayerId: this.playerId
         };
         
@@ -4115,17 +4118,20 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     // Тестування творчого квесту
-    testCreativeQuest() {
+    testCreativeQuest(cellNumber) {
+        const questData = window.CREATIVE_QUESTS?.find(q => q.cell === cellNumber);
+        const description = questData ? questData.description : 'Опишіть ідеальну школу майбутнього';
+        
         const testData = {
             title: 'Творчий квест',
-            description: 'Опишіть ідеальну школу майбутнього',
+            description: description,
             timer: 60,
             gameState: {
                 players: [this.playerId],
                 timer: 60,
                 gameData: {
                     title: 'Творчий квест',
-                    description: 'Опишіть ідеальну школу майбутнього'
+                    description: description
                 }
             },
             activePlayerId: this.playerId
@@ -4135,9 +4141,12 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     // Тестування квесту "Хто, де, коли?"
-    testMadLibsQuest() {
+    testMadLibsQuest(cellNumber) {
+        const questData = window.MAD_LIBS_QUESTIONS?.find(q => q.cell === cellNumber);
+        const question = questData ? questData.questions[0] : 'Хто?';
+        
         const testData = {
-            question: 'Хто?',
+            question: question,
             activePlayerId: this.playerId,
             currentPlayer: { name: 'Тестовий гравець' }
         };
@@ -4146,14 +4155,18 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     // Тестування вебновели
-    testWebNovellaQuest() {
+    testWebNovellaQuest(cellNumber) {
+        const questData = window.WEBNOVELLA_QUESTIONS?.find(q => q.cell === cellNumber);
+        const currentSentence = questData ? questData.currentSentence : 'Давним-давно в далекій галактиці...';
+        const description = questData ? questData.description : 'Продовжіть історію про подорож у часі';
+        
         const testData = {
             title: 'Вебновела',
-            description: 'Продовжіть історію про подорож у часі',
-            currentSentence: 'Давним-давно в далекій галактиці...',
+            description: description,
+            currentSentence: currentSentence,
             event: {
-                text: 'Продовжіть історію про подорож у часі',
-                currentSentence: 'Давним-давно в далекій галактиці...'
+                text: description,
+                currentSentence: currentSentence
             },
             activePlayerId: this.playerId
         };
@@ -4162,7 +4175,12 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     // Тестування обхідного шляху
-    testAlternativePath() {
+    testAlternativePath(cellData, cellNumber) {
+        const target = cellData.target || 1;
+        const cost = cellData.cost || 10;
+        const description = cellData.description || `Обхідний шлях до клітинки ${target} за ${cost} ОО`;
+        const isTestMode = this.isTestMode;
+        
         // Додаємо клас для фонового зображення
         document.body.classList.add('glassmorphism-bg');
         
@@ -4171,19 +4189,27 @@ class MultiplayerGame extends EducationalPathGame {
                 <div class="glassmorphism-content-bypass">
                     <div class="glassmorphism-header">
                         <h2>🛤️ Обхідна дорога!</h2>
+                        ${isTestMode ? `
+                            <button class="close-test-modal-btn" onclick="document.getElementById('test-bypass-modal').remove(); document.body.classList.remove('glassmorphism-bg');">✖</button>
+                        ` : ''}
                         <p>Тестовий гравець знайшов обхідний шлях!</p>
-                        <p>Ви можете обійти наступну клітинку за 15 ОО</p>
+                        <p>${description}</p>
                     </div>
                     
                     <div class="glassmorphism-spacer"></div>
                     
                     <div class="glassmorphism-actions">
                         <button class="glassmorphism-btn-primary" id="test-bypass-yes-btn">
-                            Так, обійти (15 ОО)
+                            Так, обійти (${cost} ОО)
                         </button>
                         <button class="glassmorphism-btn-secondary" id="test-bypass-no-btn">
                             Ні, йти далі
                         </button>
+                        ${isTestMode ? `
+                            <button class="glassmorphism-btn-secondary w-full mt-2" onclick="document.getElementById('test-bypass-modal').remove(); document.body.classList.remove('glassmorphism-bg');">
+                                Закрити
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
             </div>

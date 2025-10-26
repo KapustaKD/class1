@@ -1505,10 +1505,31 @@ class MultiplayerGame extends EducationalPathGame {
         // Оновлюємо позиції фішок
         this.players.forEach(player => {
             this.updatePawnPosition(player);
+            // Оновлюємо аватарку фішки
+            this.updatePawnAvatar(player);
         });
         
         if (data.gameActive) {
             this.rollDiceBtn.disabled = false;
+        }
+    }
+    
+    // Оновлення аватарки фішки
+    updatePawnAvatar(player) {
+        const pawn = document.getElementById(`pawn-${player.id}`);
+        if (!pawn) return;
+        
+        // Оновлюємо аватарку, якщо вона є
+        if (player.avatarUrl) {
+            pawn.src = player.avatarUrl;
+            pawn.alt = `${player.name} аватар`;
+            pawn.style.backgroundColor = 'transparent';
+            pawn.style.borderRadius = '0';
+        } else {
+            // Fallback на кольоровий кружечок
+            pawn.src = '';
+            pawn.style.backgroundColor = player.color;
+            pawn.style.borderRadius = '50%';
         }
     }
     
@@ -1932,7 +1953,7 @@ class MultiplayerGame extends EducationalPathGame {
                 // Спеціальний інтерфейс для хрестиків-нуликів
                 modalContent += `
                     <div class="mb-4">
-                        <h3 class="text-2xl font-bold text-center mb-4">🎯 Хрестики-Нулики</h3>
+                        <h3 class="text-2xl font-bold text-center mb-4">🎯 Хреститися рано!</h3>
                         <div id="tic-tac-toe-board" class="tic-tac-toe-grid mx-auto mb-4"></div>
                         <div id="game-status" class="text-center text-lg font-bold mb-2">Хід гравця: <span class="x">X</span></div>
                         <div id="timer" class="text-2xl font-bold text-red-500 text-center">${data.gameState.timer}</div>

@@ -95,7 +95,8 @@ class MultiplayerGame extends EducationalPathGame {
         // Додаємо елементи для початку гри
         this.startGameSection = document.getElementById('start-game-section');
         this.startGameBtn = document.getElementById('start-game-btn-lobby');
-        this.testEventsBtn = document.getElementById('test-events-btn');
+        this.testModeBtn = document.getElementById('test-mode-btn');
+        this.isTestMode = false;
         
         // Додаємо елемент для виходу з кімнати
         this.leaveRoomBtn = document.getElementById('leave-room-btn');
@@ -158,10 +159,21 @@ class MultiplayerGame extends EducationalPathGame {
             this.startGameBtn.addEventListener('click', () => this.startOnlineGame());
         }
         
-        // Обробник кнопки тестування подій
-        if (this.testEventsBtn) {
-            this.testEventsBtn.addEventListener('click', () => {
-                this.showEventTestModal();
+        // Обробник кнопки режиму тесту
+        if (this.testModeBtn) {
+            this.testModeBtn.addEventListener('click', () => {
+                this.isTestMode = !this.isTestMode;
+                if (this.isTestMode) {
+                    this.testModeBtn.textContent = '🎮 Режим гри';
+                    this.testModeBtn.classList.remove('bg-purple-500', 'hover:bg-purple-600');
+                    this.testModeBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                    this.enterTestMode();
+                } else {
+                    this.testModeBtn.textContent = '🧪 Режим тесту';
+                    this.testModeBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    this.testModeBtn.classList.add('bg-purple-500', 'hover:bg-purple-600');
+                    this.exitTestMode();
+                }
             });
         }
         
@@ -787,6 +799,11 @@ class MultiplayerGame extends EducationalPathGame {
             }
             
             this.socket.emit('start_game', { roomId: this.roomId });
+            
+            // Показуємо кнопку режиму тесту для хоста
+            if (this.testModeBtn) {
+                this.testModeBtn.classList.remove('hidden');
+            }
         } else {
             console.error('Не можу почати гру:', {
                 isHost: this.isHost,
@@ -794,6 +811,57 @@ class MultiplayerGame extends EducationalPathGame {
                 socket: !!this.socket
             });
         }
+    }
+    
+    // Вхід в режим тестування
+    enterTestMode() {
+        console.log('Входимо в режим тестування');
+        
+        // Додаємо обробник кліків на клітинки
+        const cells = document.querySelectorAll('.board-cell');
+        cells.forEach((cell, index) => {
+            cell.style.cursor = 'pointer';
+            cell.classList.add('test-mode-cell');
+            
+            cell.addEventListener('click', this.handleTestModeCellClick.bind(this), { once: false });
+        });
+    }
+    
+    // Вихід з режиму тестування
+    exitTestMode() {
+        console.log('Вихід з режиму тестування');
+        
+        // Видаляємо обробники кліків на клітинки
+        const cells = document.querySelectorAll('.board-cell');
+        cells.forEach(cell => {
+            cell.style.cursor = '';
+            cell.classList.remove('test-mode-cell');
+            
+            // Створюємо новий елемент для видалення обробника
+            const newCell = cell.cloneNode(true);
+            cell.parentNode.replaceChild(newCell, cell);
+        });
+    }
+    
+    // Обробка кліку на клітинку в режимі тестування
+    handleTestModeCellClick(event) {
+        const cell = event.target.closest('.board-cell');
+        if (!cell) return;
+        
+        const cellNumber = parseInt(cell.id.replace('cell-', ''));
+        console.log('Клікнуто на клітинку в режимі тестування:', cellNumber);
+        
+        // Отримуємо дані про клітинку з server.js SPECIAL_CELLS
+        // Тут потрібно буде завантажити дані про події
+        this.testEventOnCell(cellNumber);
+    }
+    
+    // Тестування події на конкретній клітинці
+    testEventOnCell(cellNumber) {
+        console.log('Тестуємо подію на клітинці:', cellNumber);
+        
+        // Тимчасовий код - пізніше додамо реалізацію
+        alert(`Тестування події на клітинці ${cellNumber}. Ця функція буде реалізована далі.`);
     }
     
     // Перевизначення методу завершення гри для мультиплеєру
@@ -1949,6 +2017,12 @@ class MultiplayerGame extends EducationalPathGame {
             return;
         }
         
+        // Спеціальна обробка для камінь-ножиці-папір
+        if (gameData.gameType === 'rock_paper_scissors') {
+            this.showRockPaperScissorsModal(data);
+            return;
+        }
+        
         let modalContent = `
             <h3 class="text-2xl font-bold mb-4">${gameData.name}!</h3>
             <p class="mb-4">${gameData.description}</p>
@@ -2110,6 +2184,70 @@ class MultiplayerGame extends EducationalPathGame {
         }
     }
     
+    // Спеціальний метод для камінь-ножиці-папір з glassmorphism стилем
+    showRockPaperScissorsModal(data) {
+        const isParticipant = data.gameState.players.includes(this.playerId);
+        const isMyEvent = data.activePlayerId === this.playerId;
+        const gameData = data.gameState.gameData;
+        
+        // Додаємо клас для фонового зображення
+        document.body.classList.add('glassmorphism-bg');
+        
+        const modalHTML = `
+            <div class="glassmorphism-modal" id="rps-modal">
+                <div class="glassmorphism-content-rps">
+                    <div class="glassmorphism-header">
+                        <h2>🪨📄✂️ Камінь, Ножиці, Папір</h2>
+                        <p>${gameData.description}</p>
+                        <p>${data.player1.name} проти ${data.player2.name}</p>
+                    </div>
+                    
+                    <div class="glassmorphism-spacer"></div>
+                    
+                    <div class="glassmorphism-actions">
+                        ${isParticipant ? `
+                            <div id="rps-game" class="text-center mb-4">
+                                <div id="rps-round" class="text-xl font-bold mb-3">Раунд 1 з 3</div>
+                                <div id="rps-score" class="text-lg mb-4">Ваші перемоги: 0 | Перемоги противника: 0</div>
+                                
+                                <div class="flex justify-center gap-4 mb-4">
+                                    <button id="rps-rock" class="rps-choice-btn">✊</button>
+                                    <button id="rps-paper" class="rps-choice-btn">✋</button>
+                                    <button id="rps-scissors" class="rps-choice-btn">✌️</button>
+                                </div>
+                                
+                                <div id="rps-result" class="text-lg font-bold mb-2"></div>
+                            </div>
+                            <div id="timer" class="text-2xl font-bold text-red-500 text-center mb-4">${data.gameState.timer}</div>
+                            <button id="submit-result-btn" class="glassmorphism-btn-primary w-full" disabled>
+                                Завершити гру
+                            </button>
+                        ` : `
+                            <p class="text-center text-gray-600">Спостерігайте за грою</p>
+                        `}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Видаляємо існуюче модальне вікно, якщо є
+        const existingModal = document.getElementById('rps-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Додаємо нове модальне вікно
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Додаємо обробники подій
+        if (isParticipant) {
+            setTimeout(() => {
+                this.initializeRockPaperScissors();
+                this.startTimedTextQuestTimer(data.gameState.timer);
+            }, 100);
+        }
+    }
+    
     // Спеціальний метод для педагобота з glassmorphism стилем
     showPedagogobotModal(data, modalContent) {
         const isParticipant = data.gameState.players.includes(this.playerId);
@@ -2247,6 +2385,13 @@ class MultiplayerGame extends EducationalPathGame {
         const tictactoeModal = document.getElementById('tictactoe-modal');
         if (tictactoeModal) {
             tictactoeModal.remove();
+            document.body.classList.remove('glassmorphism-bg');
+        }
+        
+        // Закриваємо модальне вікно камінь-ножиці-папір, якщо воно відкрите
+        const rpsModal = document.getElementById('rps-modal');
+        if (rpsModal) {
+            rpsModal.remove();
             document.body.classList.remove('glassmorphism-bg');
         }
         

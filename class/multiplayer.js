@@ -2080,6 +2080,27 @@ class MultiplayerGame extends EducationalPathGame {
         // Додаємо нове модальне вікно
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         
+        // Логування для діагностики фону хрестиків-нуликів
+        setTimeout(() => {
+            const tictactoeModal = document.getElementById('tictactoe-modal');
+            const tictactoeContent = tictactoeModal?.querySelector('.glassmorphism-content-tictactoe');
+            
+            console.log('=== ДІАГНОСТИКА ФОНУ ХРЕСТИКИ-НУЛИКИ ===');
+            console.log('Modal element:', tictactoeModal);
+            console.log('Content element:', tictactoeContent);
+            
+            if (tictactoeContent) {
+                const computedStyle = window.getComputedStyle(tictactoeContent);
+                console.log('Background image:', computedStyle.backgroundImage);
+                console.log('Background color:', computedStyle.backgroundColor);
+                console.log('Background size:', computedStyle.backgroundSize);
+                console.log('Background position:', computedStyle.backgroundPosition);
+                console.log('Display:', computedStyle.display);
+                console.log('Min-height:', computedStyle.minHeight);
+            }
+            console.log('===========================================');
+        }, 200);
+        
         // Додаємо обробники подій
         if (isParticipant) {
             setTimeout(() => {
@@ -2136,6 +2157,27 @@ class MultiplayerGame extends EducationalPathGame {
         
         // Додаємо нове модальне вікно
         document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Логування для діагностики фону педагобота
+        setTimeout(() => {
+            const robotModal = document.getElementById('pedagogobot-modal');
+            const robotContent = robotModal.querySelector('.glassmorphism-content-robot');
+            
+            console.log('=== ДІАГНОСТИКА ФОНУ ПЕДАГОБОТА ===');
+            console.log('Modal element:', robotModal);
+            console.log('Content element:', robotContent);
+            
+            if (robotContent) {
+                const computedStyle = window.getComputedStyle(robotContent);
+                console.log('Background image:', computedStyle.backgroundImage);
+                console.log('Background color:', computedStyle.backgroundColor);
+                console.log('Background size:', computedStyle.backgroundSize);
+                console.log('Background position:', computedStyle.backgroundPosition);
+                console.log('Display:', computedStyle.display);
+                console.log('Min-height:', computedStyle.minHeight);
+            }
+            console.log('==================================');
+        }, 200);
         
         // Додаємо обробники подій
         if (isParticipant) {

@@ -780,14 +780,26 @@ io.on('connection', (socket) => {
 
                 const opponent = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
                 
-                // Вибираємо випадкову PvP-гру
-                const gameKeys = Object.keys(pvpGames);
-                const randomGameKey = gameKeys[Math.floor(Math.random() * gameKeys.length)];
-                const selectedGame = pvpGames[randomGameKey];
+                // Вибираємо PvP-гру на основі gameType з клітинки або випадково
+                let selectedGameKey;
+                let selectedGame;
+                
+                if (data.eventData && data.eventData.gameType && pvpGames[data.eventData.gameType]) {
+                    // Використовуємо gameType з клітинки
+                    selectedGameKey = data.eventData.gameType;
+                    selectedGame = pvpGames[data.eventData.gameType];
+                    console.log(`Використовуємо gameType з клітинки: ${selectedGameKey}`);
+                } else {
+                    // Вибираємо випадкову гру
+                    const gameKeys = Object.keys(pvpGames);
+                    selectedGameKey = gameKeys[Math.floor(Math.random() * gameKeys.length)];
+                    selectedGame = pvpGames[selectedGameKey];
+                    console.log(`Вибрано випадкову гру: ${selectedGameKey}`);
+                }
                 
                 // Створюємо стан гри на швидкість введення тексту
                 room.timedTextQuestState = {
-                    gameType: randomGameKey,
+                    gameType: selectedGameKey,
                     gameData: selectedGame,
                     players: [player.id, opponent.id],
                     playerNames: [player.name, opponent.name],

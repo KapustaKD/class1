@@ -860,8 +860,108 @@ class MultiplayerGame extends EducationalPathGame {
     testEventOnCell(cellNumber) {
         console.log('Тестуємо подію на клітинці:', cellNumber);
         
-        // Тимчасовий код - пізніше додамо реалізацію
-        alert(`Тестування події на клітинці ${cellNumber}. Ця функція буде реалізована далі.`);
+        const SPECIAL_CELLS = {
+            3: { type: 'pvp-quest', gameType: 'tic_tac_toe' },
+            5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
+            10: { type: 'pvp-quest' },
+            14: { type: 'alternative-path', target: 18, cost: 15, description: 'Обхідний шлях до клітинки 18 за 15 ОО' },
+            21: { type: 'creative-quest' },
+            26: { type: 'alternative-path', target: 33, cost: 20, description: 'Обхідний шлях до клітинки 33 за 20 ОО' },
+            32: { type: 'mad-libs' },
+            40: { type: 'webnovella' },
+            46: { type: 'alternative-path', target: 57, cost: 25, description: 'Обхідний шлях до клітинки 57 за 25 ОО' },
+            55: { type: 'pvp-quest', gameType: 'tic_tac_toe' },
+            61: { type: 'pvp-quest' },
+            69: { type: 'mad-libs' },
+            80: { type: 'alternative-path', target: 91, cost: 30, description: 'Обхідний шлях до клітинки 91 за 30 ОО' },
+            81: { type: 'webnovella' },
+            90: { type: 'webnovella' },
+            96: { type: 'pvp-quest' },
+            99: { type: 'mad-libs' },
+            
+            // Тестові завдання
+            2: { type: 'test-question' },
+            8: { type: 'test-question' },
+            11: { type: 'test-question' },
+            17: { type: 'test-question' },
+            20: { type: 'test-question' },
+            23: { type: 'test-question' },
+            26: { type: 'test-question' },
+            29: { type: 'test-question' },
+            35: { type: 'test-question' },
+            38: { type: 'test-question' },
+            41: { type: 'test-question' },
+            44: { type: 'test-question' },
+            47: { type: 'test-question' },
+            50: { type: 'test-question' },
+            53: { type: 'test-question' },
+            56: { type: 'test-question' },
+            59: { type: 'test-question' },
+            62: { type: 'test-question' },
+            65: { type: 'test-question' },
+            68: { type: 'test-question' },
+            71: { type: 'test-question' },
+            74: { type: 'test-question' },
+            77: { type: 'test-question' },
+            80: { type: 'test-question' },
+            83: { type: 'test-question' },
+            86: { type: 'test-question' },
+            89: { type: 'test-question' },
+            92: { type: 'test-question' },
+            95: { type: 'test-question' },
+            98: { type: 'test-question' }
+        };
+        
+        const cellData = SPECIAL_CELLS[cellNumber];
+        
+        if (!cellData) {
+            alert(`Клітинка ${cellNumber} не має події`);
+            return;
+        }
+        
+        console.log('Дані про клітинку:', cellData);
+        
+        // Викликаємо тестування події
+        this.testEventData(cellData, cellNumber);
+    }
+    
+    // Тестування конкретного типу події
+    testEventData(cellData, cellNumber) {
+        const eventType = cellData.type;
+        
+        switch(eventType) {
+            case 'pvp-quest':
+                if (cellData.gameType === 'tic_tac_toe' || cellData.gameType === 'cross_early') {
+                    this.testTicTacToeCell();
+                } else if (cellData.gameType === 'rock_paper_scissors') {
+                    this.testRockPaperScissorsCell();
+                } else {
+                    this.testPvPQuest();
+                }
+                break;
+            case 'creative-quest':
+                this.testCreativeQuest();
+                break;
+            case 'mad-libs':
+            case 'mad-libs-quest':
+                this.testMadLibsQuest();
+                break;
+            case 'webnovella':
+            case 'webnovella-quest':
+                this.testWebNovellaQuest();
+                break;
+            case 'alternative-path':
+                this.testAlternativePath();
+                break;
+            case 'reincarnation':
+                this.testReincarnation();
+                break;
+            case 'test-question':
+                this.testQuestionCell(cellNumber);
+                break;
+            default:
+                alert(`Невідомий тип події: ${eventType}`);
+        }
     }
     
     // Перевизначення методу завершення гри для мультиплеєру
@@ -4064,6 +4164,60 @@ class MultiplayerGame extends EducationalPathGame {
                 </button>
             </div>
         `, [], null);
+    }
+    
+    // Тестування хрестиків-нуликів на конкретній клітинці
+    testTicTacToeCell() {
+        const testData = {
+            gameState: {
+                players: [this.playerId],
+                timer: 60,
+                gameData: {
+                    name: 'Хреститися рано!',
+                    description: 'Класична гра хрестики-нулики. Перший гравець ставить хрестики, другий - нулики. Перемагає той, хто першим вирівняє три свої символи в ряд.',
+                    gameType: 'tic_tac_toe'
+                }
+            },
+            player1: { name: 'Тестовий гравець 1', id: this.playerId },
+            player2: { name: 'Тестовий гравець 2', id: 'test-player-2' },
+            activePlayerId: this.playerId
+        };
+        this.showTicTacToeModal(testData);
+    }
+    
+    // Тестування камінь-ножиці-папір на конкретній клітинці
+    testRockPaperScissorsCell() {
+        const testData = {
+            gameState: {
+                players: [this.playerId],
+                timer: 90,
+                gameData: {
+                    name: 'Камінь, Ножиці, Папір',
+                    description: 'Класична гра камінь-ножиці-папір. Гра проходить у три раунди. Перемагає той, хто першим набере дві перемоги.',
+                    gameType: 'rock_paper_scissors'
+                }
+            },
+            player1: { name: 'Тестовий гравець 1', id: this.playerId },
+            player2: { name: 'Тестовий гравець 2', id: 'test-player-2' },
+            activePlayerId: this.playerId
+        };
+        this.showRockPaperScissorsModal(testData);
+    }
+    
+    // Тестування тестового завдання на конкретній клітинці
+    testQuestionCell(cellNumber) {
+        const questionData = window.TEST_QUESTIONS[cellNumber];
+        if (!questionData) {
+            alert(`Тестове завдання для клітинки ${cellNumber} не знайдено`);
+            return;
+        }
+        
+        this.showTestQuestion({
+            eventType: 'test-question',
+            eventData: { cellNumber: cellNumber },
+            playerId: this.playerId,
+            playerName: 'Тестовий гравець'
+        });
     }
 }
 

@@ -180,13 +180,8 @@ class MultiplayerGame extends EducationalPathGame {
                 const gameData = JSON.parse(savedGame);
                 console.log('Знайдено збережену гру:', gameData);
                 
-                // Показуємо повідомлення про можливість перепідключення
-                if (confirm('Знайдено збережену гру. Перепідключитися?')) {
-                    this.reconnectToGame(gameData);
-                } else {
-                    // Видаляємо збережені дані
-                    sessionStorage.removeItem('activeGameRoom');
-                }
+                // Автоматично перепідключаємось без повідомлення
+                this.reconnectToGame(gameData);
             } catch (error) {
                 console.error('Помилка при читанні збереженої гри:', error);
                 sessionStorage.removeItem('activeGameRoom');
@@ -1942,6 +1937,18 @@ class MultiplayerGame extends EducationalPathGame {
         const isMyEvent = data.activePlayerId === this.playerId;
         const gameData = data.gameState.gameData;
         
+        // Спеціальна обробка для педагобота - використовуємо glassmorphism стиль
+        if (gameData.gameType === 'pedagogobot') {
+            this.showPedagogobotModal(data);
+            return;
+        }
+        
+        // Спеціальна обробка для хрестиків-нуликів
+        if (gameData.gameType === 'tic_tac_toe' || gameData.gameType === 'cross_early') {
+            this.showTicTacToeModal(data);
+            return;
+        }
+        
         let modalContent = `
             <h3 class="text-2xl font-bold mb-4">${gameData.name}!</h3>
             <p class="mb-4">${gameData.description}</p>
@@ -1949,20 +1956,7 @@ class MultiplayerGame extends EducationalPathGame {
         `;
         
         if (isParticipant) {
-            if (gameData.gameType === 'tic_tac_toe' || gameData.gameType === 'cross_early') {
-                // Спеціальний інтерфейс для хрестиків-нуликів
-                modalContent += `
-                    <div class="mb-4">
-                        <h3 class="text-2xl font-bold text-center mb-4">🎯 Хреститися рано!</h3>
-                        <div id="tic-tac-toe-board" class="tic-tac-toe-grid mx-auto mb-4"></div>
-                        <div id="game-status" class="text-center text-lg font-bold mb-2">Хід гравця: <span class="x">X</span></div>
-                        <div id="timer" class="text-2xl font-bold text-red-500 text-center">${data.gameState.timer}</div>
-                    </div>
-                    <button id="submit-result-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" disabled>
-                        Завершити гру
-                    </button>
-                `;
-            } else if (gameData.gameType === 'rock_paper_scissors') {
+            if (gameData.gameType === 'rock_paper_scissors') {
                 // Спеціальний інтерфейс для камінь-ножиці-папір
                 modalContent += `
                     <div class="mb-4">
@@ -2036,6 +2030,62 @@ class MultiplayerGame extends EducationalPathGame {
                 }, 100);
             }
             this.startTimedTextQuestTimer(data.gameState.timer);
+        }
+    }
+    
+    // Спеціальний метод для хрестиків-нуликів з glassmorphism стилем
+    showTicTacToeModal(data) {
+        const isParticipant = data.gameState.players.includes(this.playerId);
+        const isMyEvent = data.activePlayerId === this.playerId;
+        const gameData = data.gameState.gameData;
+        
+        // Додаємо клас для фонового зображення
+        document.body.classList.add('glassmorphism-bg');
+        
+        const modalHTML = `
+            <div class="glassmorphism-modal" id="tictactoe-modal">
+                <div class="glassmorphism-content-tictactoe">
+                    <div class="glassmorphism-header">
+                        <h2>🎯 Хреститися рано!</h2>
+                        <p>${gameData.description}</p>
+                        <p>${data.player1.name} проти ${data.player2.name}</p>
+                    </div>
+                    
+                    <div class="glassmorphism-spacer"></div>
+                    
+                    <div class="glassmorphism-actions">
+                        ${isParticipant ? `
+                            <div class="mb-4">
+                                <div id="tic-tac-toe-board" class="tic-tac-toe-grid mx-auto mb-4"></div>
+                                <div id="game-status" class="text-center text-lg font-bold mb-2">Хід гравця: <span class="x">X</span></div>
+                                <div id="timer" class="text-2xl font-bold text-red-500 text-center">${data.gameState.timer}</div>
+                            </div>
+                            <button id="submit-result-btn" class="glassmorphism-btn-primary w-full" disabled>
+                                Завершити гру
+                            </button>
+                        ` : `
+                            <p class="text-center text-gray-600">Спостерігайте за грою</p>
+                        `}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Видаляємо існуюче модальне вікно, якщо є
+        const existingModal = document.getElementById('tictactoe-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Додаємо нове модальне вікно
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Додаємо обробники подій
+        if (isParticipant) {
+            setTimeout(() => {
+                this.initializeTicTacToeBoard();
+                this.startTimedTextQuestTimer(data.gameState.timer);
+            }, 100);
         }
     }
     
@@ -2148,6 +2198,13 @@ class MultiplayerGame extends EducationalPathGame {
         const pedagogobotModal = document.getElementById('pedagogobot-modal');
         if (pedagogobotModal) {
             pedagogobotModal.remove();
+            document.body.classList.remove('glassmorphism-bg');
+        }
+        
+        // Закриваємо модальне вікно хрестиків-нуликів, якщо воно відкрите
+        const tictactoeModal = document.getElementById('tictactoe-modal');
+        if (tictactoeModal) {
+            tictactoeModal.remove();
             document.body.classList.remove('glassmorphism-bg');
         }
         

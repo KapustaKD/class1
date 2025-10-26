@@ -39,7 +39,8 @@
     <!-- Основна гра (прихована спочатку) -->
     <div id="game-container" class="hidden w-full max-w-screen-2xl flex flex-col lg:flex-row gap-8 lg:h-[85vh] justify-start">
         <!-- Ігрове поле -->
-        <div class="bg-gray-700 panel-overlay p-2 rounded-2xl shadow-2xl" style="width: 1289px; height: 822px;">
+        <div class="bg-gray-700 panel-overlay p-2 rounded-2xl shadow-2xl" style="position: relative; width: 1289px; height: 822px;">
+            <button id="test-mode-btn" class="absolute top-2 right-2 bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg z-10 hidden">🧪 Режим тесту</button>
             <div class="game-viewport w-full h-full" id="game-viewport">
                 <div id="game-board-container" style="position: relative; width: 1273px; height: 806px; cursor: crosshair;">
                     <img src="map_background.png" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;">
@@ -127,7 +128,6 @@
                     </div>
                     <div id="start-game-section" class="mt-4 hidden">
                         <button id="start-game-btn-lobby" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-xl">🎮 Почати гру</button>
-                        <button id="test-events-btn" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg text-lg mt-2">🧪 Тестувати події</button>
                     </div>
                 </div>
 

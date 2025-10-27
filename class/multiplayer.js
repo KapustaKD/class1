@@ -1836,6 +1836,37 @@ class MultiplayerGame extends EducationalPathGame {
         }
     }
     
+    // Показуємо спочатку правила, потім клас
+    showRulesFirst() {
+        const rulesModal = document.getElementById('rules-modal');
+        if (rulesModal) {
+            rulesModal.classList.remove('hidden');
+            
+            // Після закриття правил показуємо клас
+            const showSetupBtn = document.getElementById('show-setup-btn');
+            if (showSetupBtn) {
+                showSetupBtn.addEventListener('click', () => {
+                    rulesModal.classList.add('hidden');
+                    // Після закриття правил показуємо клас
+                    setTimeout(() => {
+                        console.log('🎭 Показуємо клас гравця після правил...');
+                        this.showPlayerClassAssignment();
+                    }, 300);
+                }, { once: true }); // once: true щоб обробник виконався тільки один раз
+            } else {
+                // Якщо кнопка не знайдена, одразу показуємо клас
+                setTimeout(() => {
+                    this.showPlayerClassAssignment();
+                }, 300);
+            }
+        } else {
+            // Якщо модальне вікно не знайдено, одразу показуємо клас
+            setTimeout(() => {
+                this.showPlayerClassAssignment();
+            }, 300);
+        }
+    }
+    
     // Показуємо роздачу класів гравцям
     showPlayerClassAssignment() {
         const myPlayer = this.players.find(p => p.id === this.playerId);
@@ -3320,10 +3351,10 @@ class MultiplayerGame extends EducationalPathGame {
             }
         }, 100);
         
-        // Показуємо клас кожному гравцю після закінчення звуку (приблизно 1.5 секунди)
+        // Спершу показуємо правила, потім клас кожному гравцю
         setTimeout(() => {
-            console.log('🎭 Показуємо клас гравця після закінчення звуку...');
-            this.showPlayerClassAssignment();
+            console.log('📖 Показуємо правила гри...');
+            this.showRulesFirst();
         }, 1500);
     }
     

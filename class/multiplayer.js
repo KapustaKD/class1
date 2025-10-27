@@ -1,7 +1,7 @@
 // Мультиплеєр клас для Socket.io
 class MultiplayerGame extends EducationalPathGame {
     constructor() {
-        super();
+        super(true); // Передаємо true щоб EducationalPathGame не додавав свої обробники
         this.socket = null;
         this.isOnlineMode = false;
         this.roomId = null;
@@ -4447,7 +4447,6 @@ class MultiplayerGame extends EducationalPathGame {
         const testData = {
             gameState: {
                 players: [this.playerId],
-                timer: 90,
                 gameData: {
                     name: 'Камінь, Ножиці, Папір',
                     description: 'Класична гра камінь-ножиці-папір. Гра проходить у три раунди. Перемагає той, хто першим набере дві перемоги.',

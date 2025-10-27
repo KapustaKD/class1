@@ -432,6 +432,17 @@ class MultiplayerGame extends EducationalPathGame {
                     this.handleTestResult(data);
                 });
 
+                // Обробник для Хрестиків-Нуликів
+                this.socket.on('tic_tac_toe_start', (data) => {
+                    console.log('Початок гри "Хрестики-нулики":', data);
+                    this.showTicTacToeModal(data);
+                });
+
+                // Обробник для Камінь-Ножиці-Папір
+                this.socket.on('rock_paper_scissors_start', (data) => {
+                    console.log('Початок гри "Камінь-ножиці-папір":', data);
+                    this.showRockPaperScissorsModal(data);
+                });
                 
                 // Обмін місцями
                 this.socket.on('positions_swapped', (data) => {
@@ -1490,7 +1501,7 @@ class MultiplayerGame extends EducationalPathGame {
             // Показуємо тестове завдання всім гравцям
             this.showTestQuestionForAll(data);
             return; // Виходимо, щоб не показувати стандартне модальне вікно
-        } else if (data.eventType === 'pvp-quest' || data.eventType === 'creative-quest' || data.eventType === 'webnovella-quest' || data.eventType === 'mad-libs') {
+        } else if (data.eventType === 'pvp-quest' || data.eventType === 'creative-quest' || data.eventType === 'webnovella-quest' || data.eventType === 'mad-libs-quest') {
             // Ці події обробляються через інші обробники подій (socket.on)
             // Не показуємо загальне модальне вікно
             console.log('Події pvp/creative/webnovella/mad-libs обробляються спеціальними обробниками');

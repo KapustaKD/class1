@@ -111,7 +111,7 @@ class EducationalPathGame {
         // В мультиплеєрному режимі використовується server.js з specialCells.js
         this.specialCells = {
             // Гра "Хто, де, коли?"
-            3: { type: 'mad-libs', questName: 'Хто? Де? Коли?' },
+            3: { type: 'mad-libs-quest', questName: 'Хто? Де? Коли?' },
 
             // Вебновели
             10: { type: 'webnovella-quest', questName: 'Халепа!', eventNumber: 2 },

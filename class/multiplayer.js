@@ -107,10 +107,13 @@ class MultiplayerGame extends EducationalPathGame {
     setupMultiplayerEventListeners() {
         console.log('Налаштовуємо обробники подій для кнопок режиму');
         
-        // Обробники для кнопок режиму (локальний режим заблокований)
+        // Обробники для кнопок режиму
         if (this.localModeBtn) {
-            // Локальний режим зараз заблокований, не додаємо обробник
-            console.log('Локальний режим заблокований');
+            this.localModeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Натиснуто локальний режим');
+                this.startLocalMode();
+            });
         } else {
             console.error('Кнопка локального режиму не знайдена!');
         }

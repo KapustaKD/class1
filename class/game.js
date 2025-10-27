@@ -1995,18 +1995,9 @@ class EducationalPathGame {
     
     // Застосування трансформації
     applyTransform() {
-        console.log('🎯 applyTransform() викликано (друга функція)');
         if (this.gameBoardContainer) {
             const transformString = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
-            console.log('🔄 Застосовуємо transform (друга функція):', transformString);
             this.gameBoardContainer.style.transform = transformString;
-            
-            // Логуємо поточний стан після застосування
-            console.log('📋 СТАН ПІСЛЯ ЗАСТОСУВАННЯ (друга функція):', {
-                element: this.gameBoardContainer.id,
-                currentStyle: this.gameBoardContainer.style.cssText,
-                computedTransform: window.getComputedStyle(this.gameBoardContainer).transform
-            });
         }
     }
     

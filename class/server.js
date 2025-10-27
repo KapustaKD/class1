@@ -65,36 +65,53 @@ function handleImmediateEvent(room, player, eventType) {
     const roomPlayer = room.gameData.players.find(p => p.id === player.id);
     if (!roomPlayer) return;
 
-    const playerClass = roomPlayer.class ? roomPlayer.class.id : 'burgher'; // За замовчуванням - міщанин
+    // Переконайся, що клас гравця доступний
+    if (!roomPlayer.class || !roomPlayer.class.id) {
+        console.error(`Клас гравця ${roomPlayer.name} не визначено!`);
+        // Встановимо клас за замовчуванням, щоб уникнути помилки
+        roomPlayer.class = { id: 'burgher', name: '⚖️ Міщанин' }; // Або інший клас за замовчуванням
+    }
+    const playerClassId = roomPlayer.class.id;
+    const playerClassName = roomPlayer.class.name; // Для повідомлень
 
     switch(eventType) {
         case 'amphitheater':
-            if (playerClass === 'aristocrat' || playerClass === 'burgher') {
+            if (playerClassId === 'aristocrat' || playerClassId === 'burgher') {
                 roomPlayer.skipTurn = true;
-                resultMessage = `${roomPlayer.name} ("${roomPlayer.class.name}") так захопився виставою в Амфітеатрі, що пропускає наступний хід!`;
-            } else {
-                // Селянина ('peasant') не пустили
-                resultMessage = `${roomPlayer.name} ("${roomPlayer.class.name}") хотів потрапити до Амфітеатру, але його не пустила охорона.`;
+                resultMessage = `🎭 ${roomPlayer.name} (${playerClassName}) захотів вина та видовищ в Амфітеатрі! У такому стані він не може продовжити гру та пропускає хід.`;
+            } else { // peasant
+                resultMessage = `⛔ ${roomPlayer.name} (${playerClassName}) хотів потрапити до Амфітеатру, але забув про своє становище у суспільстві - його не пустили.`;
+                // Пропуск ходу для селянина не встановлюємо
             }
             break;
             
-        case 'tavern': // Шинок (правила як у казино)
+        case 'tavern': // Шинок
         case 'casino': // Казино
             const eventName = eventType === 'tavern' ? 'Шинку' : 'Казино';
             
-            if (playerClass === 'aristocrat') {
+            if (playerClassId === 'aristocrat') {
+                const lostPoints = roomPlayer.points; // Запам'ятовуємо скільки втратив
                 roomPlayer.points = 0;
-                resultMessage = `${roomPlayer.name} ("${roomPlayer.class.name}") програв усі свої статки (${player.points} ОО) у ${eventName}!`;
-            } else if (playerClass === 'burgher') {
+                resultMessage = `💸 ${roomPlayer.name} (${playerClassName})! Вітаємо! Ви втратили усі статки (${lostPoints} ОО), які століттями накопичувала ваша родина у ${eventName}! Відтепер життя стане складнішим, проте не засмучуйтесь: все ще є шанси перемогти!`;
+            } else if (playerClassId === 'burgher') {
                 const lostPoints = Math.floor(roomPlayer.points / 2);
                 roomPlayer.points -= lostPoints;
-                resultMessage = `${roomPlayer.name} ("${roomPlayer.class.name}") програв половину своїх статків (${lostPoints} ОО) у ${eventName}!`;
-            } else { // 'peasant'
+                resultMessage = `💰 ${roomPlayer.name} (${playerClassName})! Вітаємо! Ви втратили половину (${lostPoints} ОО) вашого нажитого майна у ${eventName}! Відтепер життя стане дещо складнішим, проте не засмучуйтесь: все ще є шанси перемогти!`;
+            } else { // peasant
+                const lostPoints = roomPlayer.points; // Запам'ятовуємо скільки мав
                 roomPlayer.hasLost = true; // "втрачає життя"
                 roomPlayer.points = 0;
-                resultMessage = `Фатальна помилка! ${roomPlayer.name} ("${roomPlayer.class.name}") програв у ${eventName} своє життя та вибуває з гри!`;
+                resultMessage = `💀 ${roomPlayer.name} (${playerClassName})! Вітаємо! Ви втратили останні гроші (${lostPoints} ОО) на їжу, які мали у ${eventName}! Нехай ваша передчасна смерть від голоду стане щасливим квитком у нове життя. Гравець вибуває!`;
+                // Відправляємо подію про вибування гравця
+                io.to(room.id).emit('player_eliminated', {
+                    playerId: roomPlayer.id,
+                    playerName: roomPlayer.name,
+                    reason: `загинув від голоду після відвідування ${eventName}`
+                });
             }
             break;
+        default:
+            resultMessage = `Невідома миттєва подія: ${eventType}`;
     }
 
     // Повідомляємо всіх про результат
@@ -103,7 +120,7 @@ function handleImmediateEvent(room, player, eventType) {
         message: resultMessage
     });
     
-    // Оновлюємо стан гри (очки, пропуск ходу)
+    // Оновлюємо стан гри (очки, пропуск ходу, статус вибування)
     io.to(room.id).emit('game_state_update', room.gameData);
 }
 
@@ -656,6 +673,22 @@ io.on('connection', (socket) => {
             finalPosition = Math.min(oldPosition + move, 101);
             currentPlayer.position = finalPosition;
             
+            // Перевірка на попадання на клітинку 100 (Повстання машин)
+            if (finalPosition === 100) {
+                console.log(`Гравець ${currentPlayer.name} потрапив на 100-ту клітинку! Повстання машин!`);
+                const uprisingCost = Math.ceil(currentPlayer.points / 2); // Вартість = половина поточних очок
+                
+                // Зберігаємо вартість для передачі клієнту
+                currentPlayer.uprisingCost = uprisingCost;
+                
+                // Встановлюємо, що це подія
+                eventInfo.hasEvent = true;
+                eventInfo.eventType = 'machine-uprising';
+                eventInfo.eventData = { cost: uprisingCost };
+                
+                console.log(`Вартість відкупу від ШІ: ${uprisingCost} ОО`);
+            }
+            
             // Перевіряємо перемогу (досягнення клітинки 101)
             if (finalPosition >= 101) {
                 // Гравець переміг!
@@ -1166,16 +1199,17 @@ io.on('connection', (socket) => {
                 // Знаходимо гравця в масиві гравців кімнати
                 const roomPlayer = room.gameData.players.find(p => p.id === player.id);
                 if (roomPlayer) {
-                    // Нараховуємо очки за реінкарнацію
-                    roomPlayer.points += 30;
-                    player.points += 30;
+                    // Нараховуємо очки за реінкарнацію (беремо з eventData.points)
+                    const points = data.eventData.points || 30; // За замовчуванням 30, якщо не вказано
+                    roomPlayer.points += points;
+                    player.points += points;
                     
                     // Автоматично переміщуємо на наступну клітинку
                     roomPlayer.position += 1;
                     player.position += 1;
                 }
                 
-                resultMessage = `${player.name} завершив епоху! Отримано 30 ОО та переміщено на наступну клітинку.`;
+                resultMessage = `${player.name} завершив епоху! Отримано ${data.eventData.points || 30} ОО та переміщено на наступну клітинку.`;
             } else {
                 resultMessage = `${player.name} відмовився від переходу між епохами.`;
             }
@@ -1210,11 +1244,49 @@ io.on('connection', (socket) => {
                         // Встановлюємо пропуск ходу
                         roomPlayer.skipTurn = true; 
                     }
-                    resultMessage = `${player.name} спробував скоротити шлях, але потрапив до реабілітаційного центру! Втрачено ${data.eventData.cost} ОО та 1 хід.`;
+                    resultMessage = `🍄 ${player.name}, ваша жага до ефективного навчання привела Вас до рехабу! Втрачено ${data.eventData.cost} ОО. Наступного разу будьте обережніші з грибами! Пропускаєте 1 хід.`;
                 }
             } else {
                 resultMessage = `${player.name} відмовився від обхідної дороги.`;
             }
+        } else if (data.eventType === 'machine-uprising') {
+            const roomPlayer = room.gameData.players.find(p => p.id === player.id);
+            const cost = roomPlayer.uprisingCost || 0; // Отримуємо вартість
+            
+            if (data.choice === 'pay') {
+                if (roomPlayer.points >= cost) {
+                    roomPlayer.points -= cost;
+                    roomPlayer.hasWon = true; // Гравець відкупився і переміг!
+                    resultMessage = `🤖 ${player.name} відкупився від ШІ за ${cost} ОО та успішно завершив Освітній Шлях! Перемога!`;
+                    // Завершуємо гру для цього гравця
+                    room.gameState = 'finished';
+                    io.to(room.id).emit('game_ended', { 
+                        winner: roomPlayer, 
+                        reason: resultMessage 
+                    });
+                    shouldContinue = false; // Гра завершена
+                } else {
+                    roomPlayer.hasLost = true; // Не вистачило очок - програв
+                    resultMessage = `📉 ${player.name} не зміг відкупитися від ШІ (${cost} ОО)! Штучний інтелект переміг. Гравець вибуває!`;
+                    // Відправляємо подію про вибування гравця
+                    io.to(room.id).emit('player_eliminated', { 
+                        playerId: roomPlayer.id, 
+                        playerName: roomPlayer.name, 
+                        reason: `не зміг відкупитися від ШІ` 
+                    });
+                }
+            } else { // choice === 'refuse'
+                roomPlayer.hasLost = true; // Відмовився платити - програв
+                resultMessage = `💥 ${player.name} відмовився платити ШІ! Повстання машин було успішним. Гравець вибуває!`;
+                // Відправляємо подію про вибування гравця
+                io.to(room.id).emit('player_eliminated', { 
+                    playerId: roomPlayer.id, 
+                    playerName: roomPlayer.name, 
+                    reason: `відмовився платити ШІ` 
+                });
+            }
+            delete roomPlayer.uprisingCost; // Видаляємо тимчасове поле
+            shouldContinue = false; // Гра або завершена, або гравець вибув - хід не передаємо
         }
         
         // Очищуємо поточну подію
@@ -1237,8 +1309,10 @@ io.on('connection', (socket) => {
         
         console.log('Відправлено результат події всім гравцям');
         
-        // Завжди передаємо хід після завершення події
-        passTurnToNextPlayer(room);
+        // Передаємо хід тільки якщо гра продовжується
+        if (shouldContinue) {
+            passTurnToNextPlayer(room);
+        }
     });
     
     // Обробляємо відповідь на тестове завдання
@@ -1368,6 +1442,16 @@ io.on('connection', (socket) => {
                 return;
             }
             targetPlayer = room.gameData.players.find(p => p.id === data.targetPlayerId);
+        } else if (data.effectType === 'pushBack') {
+            cost = 50;
+            if (!data.targetPlayerId) {
+                console.log('Не вибрана ціль');
+                return;
+            }
+            targetPlayer = room.gameData.players.find(p => p.id === data.targetPlayerId);
+        } else if (data.effectType === 'boostForward') {
+            cost = 50;
+            targetPlayer = caster;
         }
         
         if (!targetPlayer) {
@@ -1384,18 +1468,63 @@ io.on('connection', (socket) => {
         // Списуємо ОО
         caster.points -= cost;
         
-        // Ініціалізуємо effects, якщо їх немає
-        if (!targetPlayer.effects) {
-            targetPlayer.effects = {};
-        }
+        let moveAmount = 0;
+        let targetNewPosition = targetPlayer.position;
         
         // Застосовуємо ефект
         if (data.effectType === 'hateClone') {
+            // Ініціалізуємо effects, якщо їх немає
+            if (!targetPlayer.effects) {
+                targetPlayer.effects = {};
+            }
             targetPlayer.effects.hateClone = (targetPlayer.effects.hateClone || 0) + 3;
         } else if (data.effectType === 'happinessCharm') {
+            // Ініціалізуємо effects, якщо їх немає
+            if (!targetPlayer.effects) {
+                targetPlayer.effects = {};
+            }
             targetPlayer.effects.happinessCharm = (targetPlayer.effects.happinessCharm || 0) + 3;
         } else if (data.effectType === 'procrastination') {
+            // Ініціалізуємо effects, якщо їх немає
+            if (!targetPlayer.effects) {
+                targetPlayer.effects = {};
+            }
             targetPlayer.effects.skipTurn = (targetPlayer.effects.skipTurn || 0) + 1;
+        } else if (data.effectType === 'pushBack') {
+            // Відкидаємо гравця назад
+            moveAmount = Math.floor(Math.random() * 6) + 10; // 10-15 клітинок
+            targetNewPosition = Math.max(0, targetPlayer.position - moveAmount);
+            targetPlayer.position = targetNewPosition;
+        } else if (data.effectType === 'boostForward') {
+            // Переміщуємо гравця вперед
+            moveAmount = Math.floor(Math.random() * 6) + 10; // 10-15 клітинок
+            targetNewPosition = Math.min(101, caster.position + moveAmount);
+            caster.position = targetNewPosition;
+            
+            // Перевірка перемоги після стрибка
+            if (caster.position >= 101) {
+                caster.hasWon = true;
+                room.gameState = 'finished';
+                io.to(room.id).emit('game_ended', { 
+                    winner: caster, 
+                    reason: `${caster.name} переміг за допомогою стрибка у майбутнє!` 
+                });
+                
+                // Відправляємо сповіщення
+                io.to(room.id).emit('effect_applied', {
+                    casterId: caster.id,
+                    casterName: caster.name,
+                    targetId: targetPlayer.id,
+                    targetName: targetPlayer.name,
+                    effectType: data.effectType,
+                    targetNewPosition: targetNewPosition,
+                    moveAmount: moveAmount
+                });
+                
+                // Оновлюємо стан гри
+                io.to(room.id).emit('game_state_update', room.gameData);
+                return;
+            }
         }
         
         // Відправляємо сповіщення
@@ -1404,7 +1533,9 @@ io.on('connection', (socket) => {
             casterName: caster.name,
             targetId: targetPlayer.id,
             targetName: targetPlayer.name,
-            effectType: data.effectType
+            effectType: data.effectType,
+            targetNewPosition: targetNewPosition,
+            moveAmount: moveAmount
         });
         
         // Оновлюємо стан гри
@@ -1645,6 +1776,25 @@ io.on('connection', (socket) => {
             } else {
                 resultMessage = `Нічия! Перемогла дружба! Кожному по ${player1Words} ОО!`;
             }
+            
+            // Нараховуємо очки переможцю або всім при нічиї
+            if (winner) {
+                const winnerPlayer = room.gameData.players.find(p => p.id === winner);
+                if (winnerPlayer) {
+                    winnerPlayer.points += 10; // PvP квест: +10 ОО за перемогу
+                }
+            } else {
+                // Нічия: даємо очки всім гравцям
+                room.timedTextQuestState.players.forEach(playerId => {
+                    const playerInRoom = room.gameData.players.find(p => p.id === playerId);
+                    if (playerInRoom) {
+                        playerInRoom.points += 10;
+                    }
+                });
+            }
+            
+            // Оновлюємо стан гри
+            io.to(room.id).emit('game_state_update', room.gameData);
 
             // Відправляємо результат всім гравцям
             io.to(room.id).emit('timed_text_quest_end', {
@@ -1864,7 +2014,7 @@ io.on('connection', (socket) => {
                 // Даємо бонус переможцю
                 const winnerPlayer = room.gameData.players.find(p => p.id === winner.playerId);
                 if (winnerPlayer) {
-                    winnerPlayer.points += 30;
+                    winnerPlayer.points += 20; // Творчий квест: +20 ОО за перемогу
                 }
             }
             

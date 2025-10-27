@@ -101,6 +101,9 @@ class MultiplayerGame extends EducationalPathGame {
         // Додаємо елемент для виходу з кімнати
         this.leaveRoomBtn = document.getElementById('leave-room-btn');
         
+        // Додаємо кнопку кидка кубика
+        this.rollDiceBtn = document.getElementById('roll-dice-btn');
+        
         console.log('Елементи мультиплеєра налаштовано');
     }
     
@@ -180,6 +183,11 @@ class MultiplayerGame extends EducationalPathGame {
         // Обробник для кнопки виходу з кімнати
         if (this.leaveRoomBtn) {
             this.leaveRoomBtn.addEventListener('click', () => this.leaveRoom());
+        }
+        
+        // Обробник для кнопки кидка кубика
+        if (this.rollDiceBtn) {
+            this.rollDiceBtn.addEventListener('click', () => this.rollTheDice());
         }
         
         console.log('Обробники подій мультиплеєра налаштовано');

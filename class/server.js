@@ -50,7 +50,7 @@ if (typeof EducationalPathGame !== 'undefined') {
 }
 
 // Межі епох для системи реінкарнації
-const EPOCH_BOUNDARIES = { 1: 12, 2: 22, 3: 42, 4: 75, 5: 97 };
+const EPOCH_BOUNDARIES = { 1: 12, 2: 22, 3: 42, 4: 75, 5: 97, 6: 101 };
 
 function getEpochForPosition(position) {
     if (position <= 12) return 1;
@@ -58,7 +58,8 @@ function getEpochForPosition(position) {
     if (position <= 42) return 3;
     if (position <= 75) return 4;
     if (position <= 97) return 5;
-    return 6;
+    if (position <= 101) return 6;
+    return 7; // Фінальна клітинка 101
 }
 
 // Спеціальні клітинки з подіями імпортуються з specialCells.js
@@ -521,21 +522,23 @@ io.on('connection', (socket) => {
         console.log('Кубик показав:', roll, 'Рух:', move);
         
         // Межі епох для системи реінкарнації
-        const EPOCH_BOUNDARIES = [12, 22, 42, 75, 97];
+        const EPOCH_BOUNDARIES = [12, 22, 42, 75, 97, 101];
         
         // Нова логіка руху з перевіркою меж епох
         const oldPosition = currentPlayer.position;
         let finalPosition = oldPosition;
         let stopMove = false;
-        
+
         // Поступово переміщуємо гравця крок за кроком
         for (let i = 1; i <= move; i++) {
             const nextStep = oldPosition + i;
             if (EPOCH_BOUNDARIES.includes(nextStep)) {
-                // Гравець ступив на межу епохи
-                finalPosition = nextStep;
-                stopMove = true;
-                break; // Зупиняємо рух, ходи скасовуються
+                // Гравець ступив на межу епохи (крім 100 - це кінець гри)
+                if (nextStep !== 101) {
+                    finalPosition = nextStep;
+                    stopMove = true;
+                    break; // Зупиняємо рух
+                }
             }
         }
         
@@ -748,25 +751,72 @@ io.on('connection', (socket) => {
                     console.log(`Використано запасний gameType: ${selectedGameKey}`);
                 }
                 
-                // Створюємо стан гри на швидкість введення тексту
-                room.timedTextQuestState = {
-                    gameType: selectedGameKey,
-                    gameData: selectedGame,
-                    players: [player.id, opponent.id],
-                    playerNames: [player.name, opponent.name],
-                    timer: selectedGame.timer,
-                    startTime: Date.now(),
-                    results: {},
-                    gameActive: true
-                };
+                // Визначаємо тип гри і запускаємо відповідну подію
+                if (selectedGameKey === 'tic_tac_toe') {
+                    // Хрестики-нулики
+                    room.tictactoeState = {
+                        gameType: 'tic_tac_toe',
+                        gameData: selectedGame,
+                        players: [player.id, opponent.id],
+                        playerNames: [player.name, opponent.name],
+                        currentRound: 0,
+                        totalRounds: 3,
+                        rounds: [{board: Array(9).fill(null), winner: null, currentPlayer: player.id}, 
+                                 {board: Array(9).fill(null), winner: null, currentPlayer: player.id}, 
+                                 {board: Array(9).fill(null), winner: null, currentPlayer: player.id}],
+                        scores: {[player.id]: 0, [opponent.id]: 0},
+                        gameActive: true,
+                        currentPlayer: player.id
+                    };
+                    
+                    io.to(room.id).emit('tic_tac_toe_start', {
+                        gameState: room.tictactoeState,
+                        player1: { id: player.id, name: player.name },
+                        player2: { id: opponent.id, name: opponent.name }
+                    });
+                } else if (selectedGameKey === 'rock_paper_scissors') {
+                    // Камінь-ножиці-папір
+                    room.rockPaperScissorsState = {
+                        gameType: 'rock_paper_scissors',
+                        gameData: selectedGame,
+                        players: [player.id, opponent.id],
+                        playerNames: [player.name, opponent.name],
+                        currentRound: 0,
+                        maxRounds: 3,
+                        rounds: [{ player1Choice: null, player2Choice: null, winner: null },
+                                { player1Choice: null, player2Choice: null, winner: null },
+                                { player1Choice: null, player2Choice: null, winner: null }],
+                        scores: { [player.id]: 0, [opponent.id]: 0 },
+                        gameActive: true,
+                        currentPlayer: player.id
+                    };
+                    
+                    io.to(room.id).emit('rock_paper_scissors_start', {
+                        gameState: room.rockPaperScissorsState,
+                        player1: { id: player.id, name: player.name },
+                        player2: { id: opponent.id, name: opponent.name }
+                    });
+                } else {
+                    // Текстова гра (genius, megabrain, pedagogobot)
+                    room.timedTextQuestState = {
+                        gameType: selectedGameKey,
+                        gameData: selectedGame,
+                        players: [player.id, opponent.id],
+                        playerNames: [player.name, opponent.name],
+                        timer: selectedGame.timer,
+                        startTime: Date.now(),
+                        results: {},
+                        gameActive: true
+                    };
 
-                // Відправляємо початок гри
-                io.to(room.id).emit('start_timed_text_quest', {
-                    gameState: room.timedTextQuestState,
-                    player1: { id: player.id, name: player.name },
-                    player2: { id: opponent.id, name: opponent.name },
-                    activePlayerId: player.id
-                });
+                    // Відправляємо початок гри
+                    io.to(room.id).emit('start_timed_text_quest', {
+                        gameState: room.timedTextQuestState,
+                        player1: { id: player.id, name: player.name },
+                        player2: { id: opponent.id, name: opponent.name },
+                        activePlayerId: player.id
+                    });
+                }
 
             } else if (data.eventType === 'creative-quest') {
                 // Використовуємо gameType з specialCells (без рандомізації!)

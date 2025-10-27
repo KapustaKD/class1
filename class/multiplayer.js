@@ -1358,8 +1358,18 @@ class MultiplayerGame extends EducationalPathGame {
                         eventData: data.eventInfo.eventData,
                         cellNumber: player.position
                     });
+                } else if (data.eventInfo.eventType === 'reincarnation' || data.eventInfo.eventType === 'alternative-path' || 
+                           data.eventInfo.eventType === 'test-question') {
+                    // Для цих типів подій показуємо модальне вікно
+                    this.showEventPrompt({
+                        playerId: data.eventInfo.playerId,
+                        playerName: data.eventInfo.playerName,
+                        eventType: data.eventInfo.eventType,
+                        eventData: data.eventInfo.eventData,
+                        activePlayerId: data.eventInfo.playerId
+                    });
                 } else {
-                    // Для інших типів подій показуємо модальне вікно
+                    // Для всіх інших типів подій також показуємо модальне вікно
                     this.showEventPrompt({
                         playerId: data.eventInfo.playerId,
                         playerName: data.eventInfo.playerName,

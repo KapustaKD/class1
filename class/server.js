@@ -597,7 +597,7 @@ io.on('connection', (socket) => {
             currentPlayer.position = finalPosition;
             
             // Перевіряємо перемогу (досягнення клітинки 101)
-            if (finalPosition >= 100) {
+            if (finalPosition >= 101) {
                 // Гравець переміг!
                 currentPlayer.hasWon = true;
                 room.gameState = 'finished';

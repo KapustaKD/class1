@@ -1255,3 +1255,57 @@ body.glassmorphism-bg {
     border-color: #3b82f6 !important; /* Синій бордер (Tailwind blue-500) */
 }
 
+/* Стилі для кнопки бафів/дебафів */
+#buff-debuff-btn {
+    background-color: #9333ea !important; /* Фіолетовий */
+}
+
+#buff-debuff-btn:hover:not(:disabled) {
+    background-color: #7e22ce !important;
+}
+
+#buff-debuff-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Стилі для модального вікна бафів/дебафів */
+#buff-debuff-modal .modal-content {
+    max-width: 600px;
+}
+
+#buff-debuff-modal .buff-debuff-option {
+    background: rgba(30, 41, 59, 0.8);
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    border: 2px solid rgba(139, 92, 246, 0.3);
+}
+
+#buff-debuff-modal .buff-debuff-option h4 {
+    color: #fbbf24;
+    margin-bottom: 10px;
+}
+
+#buff-debuff-modal .buff-debuff-option p {
+    color: #e2e8f0;
+    margin-bottom: 10px;
+}
+
+#buff-debuff-modal .duration {
+    font-style: italic;
+    color: #a78bfa;
+}
+
+#buff-debuff-modal .player-selection label {
+    color: #e2e8f0;
+    margin-bottom: 5px;
+    display: block;
+}
+
+#buff-debuff-modal select {
+    background-color: #1e293b !important;
+    color: white !important;
+    border: 1px solid #475569 !important;
+}
+

@@ -1335,14 +1335,29 @@ class MultiplayerGame extends EducationalPathGame {
             
             // Після завершення анімації перевіряємо події
             if (data.eventInfo && data.eventInfo.hasEvent) {
-                console.log('Показуємо подію після завершення анімації:', data.eventInfo);
-                this.showEventPrompt({
-                    playerId: data.eventInfo.playerId,
-                    playerName: data.eventInfo.playerName,
-                    eventType: data.eventInfo.eventType,
-                    eventData: data.eventInfo.eventData,
-                    activePlayerId: data.eventInfo.playerId
-                });
+                console.log('Подія виявлена після завершення анімації:', data.eventInfo);
+                
+                // Для спеціальних типів подій (pvp, creative, webnovella, mad-libs) відправляємо на сервер
+                if (data.eventInfo.eventType === 'pvp-quest' || data.eventInfo.eventType === 'creative-quest' || 
+                    data.eventInfo.eventType === 'webnovella-quest' || data.eventInfo.eventType === 'mad-libs-quest') {
+                    // Відправляємо подію на сервер для обробки
+                    this.socket.emit('player_on_event', {
+                        roomId: this.roomId,
+                        playerId: data.playerId,
+                        eventType: data.eventInfo.eventType,
+                        eventData: data.eventInfo.eventData,
+                        cellNumber: player.position
+                    });
+                } else {
+                    // Для інших типів подій показуємо модальне вікно
+                    this.showEventPrompt({
+                        playerId: data.eventInfo.playerId,
+                        playerName: data.eventInfo.playerName,
+                        eventType: data.eventInfo.eventType,
+                        eventData: data.eventInfo.eventData,
+                        activePlayerId: data.eventInfo.playerId
+                    });
+                }
             }
             
         }, 1000);

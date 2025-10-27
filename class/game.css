@@ -348,6 +348,57 @@ body {
     color: #2d3748;
 }
 
+/* Кольорове маркування клітинок */
+.board-cell.cell-quest { /* Усі типи квестів: pvp, creative, mad-libs, webnovella */
+    background: linear-gradient(135deg, #2dd4bf, #14b8a6) !important; /* Зелений (Teal) */
+    border-color: #0d9488 !important;
+    color: white !important; /* Білий текст для контрасту */
+}
+
+.board-cell.cell-test { /* test-question */
+    background: linear-gradient(135deg, #60a5fa, #3b82f6) !important; /* Синій */
+    border-color: #2563eb !important;
+    color: white !important;
+}
+
+.board-cell.cell-reincarnation { /* reincarnation, early-reincarnation */
+    background: linear-gradient(135deg, #374151, #1f2937) !important; /* Чорний/Темно-сірий */
+    border-color: #111827 !important;
+    color: #d1d5db !important; /* Світло-сірий текст */
+}
+
+.board-cell.cell-amphitheater { /* amphitheater */
+    background: linear-gradient(135deg, #a16207, #854d0e) !important; /* Коричневий (Amber-800) */
+    border-color: #713f12 !important;
+    color: #fef3c7 !important; /* Світло-жовтий текст */
+}
+
+.board-cell.cell-tavern { /* tavern */
+    background: linear-gradient(135deg, #f97316, #ea580c) !important; /* Помаранчевий */
+    border-color: #c2410c !important;
+    color: white !important;
+}
+
+.board-cell.cell-casino { /* casino */
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important; /* Червоний */
+    border-color: #b91c1c !important;
+    color: white !important;
+}
+
+/* Стиль для обхідних шляхів */
+.board-cell.alternative-path {
+    background: linear-gradient(135deg, #facc15, #eab308) !important; /* Жовтий */
+    border-color: #ca8a04 !important;
+    color: #422006 !important; /* Темно-коричневий текст */
+}
+
+/* Стиль для фінішної клітинки */
+.board-cell.finish {
+    background: radial-gradient(circle, #ffd700, #ffb347) !important; /* Золотий */
+    border-color: #ca8a04 !important;
+    color: #422006 !important;
+}
+
 .board-cell.reincarnation { 
     color: #4a5568; 
 }

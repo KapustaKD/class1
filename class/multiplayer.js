@@ -104,6 +104,9 @@ class MultiplayerGame extends EducationalPathGame {
         // Додаємо кнопку кидка кубика
         this.rollDiceBtn = document.getElementById('roll-dice-btn');
         
+        // Додаємо кнопку бафів/дебафів
+        this.buffDebuffBtn = document.getElementById('buff-debuff-btn');
+        
         console.log('Елементи мультиплеєра налаштовано');
     }
     
@@ -188,6 +191,40 @@ class MultiplayerGame extends EducationalPathGame {
         // Обробник для кнопки кидка кубика
         if (this.rollDiceBtn) {
             this.rollDiceBtn.addEventListener('click', () => this.rollTheDice());
+        }
+        
+        // Обробник для кнопки бафів/дебафів
+        if (this.buffDebuffBtn) {
+            this.buffDebuffBtn.addEventListener('click', () => {
+                if (!this.buffDebuffBtn.disabled && this.gameActive) {
+                    this.showBuffDebuffModal();
+                }
+            });
+        }
+        
+        // Обробник закриття модального вікна бафів/дебафів
+        const closeBuffModalBtn = document.getElementById('close-buff-modal-btn');
+        if (closeBuffModalBtn) {
+            closeBuffModalBtn.addEventListener('click', () => {
+                document.getElementById('buff-debuff-modal').classList.add('hidden');
+            });
+        }
+        
+        // Обробники для кнопок застосування бафів/дебафів
+        const applyHateBtn = document.getElementById('apply-hate-btn');
+        const applyHappinessBtn = document.getElementById('apply-happiness-btn');
+        const applyProcrastinationBtn = document.getElementById('apply-procrastination-btn');
+        
+        if (applyHateBtn) {
+            applyHateBtn.addEventListener('click', () => this.handleApplyEffect('hateClone', 100));
+        }
+        
+        if (applyHappinessBtn) {
+            applyHappinessBtn.addEventListener('click', () => this.handleApplyEffect('happinessCharm', 100));
+        }
+        
+        if (applyProcrastinationBtn) {
+            applyProcrastinationBtn.addEventListener('click', () => this.handleApplyEffect('procrastination', 50));
         }
         
         console.log('Обробники подій мультиплеєра налаштовано');
@@ -551,6 +588,31 @@ class MultiplayerGame extends EducationalPathGame {
                 });
         
         // Реінкарнація гравця
+        // Обробник для застосування бафів/дебафів
+        this.socket.on('effect_applied', (data) => {
+            console.log('Баф/Дебаф застосовано:', data);
+            let message = '';
+            
+            if (data.effectType === 'hateClone') {
+                message = `🎭 ${data.casterName} застосував "Кльон хейту" на ${data.targetName}! Його рух сповільнено.`;
+                if (data.targetId === this.playerId) {
+                    alert(`Співчуваємо, ${data.casterName} застосував на вас "Кльон хейту". Тепер Вас ненавидить кожен видатний педагог даної епохи! Ваше просування йде вдвічі повільніше.`);
+                }
+            } else if (data.effectType === 'happinessCharm') {
+                message = `🍀 ${data.casterName} застосував на себе "Замовляння на щастє"! Його рух подвоєно.`;
+                if (data.casterId === this.playerId) {
+                    alert(`Вітаємо! Ви застосували "Замовляння на щастє". Тепер ваш шлях вдвічі швидший!`);
+                }
+            } else if (data.effectType === 'procrastination') {
+                message = `⏳ ${data.casterName} застосував "Кльон прокрастинації" на ${data.targetName}! Він пропустить хід.`;
+                if (data.targetId === this.playerId) {
+                    alert(`Співчуваємо, ${data.casterName} застосував на вас "Кльон прокрастинації". Кидання кубику здається непосильним завданням, тому Ви пропускаєте наступний хід.`);
+                }
+            }
+            
+            this.addChatMessage('system', message);
+        });
+        
         this.socket.on('player_reincarnated', (data) => {
             console.log('Реінкарнація гравця:', data);
             
@@ -566,6 +628,14 @@ class MultiplayerGame extends EducationalPathGame {
                 this.updateLeaderboard();
                 
                 console.log(`${player.name} реінкарнувався в епоху ${data.newEpoch} як ${data.newClass.name}`);
+            }
+        });
+        
+        // Обробник для відображення класу при реінкарнації
+        this.socket.on('show_reincarnation_class', (data) => {
+            console.log('Показ класу після реінкарнації:', data);
+            if (data.playerId === this.playerId && data.newClass) {
+                this.displayClassModal(data.newClass);
             }
         });
         
@@ -1985,11 +2055,23 @@ class MultiplayerGame extends EducationalPathGame {
                 this.rollDiceBtn.textContent = `⏳ Не ваш хід - Хід гравця ${currentPlayer?.name || 'невідомо'}`;
                 this.rollDiceBtn.style.backgroundColor = '#6b7280'; // Сірий колір
             }
+            
+            // Управління кнопкою бафів/дебафів
+            if (this.buffDebuffBtn) {
+                const myPlayer = this.players.find(p => p.id === this.playerId);
+                const hasEnoughPoints = myPlayer && myPlayer.points >= 50; // Мінімальна вартість бафу
+                this.buffDebuffBtn.disabled = !isCurrentPlayer || !hasEnoughPoints || !this.gameActive;
+            }
         } else {
             this.rollDiceBtn.disabled = !this.gameActive;
             this.rollDiceBtn.style.opacity = this.gameActive ? '1' : '0.5';
             this.rollDiceBtn.textContent = 'Кинути кубик';
             this.rollDiceBtn.style.backgroundColor = '#eab308'; // Жовтий колір
+            
+            // Управління кнопкою бафів/дебафів для локального режиму
+            if (this.buffDebuffBtn) {
+                this.buffDebuffBtn.disabled = !this.gameActive;
+            }
         }
     }
     
@@ -4466,6 +4548,141 @@ class MultiplayerGame extends EducationalPathGame {
             playerId: this.playerId,
             playerName: 'Тестовий гравець'
         });
+    }
+    
+    // Методи для роботи з бафами/дебафами
+    showBuffDebuffModal() {
+        const modal = document.getElementById('buff-debuff-modal');
+        if (!modal) return;
+        
+        // Оновлюємо ОО гравця
+        const pointsEl = document.getElementById('buff-modal-points');
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        if (pointsEl && currentPlayer) {
+            pointsEl.textContent = currentPlayer.points || 0;
+        }
+        
+        // Заповнюємо списки цілей
+        this.populateTargets();
+        
+        // Оновлюємо доступність кнопок
+        this.updateBuffButtonsState();
+        
+        // Показуємо модальне вікно
+        modal.classList.remove('hidden');
+    }
+    
+    populateTargets() {
+        const hateSelect = document.getElementById('hate-target');
+        const procSelect = document.getElementById('procrastination-target');
+        
+        if (hateSelect && procSelect) {
+            // Очищаємо списки
+            hateSelect.innerHTML = '';
+            procSelect.innerHTML = '';
+            
+            // Додаємо опції для інших гравців
+            this.players.forEach(player => {
+                if (player.id !== this.playerId && !player.hasLost) {
+                    const option = document.createElement('option');
+                    option.value = player.id;
+                    option.textContent = player.name;
+                    hateSelect.appendChild(option.cloneNode(true));
+                    procSelect.appendChild(option);
+                }
+            });
+        }
+    }
+    
+    updateBuffButtonsState() {
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        if (!currentPlayer) return;
+        
+        const points = currentPlayer.points || 0;
+        
+        // Оновлюємо кнопки
+        const applyHateBtn = document.getElementById('apply-hate-btn');
+        const applyHappinessBtn = document.getElementById('apply-happiness-btn');
+        const applyProcrastinationBtn = document.getElementById('apply-procrastination-btn');
+        
+        const hasOtherPlayers = this.players.filter(p => p.id !== this.playerId && !p.hasLost).length > 0;
+        
+        if (applyHateBtn) {
+            applyHateBtn.disabled = points < 100 || !hasOtherPlayers;
+        }
+        
+        if (applyHappinessBtn) {
+            applyHappinessBtn.disabled = points < 100;
+        }
+        
+        if (applyProcrastinationBtn) {
+            applyProcrastinationBtn.disabled = points < 50 || !hasOtherPlayers;
+        }
+    }
+    
+    handleApplyEffect(effectType, cost) {
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        if (!currentPlayer) return;
+        
+        if (currentPlayer.points < cost) {
+            alert('Недостатньо ОО для цього бафа/дебафа!');
+            return;
+        }
+        
+        let targetPlayerId = null;
+        
+        // Для дебафів потрібна ціль
+        if (effectType === 'hateClone') {
+            const select = document.getElementById('hate-target');
+            if (!select || !select.value) {
+                alert('Оберіть ціль!');
+                return;
+            }
+            targetPlayerId = select.value;
+        } else if (effectType === 'procrastination') {
+            const select = document.getElementById('procrastination-target');
+            if (!select || !select.value) {
+                alert('Оберіть ціль!');
+                return;
+            }
+            targetPlayerId = select.value;
+        }
+        
+        // Відправляємо подію на сервер
+        if (this.socket) {
+            this.socket.emit('apply_effect', {
+                roomId: this.roomId,
+                effectType: effectType,
+                targetPlayerId: targetPlayerId
+            });
+        }
+        
+        // Закриваємо модальне вікно
+        document.getElementById('buff-debuff-modal').classList.add('hidden');
+    }
+    
+    // Метод для відображення класу при початку гри та реінкарнації
+    displayClassModal(classInfo) {
+        if (!classInfo) return;
+        console.log('Показ модалки класу:', classInfo);
+        
+        const modalContent = `
+            <h3 class="text-2xl font-bold mb-2">${classInfo.name}</h3>
+            <p class="text-lg mb-4"><em>${classInfo.description || 'Опис класу відсутній.'}</em></p>
+            <div class="text-left mb-4 bg-gray-700 p-3 rounded text-gray-300">
+                <p><strong>Стартові ОО:</strong> ${classInfo.startPoints}</p>
+                <p><strong>Модифікатор руху:</strong> ${classInfo.moveModifier > 0 ? '+' : ''}${classInfo.moveModifier}</p>
+            </div>
+            <button onclick="window.game.closeQuestModal()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Зрозуміло</button>
+        `;
+        
+        // Використовуємо існуючу функцію показу модалки квестів
+        this.showQuestModal('Ваш клас', modalContent, [], null);
+    }
+    
+    closeQuestModal() {
+        const modal = document.getElementById('quest-modal');
+        if (modal) modal.classList.add('hidden');
     }
 }
 

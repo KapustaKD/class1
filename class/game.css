@@ -1288,8 +1288,25 @@ body.glassmorphism-bg {
     overflow: hidden;
 }
 
+/* Менше модальне вікно для камінь-ножиці-папір */
+.glassmorphism-content-rps-small {
+    background-image: url('image/modal_window/rock_paper_scissors.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: transparent;
+    position: relative;
+    min-height: 350px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+}
+
 /* Overlay для кращої читабельності тексту */
-.glassmorphism-content-rps::before {
+.glassmorphism-content-rps::before,
+.glassmorphism-content-rps-small::before {
     content: '';
     position: absolute;
     top: 0;
@@ -1302,7 +1319,8 @@ body.glassmorphism-bg {
 }
 
 /* Забезпечуємо, що контент буде поверх overlay */
-.glassmorphism-content-rps > * {
+.glassmorphism-content-rps > *,
+.glassmorphism-content-rps-small > * {
     position: relative;
     z-index: 1;
 }

@@ -524,37 +524,87 @@ body {
 .face-6 { transform: rotateX(-90deg) translateZ(40px); }
 
 /* Модальні вікна */
-.modal-backdrop { 
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%; 
-    background: rgba(0, 0, 0, 0.5);
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    z-index: 40;
-    backdrop-filter: blur(5px);
+/* Стилі для Glassmorphism-ефекту модального вікна */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Напівпрозорий чорний фон */
+    backdrop-filter: blur(5px); /* Розмиття фону */
+    z-index: 40; /* Має бути вище за інші елементи, але нижче за modal-content */
+    /* Додай 'hidden' клас з Tailwind, щоб сховати його спочатку */
 }
-
-.modal-content { 
+.modal-content {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(255, 255, 255, 0.1);
+    transform: translate(-50%, -50%); /* Центрування */
+    background: rgba(255, 255, 255, 0.1); /* Дуже прозорий білий фон */
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Ледь помітна біла рамка */
+    border-radius: 16px; /* Округлені кути */
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); /* Тінь */
+    backdrop-filter: blur(10px); /* Сильніше розмиття для самого вікна */
+    z-index: 50; /* Має бути вище за backdrop */
+    color: white; /* Колір тексту - білий */
+    width: 90%; /* Ширина на мобільних */
+    max-width: 600px; /* Максимальна ширина на десктопах */
+    max-height: 80vh; /* Максимальна висота, щоб вміщалося на екрані */
+    overflow-y: auto; /* Додаємо скрол, якщо контент не вміщається */
+    padding: 1.5rem; /* Внутрішні відступи (p-6 з Tailwind) */
+}
+
+/* Стилі для вкладок */
+.tab-btn {
+    background-color: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 16px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
-    z-index: 50;
-    color: white;
-    width: 90%;
-    max-width: 600px;
-    max-height: 80vh;
-    overflow-y: auto;
-    padding: 0;
+    color: white; /* Додано колір тексту */
+    padding: 0.5rem 1rem; /* py-2 px-4 */
+    border-top-left-radius: 0.5rem; /* rounded-t-lg */
+    border-top-right-radius: 0.5rem; /* rounded-t-lg */
+    font-size: 1.125rem; /* text-lg */
+    font-weight: 600; /* font-semibold */
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.tab-btn:hover {
+     background-color: rgba(255, 255, 255, 0.2);
+}
+.tab-btn.active {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-bottom: 2px solid #fbbf24; /* yellow-400 */
+}
+.tab-content {
+    display: none; /* Вкладки приховані за замовчуванням */
+}
+.tab-content.active {
+    display: block; /* Активна вкладка видима */
+}
+
+/* Стилізація заголовка всередині .modal-content */
+ .modal-content h2 {
+    font-size: 1.875rem; /* text-3xl */
+    font-weight: 700; /* font-bold */
+    text-align: center;
+    color: #fcd34d; /* text-yellow-300 */
+    margin-bottom: 1.5rem; /* mb-6 */
+}
+/* Стилізація кнопки закриття */
+ .modal-content #show-setup-btn {
+    background-color: #f59e0b; /* bg-yellow-500 */
+    color: #1f2937; /* text-gray-900 */
+    font-weight: 700; /* font-bold */
+    padding: 0.75rem 1.5rem; /* py-3 px-6 */
+    border-radius: 0.5rem; /* rounded-lg */
+    transition: background-color 0.3s;
+    font-size: 1.125rem; /* text-lg */
+    cursor: pointer;
+    display: block; /* Щоб центрувати */
+    margin: 2rem auto 0 auto; /* mt-8 + центрування */
+}
+ .modal-content #show-setup-btn:hover {
+    background-color: #d97706; /* hover:bg-yellow-600 */
 }
 
 .modal-content.show {
@@ -1293,3 +1343,4 @@ body.glassmorphism-bg {
     cursor: not-allowed;
     transform: none;
 }
+

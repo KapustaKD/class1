@@ -739,16 +739,25 @@ io.on('connection', (socket) => {
                 let selectedGameKey = 'genius'; // Запасний варіант
                 let selectedGame;
                 
-                if (data.eventData && data.eventData.gameType && pvpGames[data.eventData.gameType]) {
-                    // Використовуємо gameType з specialCells
-                    selectedGameKey = data.eventData.gameType;
-                    selectedGame = pvpGames[data.eventData.gameType];
-                    console.log(`Використовуємо gameType з specialCells: ${selectedGameKey}`);
+                console.log('data.eventData:', data.eventData);
+                if (data.eventData && data.eventData.gameType) {
+                    console.log(`Перевіряємо gameType: ${data.eventData.gameType}`);
+                    if (pvpGames[data.eventData.gameType]) {
+                        selectedGameKey = data.eventData.gameType;
+                        selectedGame = pvpGames[selectedGameKey];
+                        console.log(`✅ Використовуємо gameType з specialCells: ${selectedGameKey}`);
+                    } else {
+                        console.log(`❌ pvpGames не містить ключ "${data.eventData.gameType}"`);
+                        console.log('Доступні ключі:', Object.keys(pvpGames));
+                        selectedGameKey = 'genius';
+                        selectedGame = pvpGames[selectedGameKey];
+                        console.log(`Використано запасний: ${selectedGameKey}`);
+                    }
                 } else {
-                    // Якщо gameType не вказано, використовуємо запасний
+                    console.log('❌ data.eventData.gameType не вказано');
                     selectedGameKey = 'genius';
                     selectedGame = pvpGames[selectedGameKey];
-                    console.log(`Використано запасний gameType: ${selectedGameKey}`);
+                    console.log(`Використано запасний: ${selectedGameKey}`);
                 }
                 
                 // Визначаємо тип гри і запускаємо відповідну подію

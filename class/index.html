@@ -74,6 +74,7 @@
                 </div>
             </div>
             <button id="roll-dice-btn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition duration-300 shadow-lg text-xl">Кинути кубик</button>
+            <button id="buff-debuff-btn" class="w-full mt-2 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 shadow-lg text-xl" disabled>✨ Бафи/Дебафи</button>
             <button id="exit-game-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 shadow-lg text-lg mt-2" onclick="window.exitGame()">Вийти з гри</button>
         </div>
     </div>
@@ -268,6 +269,48 @@
     
     <div id="quest-modal" class="modal-backdrop hidden">
         <div id="quest-modal-content" class="modal-content text-gray-800 text-center"></div>
+        </div>
+
+    <!-- Модальне вікно бафів/дебафів -->
+    <div id="buff-debuff-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <h3>✨ Магазин Бафів та Дебафів ✨</h3>
+            <p class="text-center mb-4">Ваші ОО: <span id="buff-modal-points" class="font-bold text-yellow-300">0</span></p>
+
+            <!-- Опція 1: Кльон хейту (Дебаф) -->
+            <div class="buff-debuff-option">
+                <h4 class="text-lg font-bold mb-2">🎭 Кльон хейту (-100 ОО)</h4>
+                <p>Накласти на суперника дебаф, що зменшує його ходи вдвічі.</p>
+                <p class="duration mb-2">Діє 3 ходи цілі.</p>
+                <div class="player-selection mb-2">
+                    <label for="hate-target">Обрати ціль:</label>
+                    <select id="hate-target" class="w-full p-2 rounded bg-gray-700 text-white"></select>
+                </div>
+                <button id="apply-hate-btn" data-cost="100" data-type="hateClone" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded" disabled>Застосувати</button>
+            </div>
+
+            <!-- Опція 2: Замовляння на щастє (Баф) -->
+            <div class="buff-debuff-option">
+                <h4 class="text-lg font-bold mb-2">🍀 Замовляння на щастє (-100 ОО)</h4>
+                <p>Накласти на себе баф, що подвоює ваші ходи.</p>
+                <p class="duration mb-2">Діє 3 ваших ходи.</p>
+                <button id="apply-happiness-btn" data-cost="100" data-type="happinessCharm" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded" disabled>Застосувати на себе</button>
+            </div>
+
+            <!-- Опція 3: Кльон прокрастинації (Дебаф) -->
+            <div class="buff-debuff-option">
+                <h4 class="text-lg font-bold mb-2">⏳ Кльон прокрастинації (-50 ОО)</h4>
+                <p>Змусити суперника пропустити наступний хід.</p>
+                <p class="duration mb-2">Діє 1 хід цілі.</p>
+                <div class="player-selection mb-2">
+                    <label for="procrastination-target">Обрати ціль:</label>
+                    <select id="procrastination-target" class="w-full p-2 rounded bg-gray-700 text-white"></select>
+                </div>
+                <button id="apply-procrastination-btn" data-cost="50" data-type="procrastination" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded" disabled>Застосувати</button>
+            </div>
+
+            <button id="close-buff-modal-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded mt-4">Закрити</button>
+        </div>
     </div>
 
     <!-- Модальне вікно вибору аватарів -->

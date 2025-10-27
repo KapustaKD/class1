@@ -771,15 +771,9 @@ io.on('connection', (socket) => {
         let hasEvent = false;
         
         // Перевірка на реінкарнацію (зупинка на межі епохи)
+        // Прибираємо генерацію події reincarnation, тому що клас вже показано через show_reincarnation_class
         if (stopMove) {
-            hasEvent = true;
-            eventInfo.hasEvent = true;
-            eventInfo.eventType = 'reincarnation';
-            eventInfo.eventData = {
-                nextEpoch: newEpoch,
-                points: 30
-            };
-            console.log(`Гравець ${currentPlayer.name} потрапив на межу епохи ${currentPlayer.position}, буде реінкарнація`);
+            console.log(`Гравець ${currentPlayer.name} потрапив на межу епохи ${currentPlayer.position}, реінкарнація вже оброблена`);
         }
         
         // Перевірка на інші події (скорочення шляху тощо)
@@ -806,11 +800,16 @@ io.on('connection', (socket) => {
         });
         
         // Якщо є подія, не передаємо хід одразу - чекаємо на обробку події
-        if (hasEvent) {
+        // Але для реінкарнації передаємо хід одразу, оскільки клас вже показано
+        if (hasEvent && !stopMove) {
             console.log(`Гравець ${currentPlayer.name} потрапив на подію, чекаємо на обробку...`);
             // Зберігаємо ID гравця, який потрапив на подію
             room.currentEventPlayerId = currentPlayer.id;
             // НЕ передаємо хід - він буде переданий після обробки події
+        } else if (stopMove) {
+            // Якщо це реінкарнація, передаємо хід одразу після показу класу
+            console.log(`Реінкарнація оброблена, передаємо хід наступному гравцю...`);
+            passTurnToNextPlayer(room);
         } else {
             // Якщо події немає, передаємо хід одразу
             passTurnToNextPlayer(room);

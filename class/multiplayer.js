@@ -214,6 +214,8 @@ class MultiplayerGame extends EducationalPathGame {
         const applyHateBtn = document.getElementById('apply-hate-btn');
         const applyHappinessBtn = document.getElementById('apply-happiness-btn');
         const applyProcrastinationBtn = document.getElementById('apply-procrastination-btn');
+        const applyPushbackBtn = document.getElementById('apply-pushback-btn');
+        const applyBoostForwardBtn = document.getElementById('apply-boost-forward-btn');
         
         if (applyHateBtn) {
             applyHateBtn.addEventListener('click', () => this.handleApplyEffect('hateClone', 100));
@@ -225,6 +227,14 @@ class MultiplayerGame extends EducationalPathGame {
         
         if (applyProcrastinationBtn) {
             applyProcrastinationBtn.addEventListener('click', () => this.handleApplyEffect('procrastination', 50));
+        }
+        
+        if (applyPushbackBtn) {
+            applyPushbackBtn.addEventListener('click', () => this.handleApplyEffect('pushBack', 50));
+        }
+        
+        if (applyBoostForwardBtn) {
+            applyBoostForwardBtn.addEventListener('click', () => this.handleApplyEffect('boostForward', 50));
         }
         
         console.log('Обробники подій мультиплеєра налаштовано');
@@ -607,6 +617,16 @@ class MultiplayerGame extends EducationalPathGame {
                 message = `⏳ ${data.casterName} застосував "Кльон прокрастинації" на ${data.targetName}! Він пропустить хід.`;
                 if (data.targetId === this.playerId) {
                     alert(`Співчуваємо, ${data.casterName} застосував на вас "Кльон прокрастинації". Кидання кубику здається непосильним завданням, тому Ви пропускаєте наступний хід.`);
+                }
+            } else if (data.effectType === 'pushBack') {
+                message = `💨 ${data.casterName} відкинув ${data.targetName} на ${data.moveAmount || 0} клітинок назад!`;
+                if (data.targetId === this.playerId) {
+                    alert(`Співчуваємо, ${data.casterName} використав проти вас "Порив вітру". Ви відкинуті на ${data.moveAmount || 0} клітинок назад!`);
+                }
+            } else if (data.effectType === 'boostForward') {
+                message = `🚀 ${data.casterName} стрибнув у майбутнє на ${data.moveAmount || 0} клітинок вперед!`;
+                if (data.casterId === this.playerId) {
+                    alert(`Вітаємо! Ви використали "Стрибок у майбутнє" та перемістилися на ${data.moveAmount || 0} клітинок вперед!`);
                 }
             }
             
@@ -1506,6 +1526,31 @@ class MultiplayerGame extends EducationalPathGame {
             
             // Показуємо модальне вікно для реінкарнації
             this.showQuestModal('Реінкарнація', modalContent, buttons, null);
+            return;
+        } else if (data.eventType === 'machine-uprising') {
+            const cost = data.eventData.cost;
+            modalContent = `
+                <h3 class="text-2xl font-bold mb-4 text-red-500">🚨 Повстання машин! 🚨</h3>
+                <p class="mb-2">Найкращий друг людства кілька століть поспіль зрадив Вас!</p>
+                <p class="mb-4">Відкупіться від штучного інтелекту знаннями, які Ви здобули протягом гри, або загиньте!</p>
+                <p class="mb-6 font-bold text-yellow-300">Вартість відкупу: ${cost} ОО</p>
+            `;
+            
+            if (isMyEvent) {
+                const currentPlayer = this.players[this.currentPlayerIndex];
+                const canPay = currentPlayer && currentPlayer.points >= cost;
+                buttons = [
+                    { text: `💰 Відкупитися (${cost} ОО)`, callback: () => this.makeEventChoice('pay', data.eventType, data.eventData), disabled: !canPay },
+                    { text: '💀 Відмовитися', callback: () => this.makeEventChoice('refuse', data.eventType, data.eventData) }
+                ];
+            } else {
+                buttons = [
+                    { text: 'Очікуємо вибору...', callback: () => {}, disabled: true }
+                ];
+            }
+            
+            // Показуємо модальне вікно
+            this.showQuestModal('Повстання машин', modalContent, buttons, null);
             return;
         } else if (data.eventType === 'alternative-path') {
             // Використовуємо glassmorphism дизайн для обхідної дороги
@@ -4575,11 +4620,13 @@ class MultiplayerGame extends EducationalPathGame {
     populateTargets() {
         const hateSelect = document.getElementById('hate-target');
         const procSelect = document.getElementById('procrastination-target');
+        const pushbackSelect = document.getElementById('pushback-target');
         
         if (hateSelect && procSelect) {
             // Очищаємо списки
             hateSelect.innerHTML = '';
             procSelect.innerHTML = '';
+            if (pushbackSelect) pushbackSelect.innerHTML = '';
             
             // Додаємо опції для інших гравців
             this.players.forEach(player => {
@@ -4588,7 +4635,8 @@ class MultiplayerGame extends EducationalPathGame {
                     option.value = player.id;
                     option.textContent = player.name;
                     hateSelect.appendChild(option.cloneNode(true));
-                    procSelect.appendChild(option);
+                    procSelect.appendChild(option.cloneNode(true));
+                    if (pushbackSelect) pushbackSelect.appendChild(option.cloneNode(true));
                 }
             });
         }
@@ -4604,6 +4652,8 @@ class MultiplayerGame extends EducationalPathGame {
         const applyHateBtn = document.getElementById('apply-hate-btn');
         const applyHappinessBtn = document.getElementById('apply-happiness-btn');
         const applyProcrastinationBtn = document.getElementById('apply-procrastination-btn');
+        const applyPushbackBtn = document.getElementById('apply-pushback-btn');
+        const applyBoostForwardBtn = document.getElementById('apply-boost-forward-btn');
         
         const hasOtherPlayers = this.players.filter(p => p.id !== this.playerId && !p.hasLost).length > 0;
         
@@ -4617,6 +4667,14 @@ class MultiplayerGame extends EducationalPathGame {
         
         if (applyProcrastinationBtn) {
             applyProcrastinationBtn.disabled = points < 50 || !hasOtherPlayers;
+        }
+        
+        if (applyPushbackBtn) {
+            applyPushbackBtn.disabled = points < 50 || !hasOtherPlayers;
+        }
+        
+        if (applyBoostForwardBtn) {
+            applyBoostForwardBtn.disabled = points < 50;
         }
     }
     
@@ -4641,6 +4699,13 @@ class MultiplayerGame extends EducationalPathGame {
             targetPlayerId = select.value;
         } else if (effectType === 'procrastination') {
             const select = document.getElementById('procrastination-target');
+            if (!select || !select.value) {
+                alert('Оберіть ціль!');
+                return;
+            }
+            targetPlayerId = select.value;
+        } else if (effectType === 'pushBack') {
+            const select = document.getElementById('pushback-target');
             if (!select || !select.value) {
                 alert('Оберіть ціль!');
                 return;

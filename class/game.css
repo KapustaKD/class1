@@ -1240,5 +1240,18 @@ body.glassmorphism-bg {
     transform: none;
 }
 
+/* Виправлення кольору тексту для кнопок тестів (.test-option-btn) */
+#quest-modal .modal-content button.test-option-btn {
+    color: #1f2937 !important; /* Темно-сірий текст (Tailwind gray-800) */
+    background: white !important; /* Білий фон */
+    border-color: #cbd5e1 !important; /* Сірий бордер (Tailwind slate-300) */
+    border: 2px solid #cbd5e1 !important;
+}
 
+/* Стиль для кнопок тестів при наведенні (щоб текст залишався темним) */
+#quest-modal .modal-content button.test-option-btn:hover {
+    color: #1f2937 !important; /* Залишаємо темно-сірий текст */
+    background-color: #eff6ff !important; /* Світліший фон (Tailwind blue-50) */
+    border-color: #3b82f6 !important; /* Синій бордер (Tailwind blue-500) */
+}
 

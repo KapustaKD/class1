@@ -41,6 +41,9 @@ function passTurnToNextPlayer(room) {
 // Імпортуємо дані міні-ігор
 const { pvpGames, creativeGames, madLibsQuestions, webNovella } = require('./questsData.js');
 
+// Імпортуємо єдине джерело правди про події
+const SPECIAL_CELLS = require('./specialCells.js');
+
 // Перевірка, що ми не намагаємося використовувати неіснуючі класи
 if (typeof EducationalPathGame !== 'undefined') {
     console.warn('EducationalPathGame is defined but should not be used in server.js');
@@ -58,58 +61,7 @@ function getEpochForPosition(position) {
     return 6;
 }
 
-// Спеціальні клітинки з подіями
-const SPECIAL_CELLS = {
-    3: { type: 'pvp-quest', gameType: 'tic_tac_toe' },
-    5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
-    10: { type: 'pvp-quest' },
-    14: { type: 'alternative-path', target: 18, cost: 15, description: 'Обхідний шлях до клітинки 18 за 15 ОО' },
-    21: { type: 'creative-quest' },
-    26: { type: 'alternative-path', target: 33, cost: 20, description: 'Обхідний шлях до клітинки 33 за 20 ОО' },
-    32: { type: 'mad-libs' },
-    40: { type: 'webnovella' },
-    46: { type: 'alternative-path', target: 57, cost: 25, description: 'Обхідний шлях до клітинки 57 за 25 ОО' },
-    55: { type: 'pvp-quest', gameType: 'tic_tac_toe' },
-    61: { type: 'pvp-quest' },
-    69: { type: 'mad-libs' },
-    80: { type: 'alternative-path', target: 91, cost: 30, description: 'Обхідний шлях до клітинки 91 за 30 ОО' },
-    81: { type: 'webnovella' },
-    90: { type: 'webnovella' },
-    96: { type: 'pvp-quest' },
-    99: { type: 'mad-libs' },
-    
-    // Тестові завдання: 2, 8, 11, 17, 20, 23, 26, 29, 35, 38, 41, 44, 47, 50, 53, 56, 59, 62, 65, 68, 71, 74, 77, 80, 83, 86, 89, 92, 95, 98
-    2: { type: 'test-question' },
-    8: { type: 'test-question' },
-    11: { type: 'test-question' },
-    17: { type: 'test-question' },
-    20: { type: 'test-question' },
-    23: { type: 'test-question' },
-    26: { type: 'test-question' },
-    29: { type: 'test-question' },
-    35: { type: 'test-question' },
-    38: { type: 'test-question' },
-    41: { type: 'test-question' },
-    44: { type: 'test-question' },
-    47: { type: 'test-question' },
-    50: { type: 'test-question' },
-    53: { type: 'test-question' },
-    56: { type: 'test-question' },
-    59: { type: 'test-question' },
-    62: { type: 'test-question' },
-    65: { type: 'test-question' },
-    68: { type: 'test-question' },
-    71: { type: 'test-question' },
-    74: { type: 'test-question' },
-    77: { type: 'test-question' },
-    80: { type: 'test-question' },
-    83: { type: 'test-question' },
-    86: { type: 'test-question' },
-    89: { type: 'test-question' },
-    92: { type: 'test-question' },
-    95: { type: 'test-question' },
-    98: { type: 'test-question' }
-};
+// Спеціальні клітинки з подіями імпортуються з specialCells.js
 
 const app = express();
 const server = http.createServer(app);

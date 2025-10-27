@@ -1845,6 +1845,9 @@ class MultiplayerGame extends EducationalPathGame {
             // Після закриття правил показуємо клас
             const showSetupBtn = document.getElementById('show-setup-btn');
             if (showSetupBtn) {
+                // Вимикаємо обробник з game.js для локального режиму
+                showSetupBtn.onclick = null;
+                
                 showSetupBtn.addEventListener('click', () => {
                     rulesModal.classList.add('hidden');
                     // Після закриття правил показуємо клас

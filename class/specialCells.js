@@ -1,7 +1,7 @@
 // Єдине джерело правди про події на клітинках
 module.exports = {
     // Гра "Хто, де, коли?"
-    3: { type: 'mad-libs', questName: 'Хто? Де? Коли?' },
+    3: { type: 'mad-libs-quest', questName: 'Хто? Де? Коли?' },
 
     // Вебновели
     10: { type: 'webnovella-quest', questName: 'Халепа!', eventNumber: 2 },

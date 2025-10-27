@@ -38,6 +38,54 @@ function passTurnToNextPlayer(room) {
     });
 }
 
+// Функція для обробки подій, що не потребують вибору гравця (Амфітеатр, Шинок, Казино)
+function handleImmediateEvent(room, player, eventType) {
+    let resultMessage = '';
+    const roomPlayer = room.gameData.players.find(p => p.id === player.id);
+    if (!roomPlayer) return;
+
+    const playerClass = roomPlayer.class ? roomPlayer.class.id : 'burgher'; // За замовчуванням - міщанин
+
+    switch(eventType) {
+        case 'amphitheater':
+            if (playerClass === 'aristocrat' || playerClass === 'burgher') {
+                roomPlayer.skipTurn = true;
+                resultMessage = `${roomPlayer.name} ("${roomPlayer.class.name}") так захопився виставою в Амфітеатрі, що пропускає наступний хід!`;
+            } else {
+                // Селянина ('peasant') не пустили
+                resultMessage = `${roomPlayer.name} ("${roomPlayer.class.name}") хотів потрапити до Амфітеатру, але його не пустила охорона.`;
+            }
+            break;
+            
+        case 'tavern': // Шинок (правила як у казино)
+        case 'casino': // Казино
+            const eventName = eventType === 'tavern' ? 'Шинку' : 'Казино';
+            
+            if (playerClass === 'aristocrat') {
+                roomPlayer.points = 0;
+                resultMessage = `${roomPlayer.name} ("${roomPlayer.class.name}") програв усі свої статки (${player.points} ОО) у ${eventName}!`;
+            } else if (playerClass === 'burgher') {
+                const lostPoints = Math.floor(roomPlayer.points / 2);
+                roomPlayer.points -= lostPoints;
+                resultMessage = `${roomPlayer.name} ("${roomPlayer.class.name}") програв половину своїх статків (${lostPoints} ОО) у ${eventName}!`;
+            } else { // 'peasant'
+                roomPlayer.hasLost = true; // "втрачає життя"
+                roomPlayer.points = 0;
+                resultMessage = `Фатальна помилка! ${roomPlayer.name} ("${roomPlayer.class.name}") програв у ${eventName} своє життя та вибуває з гри!`;
+            }
+            break;
+    }
+
+    // Повідомляємо всіх про результат
+    io.to(room.id).emit('chat_message', {
+        type: 'system',
+        message: resultMessage
+    });
+    
+    // Оновлюємо стан гри (очки, пропуск ходу)
+    io.to(room.id).emit('game_state_update', room.gameData);
+}
+
 // Імпортуємо дані міні-ігор
 const { pvpGames, creativeGames, madLibsQuestions, webNovella } = require('./questsData.js');
 
@@ -947,6 +995,39 @@ io.on('connection', (socket) => {
                     activePlayerId: player.id
                 });
 
+            } else if (data.eventType === 'amphitheater' || data.eventType === 'tavern' || data.eventType === 'casino') {
+                // Всі ці події обробляються негайно, без вибору гравця
+                handleImmediateEvent(room, player, data.eventType);
+                // Оскільки подія оброблена, одразу передаємо хід
+                passTurnToNextPlayer(room);
+            } else if (data.eventType === 'early-reincarnation') {
+                // Рання реінкарнація - переміщуємо на початок наступної епохи
+                const targetEpoch = data.eventData.targetEpoch;
+                let targetPosition;
+                
+                // Визначаємо цільову позицію залежно від епохи
+                if (targetEpoch === 2) targetPosition = 13; // Початок епохи 2
+                else if (targetEpoch === 3) targetPosition = 23; // Початок епохи 3
+                else if (targetEpoch === 4) targetPosition = 43; // Початок епохи 4
+                else if (targetEpoch === 5) targetPosition = 76; // Початок епохи 5
+                else if (targetEpoch === 6) targetPosition = 98; // Початок епохи 6
+                else targetPosition = data.eventData.targetEpoch * 12; // Запасний варіант
+                
+                const roomPlayer = room.gameData.players.find(p => p.id === player.id);
+                if (roomPlayer) {
+                    roomPlayer.position = targetPosition;
+                    roomPlayer.points += data.eventData.points;
+                    player.position = targetPosition;
+                    player.points += data.eventData.points;
+                }
+                
+                io.to(room.id).emit('chat_message', {
+                    type: 'system',
+                    message: `${player.name} зазнав ранньої смерті та переродився у епосі ${targetEpoch}! Переміщено на клітинку ${targetPosition}, отримано ${data.eventData.points} ОО.`
+                });
+                
+                io.to(room.id).emit('game_state_update', room.gameData);
+                passTurnToNextPlayer(room);
             } else {
                 // Для інших подій відправляємо тільки поточному гравцю
                 socket.emit('show_event_prompt', {
@@ -1025,20 +1106,32 @@ io.on('connection', (socket) => {
                     socket.emit('error_message', 'Вам не вистачає очок!');
                     return; // Зупиняємо виконання
                 }
-                
+
                 // Знаходимо гравця в масиві гравців кімнати
                 const roomPlayer = room.gameData.players.find(p => p.id === player.id);
-                if (roomPlayer) {
-                    // Переміщуємо гравця на цільову позицію
-                    roomPlayer.position = data.eventData.target;
-                    roomPlayer.points = Math.max(0, roomPlayer.points - data.eventData.cost);
-                    
-                    // Оновлюємо також в глобальному списку
-                    player.position = data.eventData.target;
-                    player.points = Math.max(0, player.points - data.eventData.cost);
-                }
                 
-                resultMessage = `${player.name} скористався обхідною дорогою! Переміщено на клітинку ${data.eventData.target}, втрачено ${data.eventData.cost} ОО.`;
+                // 50% ризик потрапити в реабілітаційний центр
+                if (Math.random() < 0.5) {
+                    // УСПІХ: Гравець скорочує шлях
+                    if (roomPlayer) {
+                        roomPlayer.position = data.eventData.target;
+                        roomPlayer.points = Math.max(0, roomPlayer.points - data.eventData.cost);
+                        player.position = data.eventData.target;
+                        player.points = Math.max(0, player.points - data.eventData.cost);
+                    }
+                    resultMessage = `${player.name} успішно скоротив шлях! Переміщено на клітинку ${data.eventData.target}, втрачено ${data.eventData.cost} ОО.`;
+                } else {
+                    // ПРОВАЛ: "Передозування" та реабілітація
+                    if (roomPlayer) {
+                        // Забираємо гроші, але не переміщуємо
+                        roomPlayer.points = Math.max(0, roomPlayer.points - data.eventData.cost);
+                        player.points = Math.max(0, player.points - data.eventData.cost);
+                        
+                        // Встановлюємо пропуск ходу
+                        roomPlayer.skipTurn = true; 
+                    }
+                    resultMessage = `${player.name} спробував скоротити шлях, але потрапив до реабілітаційного центру! Втрачено ${data.eventData.cost} ОО та 1 хід.`;
+                }
             } else {
                 resultMessage = `${player.name} відмовився від обхідної дороги.`;
             }

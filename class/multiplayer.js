@@ -1502,13 +1502,19 @@ class MultiplayerGame extends EducationalPathGame {
             this.showTestQuestionForAll(data);
             return; // Виходимо, щоб не показувати стандартне модальне вікно
         } else if (data.eventType === 'pvp-quest' || data.eventType === 'creative-quest' || data.eventType === 'webnovella-quest' || data.eventType === 'mad-libs-quest') {
-            // Ці події обробляються через інші обробники подій (socket.on)
+            // Ці події обробляються через socket.on обробники
+            // Але клієнт має вже був відправити player_on_event на сервер
+            console.log('Події pvp/creative/webnovella/mad-libs будуть оброблені сервером через socket.on');
             // Не показуємо загальне модальне вікно
-            console.log('Події pvp/creative/webnovella/mad-libs обробляються спеціальними обробниками');
             return;
         } else {
-            // Для всіх інших типів подій показуємо загальне модальне вікно
-            this.showQuestModal('Подія', modalContent, buttons, 'image/modal_window/bypass_road.png');
+            console.warn('Необроблений тип події:', data.eventType, data);
+            // Якщо modalContent порожній, не показуємо вікно
+            if (modalContent || buttons.length > 0) {
+                this.showQuestModal('Подія', modalContent, buttons, 'image/modal_window/bypass_road.png');
+            } else {
+                console.log('modalContent порожній, не показуємо вікно для типу:', data.eventType);
+            }
         }
     }
     

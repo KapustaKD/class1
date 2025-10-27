@@ -2355,17 +2355,24 @@ class MultiplayerGame extends EducationalPathGame {
         const isParticipant = data.gameState.players.includes(this.playerId);
         const isMyEvent = data.activePlayerId === this.playerId;
         const gameData = data.gameState.gameData;
+        const isTestMode = this.isTestMode;
         
         // Додаємо клас для фонового зображення
         document.body.classList.add('glassmorphism-bg');
         
         const modalHTML = `
-            <div class="glassmorphism-modal" id="pedagogobot-modal">
-                <div class="glassmorphism-content-robot">
+            <div class="glassmorphism-modal glassmorphism-modal-small" id="pedagogobot-modal">
+                <div class="glassmorphism-content-robot-small">
                     <div class="glassmorphism-header">
                         <h2>🤖 Педагобот!</h2>
-                        <p>${gameData.description}</p>
-                        <p>${data.player1.name} проти ${data.player2.name}</p>
+                        ${isTestMode ? `
+                            <button class="close-test-modal-btn" onclick="document.getElementById('pedagogobot-modal').remove(); document.body.classList.remove('glassmorphism-bg');">✖</button>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="glassmorphism-info-box">
+                        <p class="text-sm">${gameData.description}</p>
+                        <p class="text-sm font-bold">${data.player1.name} проти ${data.player2.name}</p>
                     </div>
                     
                     <div class="glassmorphism-spacer"></div>
@@ -2373,10 +2380,7 @@ class MultiplayerGame extends EducationalPathGame {
                     <div class="glassmorphism-actions">
                         ${isParticipant ? `
                             <div class="mb-4">
-                                <textarea id="text-input" class="w-full h-32 p-3 border-2 border-gray-400 rounded bg-gray-800/70 border-gray-500/50 text-white" placeholder="Введіть якомога більше принципів, розділяючи їх комами..."></textarea>
-                            </div>
-                            <div class="mb-4">
-                                <div id="timer" class="text-2xl font-bold text-red-500 text-center">${data.gameState.timer}</div>
+                                <textarea id="text-input" class="w-full h-32 p-3 border-2 border-gray-400 rounded bg-gray-800/70 border-gray-500/50 text-white" placeholder="Введіть якомога більше якостей гарного педагога, розділяючи їх комами..."></textarea>
                             </div>
                             <button id="submit-result-btn" class="glassmorphism-btn-primary w-full" disabled>
                                 Відправити результат
@@ -2384,6 +2388,11 @@ class MultiplayerGame extends EducationalPathGame {
                         ` : `
                             <p class="text-center text-gray-600">Спостерігайте за грою</p>
                         `}
+                        ${isTestMode ? `
+                            <button class="glassmorphism-btn-secondary w-full mt-2" onclick="document.getElementById('pedagogobot-modal').remove(); document.body.classList.remove('glassmorphism-bg');">
+                                Закрити
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
             </div>

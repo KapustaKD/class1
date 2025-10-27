@@ -769,15 +769,32 @@ io.on('connection', (socket) => {
                 });
 
             } else if (data.eventType === 'creative-quest') {
-                // Вибираємо випадкову творчу гру
-                const gameKeys = Object.keys(creativeGames);
-                const randomGameKey = gameKeys[Math.floor(Math.random() * gameKeys.length)];
-                const selectedGame = creativeGames[randomGameKey];
+                // Використовуємо gameType з specialCells (без рандомізації!)
+                let gameType = 'great_pedagogical'; // Запасний варіант
+                if (data.eventData && data.eventData.gameType && creativeGames[data.eventData.gameType]) {
+                    gameType = data.eventData.gameType;
+                } else if (data.eventData && data.eventData.questName) {
+                    // Спробуємо визначити gameType за questName
+                    switch(data.eventData.questName) {
+                        case 'Хроніки Неіснуючого Вояжу':
+                            gameType = 'chronicles';
+                            break;
+                        case 'Великий Педагогічний…':
+                            gameType = 'great_pedagogical';
+                            break;
+                        case 'Я у мами педагог':
+                            gameType = 'pedagog_mom';
+                            break;
+                    }
+                }
                 
-                if (randomGameKey === 'chronicles') {
+                const selectedGame = creativeGames[gameType];
+                console.log(`Використовуємо creative-quest з specialCells: ${gameType}`);
+                
+                if (gameType === 'chronicles') {
                     // Хроніки Неіснуючого Вояжу - спільна історія
                     room.collaborativeStoryState = {
-                        gameType: randomGameKey,
+                        gameType: gameType,
                         gameData: selectedGame,
                         players: room.gameData.players.filter(p => !p.hasWon && !p.hasLost),
                         currentPlayerIndex: 0,
@@ -798,7 +815,7 @@ io.on('connection', (socket) => {
                 } else {
                     // Великий Педагогічний / Я у мами педагог - всі пишуть, потім голосують
                     room.creativeWritingState = {
-                        gameType: randomGameKey,
+                        gameType: gameType,
                         gameData: selectedGame,
                         timer: selectedGame.timer,
                         gameActive: true,

@@ -143,116 +143,101 @@
     </div>
 
     <!-- Модальні вікна -->
-    <div id="rules-modal" class="modal-backdrop hidden">
-        <div class="modal-content p-6" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); backdrop-filter: blur(10px); z-index: 50; color: white; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
-            <h2 class="text-3xl font-bold text-center text-yellow-300 mb-6">Правила Освітнього Шляху</h2>
+<div id="rules-modal" class="modal-backdrop hidden"> <!-- Додай клас hidden -->
+    <div class="modal-content"> <!-- Стилі тепер в CSS, тому видаляємо inline-style і p-6 -->
+        <h2 class="text-3xl font-bold text-center text-yellow-300 mb-6">Правила Освітнього Шляху</h2>
 
-            <!-- Навігація вкладками -->
-            <div class="flex mb-4 border-b border-gray-500">
-                <button class="tab-btn active text-lg font-semibold py-2 px-4 rounded-t-lg" onclick="openTab('basics')">
-                    Основи гри
-                </button>
-                <button class="tab-btn text-lg font-semibold py-2 px-4 rounded-t-lg" onclick="openTab('special')">
-                    Особливі події
-                </button>
-            </div>
+        <!-- Навігація вкладками -->
+        <div class="flex mb-4 border-b border-gray-500">
+            <button class="tab-btn active" onclick="openTab('basics')"> <!-- Класи тепер в CSS -->
+                Основи гри
+            </button>
+            <button class="tab-btn" onclick="openTab('special')"> <!-- Класи тепер в CSS -->
+                Особливі події
+            </button>
+        </div>
 
-            <!-- Вкладка 1: Основи гри -->
-            <div id="tab-basics" class="tab-content active space-y-4 text-base">
-                <p>
-                    Основою цієї гри є традиційна настільна гра з 6-гранним кубиком та фішками. Проте її особливістю є педагогіка як центральна ідея та події з супутніми квестами.
-                </p>
-                <p>
-                    Ціллю гравця є, перетнувши усі епохи становлення та розвитку педагогіки, дійти до фінішу (бажано першим), який символізує успішне складання екзамену, здобуття усіх відповідних регалій та титулів.
-                </p>
-                <p>
-                    За виконання кожної з подій та супутніх квестів гравець здобуватиме очки освіти (ОО), які і стануть його перепусткою до омріяної перемоги.
-                </p>
-                <p class="text-yellow-300 italic text-center mt-4">
-                    Бажаємо удачі! (можливо, навіть щиро)
-                </p>
-            </div>
+        <!-- Вкладка 1: Основи гри -->
+        <div id="tab-basics" class="tab-content active space-y-4 text-base">
+            <p>
+                Основою цієї гри є традиційна настільна гра з 6-гранним кубиком та фішками. Проте її особливістю є педагогіка як центральна ідея та події з супутніми квестами.
+            </p>
+            <p>
+                Ціллю гравця є, перетнувши усі епохи становлення та розвитку педагогіки, дійти до фінішу (бажано першим), який символізує успішне складання екзамену, здобуття усіх відповідних регалій та титулів.
+            </p>
+            <p>
+                За виконання кожної з подій та супутніх квестів гравець здобуватиме очки освіти (ОО), які і стануть його перепусткою до омріяної перемоги.
+            </p>
+            <p class="text-yellow-300 italic text-center mt-4">
+                Бажаємо удачі! (можливо, навіть щиро)
+            </p>
+        </div>
 
-            <!-- Вкладка 2: Особливі події -->
-            <div id="tab-special" class="tab-content space-y-6 text-base">
-                <div>
-                    <h3 class="text-xl font-bold text-yellow-300 mb-2">Статуси/соціальні класи</h3>
-                    <p>У грі, як і в реальному житті, присутнє соціальне розшарування, яке впливатиме на індивідуальний прогрес кожного гравця. Загалом існує 3 класи:</p>
-                    <ul class="list-disc list-inside mt-2 space-y-1 pl-2">
-                        <li><strong>Вищий</strong> – аристократія.</li>
-                        <li><strong>Середній</strong> – звичайні міщани, плебс.</li>
-                        <li><strong>Нижчий клас</strong> – раби, безхатьки, малозабезпечені.</li>
-                    </ul>
-                </div>
+        <!-- Вкладка 2: Особливі події -->
+        <div id="tab-special" class="tab-content space-y-6 text-base">
+             <!-- ... (весь вміст вкладки "Особливі події" з game-rules.html) ... -->
+             <div>
+                 <h3 class="text-xl font-bold text-yellow-300 mb-2">Статуси/соціальні класи</h3>
+                 <p>У грі, як і в реальному житті, присутнє соціальне розшарування...</p>
+                 <ul class="list-disc list-inside mt-2 space-y-1 pl-2">...</ul>
+             </div>
+             <div>
+                 <h3 class="text-xl font-bold text-yellow-300 mb-2">Переродження (Реінкарнація)</h3>
+                 <p>На кожному історичному періоді є 2 варіанти потрапити на наступний:</p>
+                 <ul class="list-disc list-inside mt-2 space-y-1 pl-2">...</ul>
+             </div>
+              <div>
+                  <h3 class="text-xl font-bold text-yellow-300 mb-2">Скорочення</h3>
+                  <p>У грі присутні додаткові шляхи...</p>
+             </div>
+             <div>
+                 <h3 class="text-xl font-bold text-yellow-300 mb-2">Казино / Шинок</h3>
+                 <p>Улюблена розвага/місце відпочинку...</p>
+             </div>
+             <div>
+                 <h3 class="text-xl font-bold text-yellow-300 mb-2">Амфітеатр</h3>
+                 <p>Улюблена розвага аристократії та міщан...</p>
+             </div>
+        </div>
 
-                <div>
-                    <h3 class="text-xl font-bold text-yellow-300 mb-2">Переродження (Реінкарнація)</h3>
-                    <p>На кожному історичному періоді є 2 варіанти потрапити на наступний:</p>
-                    <ul class="list-disc list-inside mt-2 space-y-1 pl-2">
-                        <li>Повне проходження періоду.</li>
-                        <li>Потрапляння на клітинку «Реінкарнація», яке символізує несподівану ранню смерть гравця та миттєве переродження у майбутньому.</li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 class="text-xl font-bold text-yellow-300 mb-2">Скорочення</h3>
-                    <p>У грі присутні додаткові шляхи, що, по суті, є шляхами-навпростець, які діють як стимулятори діяльності. Якщо гравцю вдалося потрапити на початок такого шляху, за додаткову плату він має можливість зробити свою подорож швидшою. Проте також є 50 % ймовірність передозування, що призведе до потрапляння у реабілітаційний центр.</p>
-                </div>
-                
-                <div>
-                    <h3 class="text-xl font-bold text-yellow-300 mb-2">Казино / Шинок</h3>
-                    <p>Улюблена розвага/місце відпочинку мільйонів та найшвидший спосіб утилізації ОО, а подекуди й життя. При потраплянні у даний заклад аристократ втрачає усі статки, міщанин – половину, бідняк – своє життя.</p>
-                </div>
-
-                <div>
-                    <h3 class="text-xl font-bold text-yellow-300 mb-2">Амфітеатр</h3>
-                    <p>Улюблена розвага аристократії та міщан античних часів, де вони можуть проводити більше часу ніж потрібно. На момент перебування у даному місці гравці не можуть продовжувати хід та вимушені його пропустити.</p>
-                </div>
-            </div>
-
-            <!-- Кнопка закриття -->
-            <div class="text-center mt-8">
-                <button id="show-setup-btn" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-6 rounded-lg transition duration-300 text-lg">
-                    Зрозуміло!
-                </button>
-            </div>
+        <!-- Кнопка закриття -->
+        <div class="text-center mt-8"> <!-- Клас text-center вже є -->
+            <button id="show-setup-btn"> <!-- Класи тепер в CSS -->
+                До вибору гравців
+            </button>
         </div>
     </div>
-    
-    <style>
-        .tab-btn {
-            background-color: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .tab-btn.active {
-            background-color: rgba(255, 255, 255, 0.3);
-            border-bottom: 2px solid #fbbf24;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-    </style>
-    
+
+    <!-- ВАЖЛИВО: Цей скрипт потрібен для роботи вкладок -->
     <script>
         function openTab(tabName) {
             // Сховати всі вкладки
-            document.querySelectorAll('.tab-content').forEach(tab => {
+            document.querySelectorAll('#rules-modal .tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
             // Деактивувати всі кнопки
-            document.querySelectorAll('.tab-btn').forEach(btn => {
+            document.querySelectorAll('#rules-modal .tab-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            
+
             // Показати потрібну вкладку
-            document.getElementById('tab-' + tabName).classList.add('active');
-            // Активувати потрібну кнопку
-            document.querySelector(`[onclick="openTab('${tabName}')"]`).classList.add('active');
+            const targetTab = document.getElementById('tab-' + tabName);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
+             // Активувати потрібну кнопку
+            const targetBtn = document.querySelector(`#rules-modal [onclick="openTab('${tabName}')"]`);
+             if (targetBtn) {
+                targetBtn.classList.add('active');
+             }
         }
+         // Встановлюємо активну вкладку за замовчуванням при першому показі
+        // (можливо, цей код вже є в main.js або game.js, якщо так, тут не потрібно)
+        // document.addEventListener('DOMContentLoaded', () => {
+        //     openTab('basics');
+        // });
     </script>
+</div>
     
     <div id="start-modal" class="modal-backdrop hidden">
         <div class="modal-content text-gray-800">
@@ -475,3 +460,4 @@
     
 </body>
 </html>
+

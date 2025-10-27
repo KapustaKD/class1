@@ -42,7 +42,7 @@ function passTurnToNextPlayer(room) {
 const { pvpGames, creativeGames, madLibsQuestions, webNovella } = require('./questsData.js');
 
 // Імпортуємо єдине джерело правди про події
-const SPECIAL_CELLS = require('./specialCells.js');
+const specialCells = require('./specialCells.js');
 
 // Перевірка, що ми не намагаємося використовувати неіснуючі класи
 if (typeof EducationalPathGame !== 'undefined') {
@@ -651,7 +651,7 @@ io.on('connection', (socket) => {
         }
         
         // Перевірка на інші події (скорочення шляху тощо)
-        const specialCell = SPECIAL_CELLS[currentPlayer.position];
+        const specialCell = specialCells[currentPlayer.position];
         if (specialCell && !hasEvent) {
             hasEvent = true;
             eventInfo.hasEvent = true;

@@ -53,51 +53,51 @@ class EducationalPathGame {
     
         this.WIN_CONDITION_POINTS = 300;
     
-            this.playerColors = ['#e53e3e', '#38b2ac', '#ed8936'];
+            this.playerColors = ['#e53e3e', '#38b2ac', '#ed8936'];
     
-            this.playerClasses = [
+            this.playerClasses = [
     
-                { id: 'aristocrat', name: '⚜️ Аристократ', startPoints: 50, moveModifier: 1 },
+                { id: 'aristocrat', name: '⚜️ Аристократ', startPoints: 50, moveModifier: 1 },
     
-                { id: 'burgher', name: '⚖️ Міщанин', startPoints: 20, moveModifier: 0 },
+                { id: 'burgher', name: '⚖️ Міщанин', startPoints: 20, moveModifier: 0 },
     
-                { id: 'peasant', name: '🌱 Селянин', startPoints: 0, moveModifier: -1 },
+                { id: 'peasant', name: '🌱 Селянин', startPoints: 0, moveModifier: -1 },
     
-            ];
+            ];
     
-           
+           
     
-            this.players = [];
+            this.players = [];
     
-            this.currentPlayerIndex = 0;
+            this.currentPlayerIndex = 0;
     
-            this.gameActive = false;
+            this.gameActive = false;
     
-            this.BOARD_SIZE = 101; // Загальна кількість клітинок (включаючи фініш)
+            this.BOARD_SIZE = 101; // Загальна кількість клітинок (включаючи фініш)
     
             this.scale = 1.0; // Буде встановлено правильно в setupEventListeners
     
-            this.translateX = 0;
+            this.translateX = 0;
     
-            this.translateY = 0;
+            this.translateY = 0;
     
-            this.isPanning = false;
+            this.isPanning = false;
     
-            this.panStartX = 0;
+            this.panStartX = 0;
     
-            this.panStartY = 0;
+            this.panStartY = 0;
     
-           
+           
     
-            // Нова структура карти з островами епох
+            // Нова структура карти з островами епох
     
-            this.mapData = null;
+            this.mapData = null;
     
-            this.loadMapData();
+            this.loadMapData();
     
-           
+           
     
-            // Координати клітинок для кожної епохи
+            // Координати клітинок для кожної епохи
     
         this.epochCoordinates = this.generateEpochCoordinates();
 
@@ -190,15 +190,15 @@ class EducationalPathGame {
             100: { type: 'machine-uprising' }
         };
     
-           
+           
     
-            this.initializeElements();
+            this.initializeElements();
     
-            this.setupEventListeners();
+            this.setupEventListeners();
     
-        }
+        }
     
-       
+       
     
     // Завантаження даних карти з mapData.js
     
@@ -219,73 +219,73 @@ class EducationalPathGame {
     
             console.error('Error loading map data:', error);
     
-                // Fallback дані якщо імпорт не вдався
+                // Fallback дані якщо імпорт не вдався
     
-                this.mapData = {
+                this.mapData = {
     
-                    canvasSize: { width: 1920, height: 1080 },
+                    canvasSize: { width: 1920, height: 1080 },
     
-                    zones: [],
+                    zones: [],
     
-                    cells: []
+                    cells: []
     
-                };
+                };
     
-            });
+            });
     
-        }
+        }
     
-       
+       
     
-        // Генерація координат для клітинок з mapData.js
+        // Генерація координат для клітинок з mapData.js
     
-        generateEpochCoordinates() {
+        generateEpochCoordinates() {
     
-            const coordinates = [];
+            const coordinates = [];
     
-           
+           
     
-            if (!this.mapData || !this.mapData.cells) {
+            if (!this.mapData || !this.mapData.cells) {
     
-                console.error('Map data not loaded!');
+                console.error('Map data not loaded!');
     
-                return coordinates;
+                return coordinates;
     
-            }
+            }
     
-           
+           
     
-            this.mapData.cells.forEach(cell => {
+            this.mapData.cells.forEach(cell => {
     
-                // Визначаємо зону для клітинки
+                // Визначаємо зону для клітинки
     
-                const zone = this.getZoneForCell(cell);
+                const zone = this.getZoneForCell(cell);
     
-               
+               
     
-                coordinates.push({
+                coordinates.push({
     
-                    top: cell.y,
+                    top: cell.y,
     
-                    left: cell.x,
+                    left: cell.x,
     
-                    zone: zone,
+                    zone: zone,
     
-                    cellId: cell.id,
+                    cellId: cell.id,
     
-                    isFinish: cell.id === 101
+                    isFinish: cell.id === 101
     
-                });
+                });
     
-            });
+            });
     
-           
+           
     
-            return coordinates;
+            return coordinates;
     
-        }
+        }
     
-       
+       
     
     // Визначення зони для клітинки
     getZoneForCell(cell) {
@@ -309,7 +309,7 @@ class EducationalPathGame {
         return 0; // За замовчуванням перша зона
     }
     
-       
+       
     
     // Перевірка, чи точка знаходиться в зоні (спрощена версія)
     isPointInZone(x, y, svgPath) {
@@ -329,77 +329,77 @@ class EducationalPathGame {
         return false;
     }
     
-       
+       
     
-        initializeElements() {
+        initializeElements() {
     
-            this.gameViewport = document.getElementById('game-viewport');
+            this.gameViewport = document.getElementById('game-viewport');
     
-            this.gameBoardContainer = document.getElementById('game-board-container');
+            this.gameBoardContainer = document.getElementById('game-board-container');
     
-            this.gameBoard = document.getElementById('game-board');
+            this.gameBoard = document.getElementById('game-board');
     
-            this.rollDiceBtn = document.getElementById('roll-dice-btn');
+            this.rollDiceBtn = document.getElementById('roll-dice-btn');
     
-            this.gameLog = document.getElementById('game-log');
+            this.gameLog = document.getElementById('game-log');
     
-            this.currentPlayerNameEl = document.getElementById('current-player-name');
+            this.currentPlayerNameEl = document.getElementById('current-player-name');
     
-            this.currentPlayerClassEl = document.getElementById('current-player-class');
+            this.currentPlayerClassEl = document.getElementById('current-player-class');
     
-            this.currentPlayerPointsEl = document.getElementById('current-player-points');
+            this.currentPlayerPointsEl = document.getElementById('current-player-points');
     
-            this.leaderboardEl = document.getElementById('leaderboard');
+            this.leaderboardEl = document.getElementById('leaderboard');
     
-            this.diceInner = document.getElementById('dice-inner');
+            this.diceInner = document.getElementById('dice-inner');
     
-            this.pathSvg = document.getElementById('path-svg');
+            this.pathSvg = document.getElementById('path-svg');
     
-            this.rulesModal = document.getElementById('rules-modal');
+            this.rulesModal = document.getElementById('rules-modal');
     
-            this.showSetupBtn = document.getElementById('show-setup-btn');
+            this.showSetupBtn = document.getElementById('show-setup-btn');
     
-            this.startModal = document.getElementById('start-modal');
+            this.startModal = document.getElementById('start-modal');
     
-            this.playerCountSelect = document.getElementById('player-count');
+            this.playerCountSelect = document.getElementById('player-count');
     
-            this.playerSetupContainer = document.getElementById('player-setup-container');
+            this.playerSetupContainer = document.getElementById('player-setup-container');
     
-            this.startGameBtn = document.getElementById('start-game-btn');
+            this.startGameBtn = document.getElementById('start-game-btn');
     
-            this.questModal = document.getElementById('quest-modal');
+            this.questModal = document.getElementById('quest-modal');
     
-            this.questModalContent = document.getElementById('quest-modal-content');
+            this.questModalContent = document.getElementById('quest-modal-content');
     
-        }
+        }
     
-       
+       
     
-        setupEventListeners() {
+        setupEventListeners() {
     
-            // Основні події гри
+            // Основні події гри
     
-            this.showSetupBtn.addEventListener('click', () => {
+            this.showSetupBtn.addEventListener('click', () => {
     
-                this.rulesModal.classList.add('hidden');
+                this.rulesModal.classList.add('hidden');
     
-                this.startModal.classList.remove('hidden');
+                this.startModal.classList.remove('hidden');
     
-            });
+            });
     
-           
+           
     
-            this.playerCountSelect.addEventListener('change', () => this.setupPlayerInputs());
+            this.playerCountSelect.addEventListener('change', () => this.setupPlayerInputs());
     
-            this.startGameBtn.addEventListener('click', () => this.initializeGame());
+            this.startGameBtn.addEventListener('click', () => this.initializeGame());
     
-            this.rollDiceBtn.addEventListener('click', () => {
+            this.rollDiceBtn.addEventListener('click', () => {
     
-                if (this.gameActive) this.rollTheDice();
+                if (this.gameActive) this.rollTheDice();
     
-            });
+            });
     
-           
+           
     
         // Зум і панорама
         
@@ -409,7 +409,7 @@ class EducationalPathGame {
         // window.addEventListener('mousemove', (e) => this.handlePanning(e));
         // window.addEventListener('mouseup', () => this.stopPanning());
     
-           
+           
     
         this.setupPlayerInputs();
         
@@ -458,97 +458,97 @@ class EducationalPathGame {
     
     setupPlayerInputs() {
     
-            const count = this.playerCountSelect.value;
+            const count = this.playerCountSelect.value;
     
-            this.playerSetupContainer.innerHTML = '';
+            this.playerSetupContainer.innerHTML = '';
     
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i < count; i++) {
     
-                this.playerSetupContainer.innerHTML += `
+                this.playerSetupContainer.innerHTML += `
     
-                    <div class="mt-4 p-3 border rounded-lg" style="border-color: ${this.playerColors[i]};">
+                    <div class="mt-4 p-3 border rounded-lg" style="border-color: ${this.playerColors[i]};">
     
-                        <h3 class="text-xl font-semibold mb-2" style="color: ${this.playerColors[i]};">Гравець ${i + 1}</h3>
+                        <h3 class="text-xl font-semibold mb-2" style="color: ${this.playerColors[i]};">Гравець ${i + 1}</h3>
     
-                        <div class="mb-2">
+                        <div class="mb-2">
     
-                            <label for="player-name-${i}" class="block font-medium">Ім'я:</label>
+                            <label for="player-name-${i}" class="block font-medium">Ім'я:</label>
     
-                            <input type="text" id="player-name-${i}" value="Гравець ${i + 1}" class="w-full p-2 border border-gray-300 rounded text-black">
+                            <input type="text" id="player-name-${i}" value="Гравець ${i + 1}" class="w-full p-2 border border-gray-300 rounded text-black">
     
-                        </div>
+                        </div>
     
-                        <div>
+                        <div>
     
-                            <label for="player-class-${i}" class="block font-medium">Клас:</label>
+                            <label for="player-class-${i}" class="block font-medium">Клас:</label>
     
-                            <select id="player-class-${i}" class="w-full p-2 border border-gray-300 rounded text-black">
+                            <select id="player-class-${i}" class="w-full p-2 border border-gray-300 rounded text-black">
     
-                                ${this.playerClasses.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                                ${this.playerClasses.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
     
-                            </select>
+                            </select>
     
-                        </div>
+                        </div>
     
-                    </div>
+                    </div>
     
-                `;
+                `;
     
-            }
+            }
     
-        }
+        }
     
-       
+       
     
-        initializeGame() {
+        initializeGame() {
     
-            const count = this.playerCountSelect.value;
+            const count = this.playerCountSelect.value;
     
-            this.players = [];
+            this.players = [];
     
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i < count; i++) {
     
-                const name = document.getElementById(`player-name-${i}`).value;
+                const name = document.getElementById(`player-name-${i}`).value;
     
-                const classId = document.getElementById(`player-class-${i}`).value;
+                const classId = document.getElementById(`player-class-${i}`).value;
     
-                const playerClass = this.playerClasses.find(c => c.id === classId);
+                const playerClass = this.playerClasses.find(c => c.id === classId);
     
-                this.players.push({
+                this.players.push({
     
-                    id: i + 1,
+                    id: i + 1,
     
-                    name,
+                    name,
     
-                    color: this.playerColors[i],
+                    color: this.playerColors[i],
     
-                    position: 0,
+                    position: 0,
     
-                    class: playerClass,
+                    class: playerClass,
     
-                    points: playerClass.startPoints,
+                    points: playerClass.startPoints,
     
-                    skipTurn: false,
+                    skipTurn: false,
     
-                    extraTurn: false,
+                    extraTurn: false,
     
-                    hasLost: false,
+                    hasLost: false,
     
-                    moveModifier: 0
+                    moveModifier: 0
     
-                });
+                });
     
-            }
+            }
     
-           
+           
     
             // this.createBoard(); // Видалено - карта створюється в loadMapData()
     
-            this.gameActive = true;
+            this.gameActive = true;
     
-            this.currentPlayerIndex = 0;
+            this.currentPlayerIndex = 0;
     
-            this.updateUI();
+            this.updateUI();
     
         this.startModal.classList.add('hidden');
         
@@ -558,11 +558,11 @@ class EducationalPathGame {
     
         this.centerViewOn(startCell);
     
-        }
+        }
     
-       
+       
     
-        createBoard() {
+        createBoard() {
     
             this.gameBoard.innerHTML = '';
         
@@ -576,7 +576,7 @@ class EducationalPathGame {
         
         console.log('Creating board with map data:', this.mapData);
     
-           
+           
     
         // Створюємо ОДИН великий білий контейнер карти
         // this.createGameMap(); // ВИДАЛЕНО - тепер використовуємо статичне зображення
@@ -584,7 +584,7 @@ class EducationalPathGame {
         // Створюємо статичні SVG-зони з mapData.js
         // this.createStaticZones(); // ВИДАЛЕНО - тепер використовуємо статичне зображення
     
-           
+           
     
         // Стартова клітинка
     
@@ -602,9 +602,9 @@ class EducationalPathGame {
     
         this.gameBoard.appendChild(startCell);
     
-           
+           
     
-            // Створюємо клітинки з mapData.js
+            // Створюємо клітинки з mapData.js
     
         // Створюємо клітинки з mapData.js
         console.log('Створюємо клітинки, загальна кількість:', this.mapData.cells.length);
@@ -663,11 +663,11 @@ class EducationalPathGame {
     
          });
     
-           
+           
     
             // ВИДАЛЕНО: this.drawSequentialPath(); - тепер шлях намальований на картинці
     
-           
+           
     
         // Фішки гравців (аватари)
     
@@ -713,89 +713,89 @@ class EducationalPathGame {
     
     }
     
-       
+       
     
     // ВИДАЛЕНО: createGameMap() та createStaticZones() - тепер використовуємо статичне зображення map_background.png
     
-       
+       
     
     // ВИДАЛЕНО: drawSequentialPath() - тепер шлях намальований на картинці
     
-       
+       
     
-        drawPath() {
+        drawPath() {
     
-            this.pathSvg.innerHTML = '';
+            this.pathSvg.innerHTML = '';
     
-           
+           
     
-            // Малюємо лінії тільки всередині кожної секції
+            // Малюємо лінії тільки всередині кожної секції
     
-            const sectionBoundaries = [0, 25, 50, 75, 100, 124]; // Межі секцій
+            const sectionBoundaries = [0, 25, 50, 75, 100, 124]; // Межі секцій
     
-            const allCoords = [{top: 700, left: 25}, ...this.cellCoordinates];
+            const allCoords = [{top: 700, left: 25}, ...this.cellCoordinates];
     
-           
+           
     
-            for (let section = 0; section < sectionBoundaries.length - 1; section++) {
+            for (let section = 0; section < sectionBoundaries.length - 1; section++) {
     
-                const startIdx = sectionBoundaries[section];
+                const startIdx = sectionBoundaries[section];
     
-                const endIdx = sectionBoundaries[section + 1];
+                const endIdx = sectionBoundaries[section + 1];
     
-               
+               
     
-                if (startIdx >= allCoords.length) break;
+                if (startIdx >= allCoords.length) break;
     
-               
+               
     
-                let pathData = '';
+                let pathData = '';
     
-                for (let i = startIdx; i < endIdx && i < allCoords.length - 1; i++) {
+                for (let i = startIdx; i < endIdx && i < allCoords.length - 1; i++) {
     
-                const p1 = { x: allCoords[i].left, y: allCoords[i].top };
+                const p1 = { x: allCoords[i].left, y: allCoords[i].top };
     
-                const p2 = { x: allCoords[i+1].left, y: allCoords[i+1].top };
+                const p2 = { x: allCoords[i+1].left, y: allCoords[i+1].top };
     
-                    if (i === startIdx) pathData += `M ${p1.x} ${p1.y} `;
+                    if (i === startIdx) pathData += `M ${p1.x} ${p1.y} `;
     
-                pathData += `L ${p2.x} ${p2.y} `;
+                pathData += `L ${p2.x} ${p2.y} `;
     
-            }
+            }
     
-           
+           
     
-                if (pathData) {
+                if (pathData) {
     
-            let path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            let path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     
-            path.setAttribute('d', pathData);
+            path.setAttribute('d', pathData);
     
-            path.setAttribute('fill', 'none');
+            path.setAttribute('fill', 'none');
     
-            path.setAttribute('stroke', 'rgba(255, 255, 255, 0.4)');
+            path.setAttribute('stroke', 'rgba(255, 255, 255, 0.4)');
     
-            path.setAttribute('stroke-width', '10');
+            path.setAttribute('stroke-width', '10');
     
-            path.setAttribute('stroke-dasharray', '20 10');
+            path.setAttribute('stroke-dasharray', '20 10');
     
-            path.setAttribute('stroke-linecap', 'round');
+            path.setAttribute('stroke-linecap', 'round');
     
-            this.pathSvg.appendChild(path);
+            this.pathSvg.appendChild(path);
     
-                }
+                }
     
-            }
+            }
     
-        }
+        }
     
-       
+       
     
         // Зум і панорама
     
     // ВИДАЛЕНО: Дублююча функція applyTransform() - використовуємо тільки другу
     
-       
+       
     
     handleZoom(e) {
         // VИМКНЕНО: Зум заблокований - карта статична
@@ -811,7 +811,7 @@ class EducationalPathGame {
             return; // Не робимо нічого
         }
     
-       
+       
     
     handlePanning(e) {
         // ВИМКНЕНО: Переміщення заблоковано - карта статична
@@ -820,31 +820,31 @@ class EducationalPathGame {
         return; // Не робимо нічого
     }
     
-       
+       
     
-        stopPanning() {
+        stopPanning() {
     
-            this.isPanning = false;
+            this.isPanning = false;
     
-            this.gameViewport.style.cursor = 'grab';
+            this.gameViewport.style.cursor = 'grab';
     
-            this.gameBoardContainer.style.transition = 'transform 0.5s ease';
+            this.gameBoardContainer.style.transition = 'transform 0.5s ease';
     
-        }
+        }
     
-       
+       
     
-        centerViewOn(element) {
+        centerViewOn(element) {
     
-            const viewportRect = this.gameViewport.getBoundingClientRect();
+            const viewportRect = this.gameViewport.getBoundingClientRect();
     
-            const targetX = viewportRect.width / 2;
+            const targetX = viewportRect.width / 2;
     
-            const targetY = viewportRect.height / 2;
+            const targetY = viewportRect.height / 2;
     
-            const elementX = element.offsetLeft + element.offsetWidth / 2;
+            const elementX = element.offsetLeft + element.offsetWidth / 2;
     
-            const elementY = element.offsetTop + element.offsetHeight / 2;
+            const elementY = element.offsetTop + element.offsetHeight / 2;
     
         this.translateX = targetX - (elementX * this.scale);
 
@@ -852,9 +852,9 @@ class EducationalPathGame {
 
         // ВИДАЛЕНО: applyTransform() - фокусування заблоковано
     
-        }
+        }
     
-       
+       
     
     // Ігрова логіка
     
@@ -1100,21 +1100,21 @@ class EducationalPathGame {
         
         const rotations = {
     
-                1: 'rotateY(0deg)',
+                1: 'rotateY(0deg)',
     
-                2: 'rotateY(-90deg)',
+                2: 'rotateY(-90deg)',
     
-                3: 'rotateY(-180deg)',
+                3: 'rotateY(-180deg)',
     
-                4: 'rotateY(90deg)',
+                4: 'rotateY(90deg)',
     
-                5: 'rotateX(-90deg)',
+                5: 'rotateX(-90deg)',
     
-                6: 'rotateX(90deg)'
+                6: 'rotateX(90deg)'
     
-            };
+            };
     
-           
+           
     
         this.diceInner.style.transform = `rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg)`;
         
@@ -1126,23 +1126,23 @@ class EducationalPathGame {
             
         }, 1000);
     
-        }
+        }
     
-       
+       
     
-        async movePlayer(player, steps) {
+        async movePlayer(player, steps) {
     
-            const startPos = player.position;
+            const startPos = player.position;
     
-            const endPos = Math.min(startPos + steps, this.BOARD_SIZE);
+            const endPos = Math.min(startPos + steps, this.BOARD_SIZE);
     
-           
+           
     
-            // Використовуємо нову плавну анімацію
+            // Використовуємо нову плавну анімацію
     
-            await this.animatePawnMovement(player, startPos, endPos, steps);
+            await this.animatePawnMovement(player, startPos, endPos, steps);
     
-           
+           
     
         // Оновлюємо позицію гравця
         player.position = endPos;
@@ -1156,9 +1156,9 @@ class EducationalPathGame {
         // Перевіряємо події на кінцевій клітинці
         this.checkCell(player);
     
-        }
+        }
     
-       
+       
     
     async movePlayerTo(player, position) {
     
@@ -1179,7 +1179,7 @@ class EducationalPathGame {
     
     }
     
-       
+       
     
     checkCell(player) {
         // В мультиплеєрному режимі перевірка подій відбувається на сервері
@@ -1197,7 +1197,7 @@ class EducationalPathGame {
         }
     }
     
-       
+       
     
     handleSpecialCell(player, cellData) {
         // Позначаємо клітинку як використану
@@ -1212,17 +1212,17 @@ class EducationalPathGame {
 
         switch(cellData.type) {
     
-                case 'quest':
+                case 'quest':
     
-                    this.triggerRandomQuest(player);
+                    this.triggerRandomQuest(player);
     
-                    break;
+                    break;
     
-                case 'pvp-quest':
+                case 'pvp-quest':
     
-                    this.triggerPvpQuest(player);
+                    this.triggerPvpQuest(player);
     
-                    break;
+                    break;
     
             case 'mad-libs-quest':
                 this.triggerMadLibsQuest(player);
@@ -1234,7 +1234,7 @@ class EducationalPathGame {
     
             case 'reincarnation':
                 this.triggerReincarnation(player, cellData);
-                    break;
+                    break;
     
             case 'machine-uprising':
                 // Показуємо повідомлення про повстання машин
@@ -1257,17 +1257,17 @@ class EducationalPathGame {
                 );
                 break;
     
-                case 'portal':
+                case 'portal':
     
-                    this.showQuestModal('Таємний портал!', `Ризикнути та стрибнути на клітинку ${cellData.target} за ${cellData.cost} ОО?`, [
+                    this.showQuestModal('Таємний портал!', `Ризикнути та стрибнути на клітинку ${cellData.target} за ${cellData.cost} ОО?`, [
     
-                        { text: 'Так', callback: () => { this.updatePoints(player, -cellData.cost); this.movePlayerTo(player, cellData.target); this.questModal.classList.add('hidden'); }},
+                        { text: 'Так', callback: () => { this.updatePoints(player, -cellData.cost); this.movePlayerTo(player, cellData.target); this.questModal.classList.add('hidden'); }},
     
-                        { text: 'Ні', callback: () => { this.questModal.classList.add('hidden'); this.nextTurn(); }}
+                        { text: 'Ні', callback: () => { this.questModal.classList.add('hidden'); this.nextTurn(); }}
     
-                    ]);
+                    ]);
     
-                    break;
+                    break;
     
             case 'alternative-path':
 
@@ -1305,180 +1305,180 @@ class EducationalPathGame {
                 setTimeout(() => this.nextTurn(), 1000);
                 break;
     
-            }
+            }
     
-        }
+        }
     
-       
+       
     
-        // Квести та події
+        // Квести та події
     
-        triggerRandomQuest(player) {
+        triggerRandomQuest(player) {
     
-            const questTypes = ['simple', 'pvp', 'creative'];
+            const questTypes = ['simple', 'pvp', 'creative'];
     
-            const questType = questTypes[Math.floor(Math.random() * questTypes.length)];
+            const questType = questTypes[Math.floor(Math.random() * questTypes.length)];
     
-           
+           
     
-            if (questType === 'simple') {
+            if (questType === 'simple') {
     
-                const simpleQuests = [
+                const simpleQuests = [
     
-                    { title: 'Знайшов старовинну книгу!', reward: 15, description: 'Ви знайшли цінну книгу в бібліотеці.' },
+                    { title: 'Знайшов старовинну книгу!', reward: 15, description: 'Ви знайшли цінну книгу в бібліотеці.' },
     
-                    { title: 'Допоміг вчителю!', reward: 20, description: 'Ви допомогли вчителю з організацією уроку.' },
+                    { title: 'Допоміг вчителю!', reward: 20, description: 'Ви допомогли вчителю з організацією уроку.' },
     
-                    { title: 'Вивчив нову мову!', reward: 25, description: 'Ви успішно вивчили основи нової мови.' },
+                    { title: 'Вивчив нову мову!', reward: 25, description: 'Ви успішно вивчили основи нової мови.' },
     
-                    { title: 'Створив науковий проект!', reward: 30, description: 'Ваш проект отримав визнання.' },
+                    { title: 'Створив науковий проект!', reward: 30, description: 'Ваш проект отримав визнання.' },
     
-                    { title: 'Переміг у олімпіаді!', reward: 40, description: 'Ви посіли перше місце в олімпіаді.' }
+                    { title: 'Переміг у олімпіаді!', reward: 40, description: 'Ви посіли перше місце в олімпіаді.' }
     
-                ];
+                ];
     
-                const quest = simpleQuests[Math.floor(Math.random() * simpleQuests.length)];
+                const quest = simpleQuests[Math.floor(Math.random() * simpleQuests.length)];
     
-                this.updatePoints(player, quest.reward, quest.title);
+                this.updatePoints(player, quest.reward, quest.title);
     
-                this.showQuestModal(quest.title, quest.description, [
+                this.showQuestModal(quest.title, quest.description, [
     
-                    { text: 'Далі', callback: () => {
+                    { text: 'Далі', callback: () => {
     
-                        this.questModal.classList.add('hidden');
+                        this.questModal.classList.add('hidden');
     
     
-                        this.nextTurn();
+                        this.nextTurn();
     
-                    }}
+                    }}
     
-                ]);
+                ]);
     
-            } else if (questType === 'pvp') {
+            } else if (questType === 'pvp') {
     
-                this.triggerPvpQuest(player);
+                this.triggerPvpQuest(player);
     
-            } else {
+            } else {
     
-                this.triggerCreativeQuest(player);
+                this.triggerCreativeQuest(player);
     
-            }
+            }
     
-        }
+        }
     
-       
+       
     
-        // Допоміжні функції
+        // Допоміжні функції
     
-        updatePoints(player, amount, reason = "", showModal = false) {
+        updatePoints(player, amount, reason = "", showModal = false) {
     
-            player.points += amount;
+            player.points += amount;
     
     
-            this.updateUI();
+            this.updateUI();
     
-           
+           
     
-            if (showModal && reason) {
+            if (showModal && reason) {
     
-                this.showQuestModal(reason, `${player.name} отримав ${amount > 0 ? '+' : ''}${amount} Очок Освіти!`, [
+                this.showQuestModal(reason, `${player.name} отримав ${amount > 0 ? '+' : ''}${amount} Очок Освіти!`, [
     
-                    { text: 'Далі', callback: () => { this.questModal.classList.add('hidden'); this.nextTurn(); }}
+                    { text: 'Далі', callback: () => { this.questModal.classList.add('hidden'); this.nextTurn(); }}
     
-                ]);
+                ]);
     
-            }
+            }
     
-           
+           
     
-            if (player.points >= this.WIN_CONDITION_POINTS) {
+            if (player.points >= this.WIN_CONDITION_POINTS) {
     
-                this.endGame(player);
+                this.endGame(player);
     
-            }
+            }
     
-        }
+        }
     
-       
+       
     
-        nextTurn() {
+        nextTurn() {
     
-            if (!this.gameActive) return;
+            if (!this.gameActive) return;
     
-            const player = this.players[this.currentPlayerIndex];
+            const player = this.players[this.currentPlayerIndex];
     
-           
+           
     
-            if (player.extraTurn) {
+            if (player.extraTurn) {
     
-                player.extraTurn = false;
+                player.extraTurn = false;
     
     
-                this.rollDiceBtn.disabled = false;
+                this.rollDiceBtn.disabled = false;
     
-                return;
+                return;
     
-            }
+            }
     
-           
+           
     
-            if (player.skipTurn) {
+            if (player.skipTurn) {
     
-                player.skipTurn = false;
+                player.skipTurn = false;
     
     
-                this.showQuestModal('Пропуск ходу', `${player.name} пропускає цей хід через подію.`, [
+                this.showQuestModal('Пропуск ходу', `${player.name} пропускає цей хід через подію.`, [
     
-                    { text: 'Зрозуміло', callback: () => { this.questModal.classList.add('hidden'); this.nextTurn(); }}
+                    { text: 'Зрозуміло', callback: () => { this.questModal.classList.add('hidden'); this.nextTurn(); }}
     
-                ]);
+                ]);
     
-                return;
+                return;
     
-            }
+            }
     
-           
+           
     
-            do {
+            do {
     
-                this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
+                this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
     
-            } while (this.players[this.currentPlayerIndex].hasLost);
+            } while (this.players[this.currentPlayerIndex].hasLost);
     
-           
+           
     
-            this.updateUI();
+            this.updateUI();
     
     
-            this.rollDiceBtn.disabled = false;
+            this.rollDiceBtn.disabled = false;
     
-        }
+        }
     
-       
+       
     
-        updateUI() {
+        updateUI() {
     
-            const player = this.players[this.currentPlayerIndex];
+            const player = this.players[this.currentPlayerIndex];
     
-            this.currentPlayerNameEl.textContent = player.name;
+            this.currentPlayerNameEl.textContent = player.name;
     
-            this.currentPlayerNameEl.style.color = player.color;
+            this.currentPlayerNameEl.style.color = player.color;
     
-            this.currentPlayerClassEl.textContent = player.class ? player.class.name : '—';
+            this.currentPlayerClassEl.textContent = player.class ? player.class.name : '—';
     
-            this.currentPlayerPointsEl.textContent = player.points;
+            this.currentPlayerPointsEl.textContent = player.points;
     
-            this.leaderboardEl.innerHTML = `<h3 class="text-lg font-semibold mt-2">Таблиця лідерів</h3>` +
+            this.leaderboardEl.innerHTML = `<h3 class="text-lg font-semibold mt-2">Таблиця лідерів</h3>` +
     
-                this.players.filter(p => !p.hasLost).sort((a,b) => b.points - a.points).map(p =>
+                this.players.filter(p => !p.hasLost).sort((a,b) => b.points - a.points).map(p =>
     
-                    `<div style="color:${p.color};">${p.name}: ${p.points} ОО</div>`
+                    `<div style="color:${p.color};">${p.name}: ${p.points} ОО</div>`
     
-                ).join('');
+                ).join('');
     
-        }
+        }
     
-       
+       
     
     updatePawnPosition(player) {
 
@@ -1504,150 +1504,150 @@ class EducationalPathGame {
 
     }
     
-       
+       
     
-        // Плавна анімація руху фішки покроково
+        // Плавна анімація руху фішки покроково
     
     async animatePawnMovement(player, fromPosition, toPosition, steps) {
         // Виправляємо негативну початкову позицію
         fromPosition = Math.max(0, fromPosition);
         console.log(`Анімація руху ${player.name} з ${fromPosition} до ${toPosition}, кроків: ${steps}`);
     
-           
+           
     
-            const pawn = document.getElementById(`pawn-${player.id}`);
+            const pawn = document.getElementById(`pawn-${player.id}`);
     
-            if (!pawn) return;
+            if (!pawn) return;
     
-           
+           
     
-            // Блокуємо кнопку кидання кубика під час анімації
+            // Блокуємо кнопку кидання кубика під час анімації
     
-            this.rollDiceBtn.disabled = true;
+            this.rollDiceBtn.disabled = true;
     
-            this.rollDiceBtn.style.opacity = '0.5';
+            this.rollDiceBtn.style.opacity = '0.5';
     
-           
+           
     
-            // Додаємо клас руху
+            // Додаємо клас руху
     
-            pawn.classList.add('moving');
+            pawn.classList.add('moving');
     
-           
+           
     
-            // Якщо рух далекий, додаємо ефект вітру
+            // Якщо рух далекий, додаємо ефект вітру
     
-            if (steps > 3) {
+            if (steps > 3) {
     
-                pawn.classList.add('wind-effect');
+                pawn.classList.add('wind-effect');
     
-            }
+            }
     
-           
+           
     
-            try {
+            try {
     
-                // Рухаємося покроково
+                // Рухаємося покроково
     
-                for (let i = 1; i <= steps; i++) {
+                for (let i = 1; i <= steps; i++) {
     
-                    const currentPosition = fromPosition + i;
+                    const currentPosition = fromPosition + i;
     
-                   
+                   
     
-                    // Переміщуємо фішку на поточну клітинку
+                    // Переміщуємо фішку на поточну клітинку
     
-                    await this.movePawnToCell(pawn, currentPosition);
+                    await this.movePawnToCell(pawn, currentPosition);
     
-                   
+                   
     
-                    // Невелика затримка між кроками
+                    // Невелика затримка між кроками
     
-                    await this.sleep(250);
+                    await this.sleep(250);
     
-                   
+                   
     
-                    // Перевіряємо події на поточній клітинці
+                    // Перевіряємо події на поточній клітинці
     
-                    if (i === steps) {
+                    if (i === steps) {
     
-                        // Останній крок - перевіряємо події
+                        // Останній крок - перевіряємо події
     
-                        const cellData = this.specialCells[currentPosition];
+                        const cellData = this.specialCells[currentPosition];
     
-                        if (cellData) {
+                        if (cellData) {
     
-                            console.log(`Гравець ${player.name} потрапив на подію на клітинці ${currentPosition}`);
+                            console.log(`Гравець ${player.name} потрапив на подію на клітинці ${currentPosition}`);
     
-                            await this.handleSpecialCell(player, cellData);
+                            await this.handleSpecialCell(player, cellData);
     
-                        }
+                        }
     
-                    }
+                    }
     
-                }
+                }
     
-               
+               
     
-                // Додаємо ефект приземлення
+                // Додаємо ефект приземлення
     
-                pawn.classList.remove('moving');
+                pawn.classList.remove('moving');
     
-                pawn.classList.add('landing');
+                pawn.classList.add('landing');
     
-               
+               
     
-                // Додаємо слід
+                // Додаємо слід
     
-                pawn.classList.add('trail');
+                pawn.classList.add('trail');
     
-               
+               
     
-                // Очищуємо ефекти після анімації
+                // Очищуємо ефекти після анімації
     
-                setTimeout(() => {
+                setTimeout(() => {
     
-                    pawn.classList.remove('landing', 'trail', 'wind-effect');
+                    pawn.classList.remove('landing', 'trail', 'wind-effect');
     
-                }, 600);
+                }, 600);
     
-               
+               
     
-            } catch (error) {
+            } catch (error) {
     
-                console.error('Помилка під час анімації:', error);
+                console.error('Помилка під час анімації:', error);
     
-            } finally {
+            } finally {
     
-                // Розблоковуємо кнопку
+                // Розблоковуємо кнопку
     
-                this.rollDiceBtn.disabled = false;
+                this.rollDiceBtn.disabled = false;
     
-                this.rollDiceBtn.style.opacity = '1';
+                this.rollDiceBtn.style.opacity = '1';
     
-            }
+            }
     
-        }
+        }
     
-       
+       
     
-        // Переміщення фішки на конкретну клітинку
+        // Переміщення фішки на конкретну клітинку
     
-        async movePawnToCell(pawn, cellPosition) {
+        async movePawnToCell(pawn, cellPosition) {
     
-            return new Promise((resolve) => {
+            return new Promise((resolve) => {
     
-                const targetCell = document.getElementById(`cell-${cellPosition}`);
+                const targetCell = document.getElementById(`cell-${cellPosition}`);
     
-                if (!targetCell) {
+                if (!targetCell) {
     
-                    resolve();
+                    resolve();
     
-                    return;
+                    return;
     
-                }
+                }
     
-               
+               
     
             // Отримуємо позицію клітинки відносно дошки
             const cellRect = targetCell.getBoundingClientRect();
@@ -1664,158 +1664,158 @@ class EducationalPathGame {
                 this.playChipMoveSound();
             }, 100);
     
-               
+               
     
-                // Центруємо вид на клітинці
+                // Центруємо вид на клітинці
     
-                this.centerViewOn(targetCell);
+                this.centerViewOn(targetCell);
     
-               
+               
     
-                // Чекаємо завершення CSS transition
+                // Чекаємо завершення CSS transition
     
-                setTimeout(resolve, 250);
+                setTimeout(resolve, 250);
     
-            });
+            });
     
-        }
+        }
     
-       
+       
     
-        // Утиліта для затримки
+        // Утиліта для затримки
     
-        sleep(ms) {
+        sleep(ms) {
     
-            return new Promise(resolve => setTimeout(resolve, ms));
+            return new Promise(resolve => setTimeout(resolve, ms));
     
-        }
+        }
     
-       
+       
     
-        // Телепорт між епохами
+        // Телепорт між епохами
     
-        async teleportToNextEpoch(player, nextEpochId) {
+        async teleportToNextEpoch(player, nextEpochId) {
     
-            const nextEpoch = this.epochs.find(e => e.id === nextEpochId);
+            const nextEpoch = this.epochs.find(e => e.id === nextEpochId);
     
-            if (!nextEpoch) return;
+            if (!nextEpoch) return;
     
-           
+           
     
-            console.log(`${player.name} телепортується до епохи ${nextEpoch.name}`);
+            console.log(`${player.name} телепортується до епохи ${nextEpoch.name}`);
     
-           
+           
     
-            // Показуємо анімацію телепорту
+            // Показуємо анімацію телепорту
     
-            await this.showTeleportAnimation(player, nextEpoch);
+            await this.showTeleportAnimation(player, nextEpoch);
     
-           
+           
     
-            // Переміщуємо гравця на першу клітинку нової епохи
+            // Переміщуємо гравця на першу клітинку нової епохи
     
-            const newPosition = nextEpoch.startCell;
+            const newPosition = nextEpoch.startCell;
     
-            const oldPosition = player.position;
+            const oldPosition = player.position;
     
-           
+           
     
-            player.position = newPosition;
+            player.position = newPosition;
     
-           
+           
     
-            // Плавно переміщуємо фішку
+            // Плавно переміщуємо фішку
     
-            await this.movePawnToCell(document.getElementById(`pawn-${player.id}`), newPosition);
+            await this.movePawnToCell(document.getElementById(`pawn-${player.id}`), newPosition);
     
-           
+           
     
-            // Центруємо камеру на новій епосі
+            // Центруємо камеру на новій епосі
     
-            this.centerViewOnEpoch(nextEpochId);
+            this.centerViewOnEpoch(nextEpochId);
     
-           
+           
     
     
-           
+           
     
-            // Перевіряємо події на новій клітинці
+            // Перевіряємо події на новій клітинці
     
-            this.checkCell(player);
+            this.checkCell(player);
     
-        }
+        }
     
-       
+       
     
-        // Анімація телепорту
+        // Анімація телепорту
     
-        async showTeleportAnimation(player, epoch) {
+        async showTeleportAnimation(player, epoch) {
     
-            const pawn = document.getElementById(`pawn-${player.id}`);
+            const pawn = document.getElementById(`pawn-${player.id}`);
     
-            if (!pawn) return;
+            if (!pawn) return;
     
-           
+           
     
-            // Додаємо клас телепорту
+            // Додаємо клас телепорту
     
-            pawn.classList.add('teleporting');
+            pawn.classList.add('teleporting');
     
-           
+           
     
-            // Показуємо ефект світла
+            // Показуємо ефект світла
     
-            const lightEffect = document.createElement('div');
+            const lightEffect = document.createElement('div');
     
-            lightEffect.style.position = 'absolute';
+            lightEffect.style.position = 'absolute';
     
-            lightEffect.style.top = pawn.style.top;
+            lightEffect.style.top = pawn.style.top;
     
-            lightEffect.style.left = pawn.style.left;
+            lightEffect.style.left = pawn.style.left;
     
-            lightEffect.style.width = '60px';
+            lightEffect.style.width = '60px';
     
-            lightEffect.style.height = '60px';
+            lightEffect.style.height = '60px';
     
-            lightEffect.style.background = `radial-gradient(circle, ${epoch.color} 0%, transparent 70%)`;
+            lightEffect.style.background = `radial-gradient(circle, ${epoch.color} 0%, transparent 70%)`;
     
-            lightEffect.style.borderRadius = '50%';
+            lightEffect.style.borderRadius = '50%';
     
-            lightEffect.style.transform = 'translate(-50%, -50%)';
+            lightEffect.style.transform = 'translate(-50%, -50%)';
     
-            lightEffect.style.animation = 'teleportFlash 0.8s ease-out';
+            lightEffect.style.animation = 'teleportFlash 0.8s ease-out';
     
-            lightEffect.style.pointerEvents = 'none';
+            lightEffect.style.pointerEvents = 'none';
     
-            lightEffect.style.zIndex = '10';
+            lightEffect.style.zIndex = '10';
     
-           
+           
     
-            this.gameBoard.appendChild(lightEffect);
+            this.gameBoard.appendChild(lightEffect);
     
-           
+           
     
-            // Чекаємо завершення анімації
+            // Чекаємо завершення анімації
     
-            await this.sleep(800);
+            await this.sleep(800);
     
-           
+           
     
-            // Видаляємо клас телепорту
+            // Видаляємо клас телепорту
     
-            pawn.classList.remove('teleporting');
+            pawn.classList.remove('teleporting');
     
-           
+           
     
-            // Видаляємо ефект світла
+            // Видаляємо ефект світла
     
-            lightEffect.remove();
+            lightEffect.remove();
     
-        }
+        }
     
-       
+       
     
-        // Центрування камери на епосі
+        // Центрування камери на епосі
     
     centerViewOnEpoch(epochId) {
         // ВИМКНЕНО: Фокусування камери заблоковано - карта статична
@@ -1823,125 +1823,125 @@ class EducationalPathGame {
         return; // Не робимо нічого
     }
     
-       
+       
     
     
-       
+       
     
-        endGame(winner, customMessage = "") {
+        endGame(winner, customMessage = "") {
     
-            if (!this.gameActive) return;
+            if (!this.gameActive) return;
     
-            this.gameActive = false;
+            this.gameActive = false;
     
-            this.rollDiceBtn.disabled = true;
+            this.rollDiceBtn.disabled = true;
     
-           
+           
     
-            let message;
+            let message;
     
-            if (customMessage) {
+            if (customMessage) {
     
-                message = customMessage;
+                message = customMessage;
     
-            } else if(winner) {
+            } else if(winner) {
     
-                message = `Переможець: ${winner.name}, який набрав ${winner.points} ОО!`;
+                message = `Переможець: ${winner.name}, який набрав ${winner.points} ОО!`;
     
-            } else {
+            } else {
     
-                const sortedPlayers = this.players.filter(p => !p.hasLost).sort((a,b) => b.points - a.points);
+                const sortedPlayers = this.players.filter(p => !p.hasLost).sort((a,b) => b.points - a.points);
     
-                if (sortedPlayers.length > 0) {
+                if (sortedPlayers.length > 0) {
     
-                    message = `Гру завершено! Переміг ${sortedPlayers[0].name} з ${sortedPlayers[0].points} ОО!`;
+                    message = `Гру завершено! Переміг ${sortedPlayers[0].name} з ${sortedPlayers[0].points} ОО!`;
     
-                } else {
+                } else {
     
-                    message = `Гру завершено! Машини перемогли.`;
+                    message = `Гру завершено! Машини перемогли.`;
     
-                }
+                }
     
-            }
+            }
     
-           
+           
     
     
-            const contentHTML = `
+            const contentHTML = `
     
-                <h2 class="text-4xl font-bold text-yellow-400 mb-4">Гру завершено!</h2>
+                <h2 class="text-4xl font-bold text-yellow-400 mb-4">Гру завершено!</h2>
     
-                <p class="text-2xl mb-6">${message}</p>
+                <p class="text-2xl mb-6">${message}</p>
     
-                <button id="restart-game-btn" class="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 text-xl">Грати знову</button>
+                <button id="restart-game-btn" class="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 text-xl">Грати знову</button>
     
-            `;
+            `;
     
-           
+           
     
-            this.showQuestModalWithContent(contentHTML, () => {
+            this.showQuestModalWithContent(contentHTML, () => {
     
-                document.getElementById('restart-game-btn').addEventListener('click', () => location.reload());
+                document.getElementById('restart-game-btn').addEventListener('click', () => location.reload());
     
-            });
+            });
     
-        }
+        }
     
-       
+       
     
-        showQuestModal(title, text, buttons) {
+        showQuestModal(title, text, buttons) {
     
-            let buttonsHTML = buttons.map((btn, index) =>
+            let buttonsHTML = buttons.map((btn, index) =>
     
-                `<button id="modal-btn-${index}" class="px-4 py-2 rounded-lg text-white font-semibold transition ${index === 0 ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}">${btn.text}</button>`
+                `<button id="modal-btn-${index}" class="px-4 py-2 rounded-lg text-white font-semibold transition ${index === 0 ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}">${btn.text}</button>`
     
-            ).join(' ');
+            ).join(' ');
     
-           
+           
     
-            const contentHTML = `
+            const contentHTML = `
     
-                <h3 class="text-2xl font-bold mb-2">${title}</h3>
+                <h3 class="text-2xl font-bold mb-2">${title}</h3>
     
-                <div class="text-lg mb-6">${text}</div>
+                <div class="text-lg mb-6">${text}</div>
     
-                <div class="flex justify-center gap-4">${buttonsHTML}</div>
+                <div class="flex justify-center gap-4">${buttonsHTML}</div>
     
-            `;
+            `;
     
-           
+           
     
-            this.showQuestModalWithContent(contentHTML, () => {
+            this.showQuestModalWithContent(contentHTML, () => {
     
-                buttons.forEach((btn, index) => {
+                buttons.forEach((btn, index) => {
     
-                    document.getElementById(`modal-btn-${index}`).onclick = () => {
+                    document.getElementById(`modal-btn-${index}`).onclick = () => {
     
-                        if (btn.callback) btn.callback();
+                        if (btn.callback) btn.callback();
     
-                    };
+                    };
     
-                });
+                });
     
-            });
+            });
     
-        }
+        }
     
-       
+       
     
-        showQuestModalWithContent(html, setupCallback) {
+        showQuestModalWithContent(html, setupCallback) {
     
-            this.questModalContent.innerHTML = html;
+            this.questModalContent.innerHTML = html;
     
-            this.questModalContent.classList.remove('modal-shake', 'modal-pulse-green');
+            this.questModalContent.classList.remove('modal-shake', 'modal-pulse-green');
     
-            this.questModal.classList.remove('hidden');
+            this.questModal.classList.remove('hidden');
     
-            if(setupCallback) setupCallback(this.questModalContent);
+            if(setupCallback) setupCallback(this.questModalContent);
     
-        }
+        }
     
-       
+       
     
     // Заглушки для PvP та Creative квестів (будуть реалізовані пізніше)
     

@@ -21,8 +21,29 @@ function passTurnToNextPlayer(room) {
         console.log('Пропущено вибулого гравця, новий індекс:', room.gameData.currentPlayerIndex);
     }
     
-    // Повідомляємо всіх про зміну черги
+    // Перевірка на пропуск ходу через "Прокрастинацію"
     const nextPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+    
+    if (nextPlayer.effects && nextPlayer.effects.skipTurn && nextPlayer.effects.skipTurn > 0) {
+        console.log(`Гравець ${nextPlayer.name} пропускає хід через Прокрастинацію.`);
+        nextPlayer.effects.skipTurn--;
+        if (nextPlayer.effects.skipTurn <= 0) delete nextPlayer.effects.skipTurn;
+        
+        // Відправляємо повідомлення в чат
+        io.to(room.id).emit('chat_message', {
+            type: 'system',
+            message: `⏳ ${nextPlayer.name} піддався Прокрастинації та пропускає хід!`
+        });
+        
+        // Відправляємо оновлення стану
+        io.to(room.id).emit('game_state_update', room.gameData);
+        
+        // Рекурсивно викликаємо функцію для передачі ходу наступному гравцю
+        passTurnToNextPlayer(room);
+        return;
+    }
+    
+    // Якщо пропуску немає, продовжуємо як зазвичай
     console.log('Наступний гравець:', nextPlayer.name, 'ID:', nextPlayer.id);
     
     io.to(room.id).emit('turn_update', {
@@ -384,9 +405,27 @@ io.on('connection', (socket) => {
         
         // ЗАМІНИТИ СТАРИЙ БЛОК РОЗПОДІЛУ КЛАСІВ НА ЦЕЙ:
         const availableClasses = [
-            { id: 'aristocrat', name: '⚜️ Аристократ', startPoints: 50, moveModifier: 1 },
-            { id: 'burgher', name: '⚖️ Міщанин', startPoints: 20, moveModifier: 0 },
-            { id: 'peasant', name: '🌱 Селянин', startPoints: 0, moveModifier: -1 },
+            { 
+                id: 'aristocrat', 
+                name: '⚜️ Аристократ', 
+                startPoints: 50, 
+                moveModifier: 1,
+                description: 'Вітаю! Ви народилися із золотою ложкою в роті! Ваше життя буде легшим, ніж у решти, завдяки безмежним статкам пращурів. Проте все ж один криптоніт маєте – казино та шинки. Якщо ступите ногою у даний заклад, втратите все!'
+            },
+            { 
+                id: 'burgher', 
+                name: '⚖️ Міщанин', 
+                startPoints: 20, 
+                moveModifier: 0,
+                description: 'Вітаю! Ви народилися в родині, що здатна вас забезпечити! Проте на більше не сподівайтесь. Ваше життя буде посереднім. До казино та шинків також не варто підходити, якщо не хочете втратити половину майна!'
+            },
+            { 
+                id: 'peasant', 
+                name: '🌱 Селянин', 
+                startPoints: 0, 
+                moveModifier: -1,
+                description: 'Вітаю! Ви народились! На цьому гарні новини для вас скінчились. Життя, сповнене стражданнями та злиднями, відтепер звична реальність. До казино та шинків теж не рекомендуємо ходити, якщо не хочете передчасно померти з голоду.'
+            },
         ];
 
         let classPool = [];
@@ -557,7 +596,25 @@ io.on('connection', (socket) => {
         console.log('Обробляємо кидання кубика для гравця:', currentPlayer.name);
         
         const roll = Math.floor(Math.random() * 6) + 1;
-        let move = roll;
+        let moveModifier = 0; // Додатковий модифікатор від бафів/дебафів
+        let effectApplied = null; // Зберігаємо, який ефект спрацював
+        
+        // Перевірка ефектів поточного гравця
+        if (currentPlayer.effects) {
+            if (currentPlayer.effects.hateClone && currentPlayer.effects.hateClone > 0) {
+                moveModifier = -Math.ceil(roll / 2); // Рух = roll - округлення_вгору(roll / 2)
+                currentPlayer.effects.hateClone--;
+                effectApplied = 'hateClone';
+                if (currentPlayer.effects.hateClone <= 0) delete currentPlayer.effects.hateClone;
+            } else if (currentPlayer.effects.happinessCharm && currentPlayer.effects.happinessCharm > 0) {
+                moveModifier = roll; // Рух = roll + roll
+                currentPlayer.effects.happinessCharm--;
+                effectApplied = 'happinessCharm';
+                if (currentPlayer.effects.happinessCharm <= 0) delete currentPlayer.effects.happinessCharm;
+            }
+        }
+        
+        let move = roll + moveModifier;
         
         // Додаємо модифікатори класу
         if (currentPlayer.class) {
@@ -567,7 +624,7 @@ io.on('connection', (socket) => {
             }
         }
         
-        console.log('Кубик показав:', roll, 'Рух:', move);
+        console.log(`Кубик: ${roll}, Клас: ${currentPlayer.class ? currentPlayer.class.moveModifier : 0}, Ефект: ${moveModifier} (${effectApplied || 'немає'}), Фінальний хід: ${move}`);
         
         // Межі епох для системи реінкарнації
         const EPOCH_BOUNDARIES = [12, 22, 42, 75, 97, 101];
@@ -632,9 +689,27 @@ io.on('connection', (socket) => {
             
             // Створюємо пул доступних класів
             const availableClasses = [
-                { id: 'aristocrat', name: 'Аристократ', moveModifier: 1, description: 'Аристократ' },
-                { id: 'burgher', name: 'Міщанин', moveModifier: 0, description: 'Міщанин' },
-                { id: 'peasant', name: 'Селянин', moveModifier: -1, description: 'Селянин' }
+                { 
+                    id: 'aristocrat', 
+                    name: '⚜️ Аристократ', 
+                    startPoints: 50,
+                    moveModifier: 1, 
+                    description: 'Вітаю! Ви народилися із золотою ложкою в роті! Ваше життя буде легшим, ніж у решти, завдяки безмежним статкам пращурів. Проте все ж один криптоніт маєте – казино та шинки. Якщо ступите ногою у даний заклад, втратите все!'
+                },
+                { 
+                    id: 'burgher', 
+                    name: '⚖️ Міщанин', 
+                    startPoints: 20,
+                    moveModifier: 0, 
+                    description: 'Вітаю! Ви народилися в родині, що здатна вас забезпечити! Проте на більше не сподівайтесь. Ваше життя буде посереднім. До казино та шинків також не варто підходити, якщо не хочете втратити половину майна!'
+                },
+                { 
+                    id: 'peasant', 
+                    name: '🌱 Селянин', 
+                    startPoints: 0,
+                    moveModifier: -1, 
+                    description: 'Вітаю! Ви народились! На цьому гарні новини для вас скінчились. Життя, сповнене стражданнями та злиднями, відтепер звична реальність. До казино та шинків теж не рекомендуємо ходити, якщо не хочете передчасно померти з голоду.'
+                }
             ];
             
             // ЗАМІНИТИ СТАРУ ЛОГІКУ ВИБОРУ КЛАСУ НА ЦЮ:
@@ -672,6 +747,12 @@ io.on('connection', (socket) => {
             
             // Повідомлення про зміну класу
             io.to(room.id).emit('chat_message', { type: 'system', message: `${currentPlayer.name} реінкарнував і став ${currentPlayer.class.name}!` });
+            
+            // Відправляємо подію для відображення класу
+            io.to(room.id).emit('show_reincarnation_class', {
+                playerId: currentPlayer.id,
+                newClass: currentPlayer.class
+            });
         }
         
         // Повідомляємо всіх про кидання кубика та нову позицію
@@ -1236,6 +1317,99 @@ io.on('connection', (socket) => {
         
         // Передаємо хід наступному гравцю
         passTurnToNextPlayer(room);
+    });
+    
+    // Обробляємо застосування бафів/дебафів
+    socket.on('apply_effect', (data) => {
+        console.log('Отримано застосування бафа/дебафа:', data);
+        const player = players.get(socket.id);
+        if (!player) {
+            console.log('Гравець не знайдений');
+            return;
+        }
+        
+        const room = rooms.get(data.roomId);
+        if (!room || room.gameState !== 'playing') {
+            console.log('Кімната не знайдена або гра не активна');
+            return;
+        }
+        
+        // Знаходимо гравця в кімнаті
+        const caster = room.gameData.players.find(p => p.id === player.id);
+        if (!caster) {
+            console.log('Гравець не знайдений в кімнаті');
+            return;
+        }
+        
+        // Перевірка, чи це хід гравця
+        const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+        if (currentPlayer.id !== caster.id) {
+            console.log('Не хід цього гравця');
+            return;
+        }
+        
+        // Визначаємо вартість та ціль ефекту
+        let cost = 0;
+        let targetPlayer = null;
+        
+        if (data.effectType === 'hateClone') {
+            cost = 100;
+            if (!data.targetPlayerId) {
+                console.log('Не вибрана ціль');
+                return;
+            }
+            targetPlayer = room.gameData.players.find(p => p.id === data.targetPlayerId);
+        } else if (data.effectType === 'happinessCharm') {
+            cost = 100;
+            targetPlayer = caster;
+        } else if (data.effectType === 'procrastination') {
+            cost = 50;
+            if (!data.targetPlayerId) {
+                console.log('Не вибрана ціль');
+                return;
+            }
+            targetPlayer = room.gameData.players.find(p => p.id === data.targetPlayerId);
+        }
+        
+        if (!targetPlayer) {
+            console.log('Ціль не знайдена');
+            return;
+        }
+        
+        // Перевірка достатності ОО
+        if (caster.points < cost) {
+            console.log('Недостатньо ОО');
+            return;
+        }
+        
+        // Списуємо ОО
+        caster.points -= cost;
+        
+        // Ініціалізуємо effects, якщо їх немає
+        if (!targetPlayer.effects) {
+            targetPlayer.effects = {};
+        }
+        
+        // Застосовуємо ефект
+        if (data.effectType === 'hateClone') {
+            targetPlayer.effects.hateClone = (targetPlayer.effects.hateClone || 0) + 3;
+        } else if (data.effectType === 'happinessCharm') {
+            targetPlayer.effects.happinessCharm = (targetPlayer.effects.happinessCharm || 0) + 3;
+        } else if (data.effectType === 'procrastination') {
+            targetPlayer.effects.skipTurn = (targetPlayer.effects.skipTurn || 0) + 1;
+        }
+        
+        // Відправляємо сповіщення
+        io.to(room.id).emit('effect_applied', {
+            casterId: caster.id,
+            casterName: caster.name,
+            targetId: targetPlayer.id,
+            targetName: targetPlayer.name,
+            effectType: data.effectType
+        });
+        
+        // Оновлюємо стан гри
+        io.to(room.id).emit('game_state_update', room.gameData);
     });
     
     // Гравець покидає кімнату

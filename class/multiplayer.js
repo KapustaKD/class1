@@ -3438,7 +3438,6 @@ class MultiplayerGame extends EducationalPathGame {
         document.documentElement.style.setProperty('--scale-factor', scaleFactor);
         this.scaleFactor = scaleFactor;
         
-        console.log('Масштаб оновлено:', { width, scaleFactor });
     }
     
     handleResize() {
@@ -3456,13 +3455,6 @@ class MultiplayerGame extends EducationalPathGame {
         
         // Оновлюємо модальні вікна
         this.adjustModals();
-        
-        console.log('Розмір екрану змінився:', {
-            oldScreenSize,
-            newScreenSize: this.screenSize,
-            isMobile: this.isMobile,
-            isTablet: this.isTablet
-        });
     }
     
     handleOrientationChange() {
@@ -3574,14 +3566,6 @@ class MultiplayerGame extends EducationalPathGame {
         this.scale = scale;
         this.scaleX = scale;
         this.scaleY = scale;
-        
-        console.log('Адаптивний масштаб встановлено:', {
-            scale,
-            containerWidth: containerRect.width,
-            containerHeight: containerRect.height,
-            isMobile: this.isMobile,
-            isTablet: this.isTablet
-        });
     }
     
     // Додаємо підтримку touch-жестів

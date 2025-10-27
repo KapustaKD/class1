@@ -4,8 +4,8 @@ module.exports = {
     3: { type: 'mad-libs', questName: 'Хто? Де? Коли?' },
 
     // Вебновели
-    10: { type: 'webnovella', questName: 'Халепа!', eventNumber: 2 },
-    90: { type: 'webnovella', questName: 'Халепа!', eventNumber: 3 },
+    10: { type: 'webnovella-quest', questName: 'Халепа!', eventNumber: 2 },
+    90: { type: 'webnovella-quest', questName: 'Халепа!', eventNumber: 3 },
 
     // PvP Квести
     21: { type: 'pvp-quest', gameType: 'megabrain', questName: 'Мегамозок' },
@@ -15,9 +15,9 @@ module.exports = {
     99: { type: 'pvp-quest', gameType: 'rock_paper_scissors', questName: 'Ляпіс-форфіцес-папірус' },
 
     // Творчі квести
-    40: { type: 'creative-quest', questName: 'Великий Педагогічний…' },
-    69: { type: 'creative-quest', questName: 'Хроніки Неіснуючого Вояжу' },
-    96: { type: 'creative-quest', questName: 'Я у мами педагог' },
+    40: { type: 'creative-quest', gameType: 'great_pedagogical', questName: 'Великий Педагогічний…' },
+    69: { type: 'creative-quest', gameType: 'chronicles', questName: 'Хроніки Неіснуючого Вояжу' },
+    96: { type: 'creative-quest', gameType: 'pedagog_mom', questName: 'Я у мами педагог' },
 
     // Обхідні шляхи
     5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },

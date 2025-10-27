@@ -1358,18 +1358,9 @@ class MultiplayerGame extends EducationalPathGame {
                         eventData: data.eventInfo.eventData,
                         cellNumber: player.position
                     });
-                } else if (data.eventInfo.eventType === 'reincarnation' || data.eventInfo.eventType === 'alternative-path' || 
-                           data.eventInfo.eventType === 'test-question') {
-                    // Для цих типів подій показуємо модальне вікно
-                    this.showEventPrompt({
-                        playerId: data.eventInfo.playerId,
-                        playerName: data.eventInfo.playerName,
-                        eventType: data.eventInfo.eventType,
-                        eventData: data.eventInfo.eventData,
-                        activePlayerId: data.eventInfo.playerId
-                    });
                 } else {
-                    // Для всіх інших типів подій також показуємо модальне вікно
+                    // Для всіх інших типів подій показуємо модальне вікно
+                    console.log('Показуємо модальне вікно для типу події:', data.eventInfo.eventType);
                     this.showEventPrompt({
                         playerId: data.eventInfo.playerId,
                         playerName: data.eventInfo.playerName,
@@ -1433,6 +1424,10 @@ class MultiplayerGame extends EducationalPathGame {
             buttons = [
                 { text: 'Ай, шайтаан, знову помер. Відроджуємось та йдемо далі!', callback: () => this.makeEventChoice('yes', data.eventType, data.eventData) }
             ];
+            
+            // Показуємо модальне вікно для реінкарнації
+            this.showQuestModal('Реінкарнація', modalContent, buttons, null);
+            return;
         } else if (data.eventType === 'alternative-path') {
             // Використовуємо glassmorphism дизайн для обхідної дороги
             document.body.classList.add('glassmorphism-bg');

@@ -1122,22 +1122,7 @@ body.glassmorphism-bg {
 }
 
 /* Модальне вікно педагобота з картинкою robot */
-.glassmorphism-content-robot {
-    background-image: url('image/modal_window/robot.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-color: transparent; /* Показує картинку */
-    position: relative;
-    min-height: 450px;
-    display: flex;
-    flex-direction: column;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    overflow: hidden;
-}
-
-/* Менше модальне вікно для педагобота */
+.glassmorphism-content-robot,
 .glassmorphism-content-robot-small {
     background-image: url('image/modal_window/robot.png');
     background-size: cover;
@@ -1175,26 +1160,7 @@ body.glassmorphism-bg {
 }
 
 /* Модальне вікно хрестиків-нуликів з картинкою tic_tac_toe */
-.glassmorphism-content-tictactoe {
-    background-image: url('image/modal_window/tic_tac_toe.jpg');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    position: relative;
-    min-height: 450px;
-    display: flex;
-    flex-direction: column;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    overflow: hidden;
-    background-color: transparent;
-}
-
-/* Менше модальне вікно для хрестиків-нуликів */
-.glassmorphism-modal-small {
-    max-width: 500px !important;
-}
-
+.glassmorphism-content-tictactoe,
 .glassmorphism-content-tictactoe-small {
     background-image: url('image/modal_window/tic_tac_toe.jpg');
     background-size: cover;
@@ -1208,6 +1174,11 @@ body.glassmorphism-bg {
     border: 1px solid rgba(255, 255, 255, 0.2);
     overflow: hidden;
     background-color: transparent;
+}
+
+/* Менше модальне вікно для хрестиків-нуликів */
+.glassmorphism-modal-small {
+    max-width: 500px !important;
 }
 
 /* Чорний контейнер для інформації */
@@ -1251,44 +1222,8 @@ body.glassmorphism-bg {
     position: relative;
 }
 
-/* Overlay для кращої читабельності тексту */
-.glassmorphism-content-tictactoe::before,
-.glassmorphism-content-tictactoe-small::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 16px;
-    pointer-events: none;
-}
-
-/* Забезпечуємо, що контент буде поверх overlay */
-.glassmorphism-content-tictactoe > *,
-.glassmorphism-content-tictactoe-small > * {
-    position: relative;
-    z-index: 1;
-}
-
 /* Модальне вікно камінь-ножиці-папір з картинкою rock_paper_scissors */
-.glassmorphism-content-rps {
-    background-image: url('image/modal_window/rock_paper_scissors.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-color: transparent;
-    position: relative;
-    min-height: 450px;
-    display: flex;
-    flex-direction: column;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    overflow: hidden;
-}
-
-/* Менше модальне вікно для камінь-ножиці-папір */
+.glassmorphism-content-rps,
 .glassmorphism-content-rps-small {
     background-image: url('image/modal_window/rock_paper_scissors.png');
     background-size: cover;
@@ -1305,6 +1240,8 @@ body.glassmorphism-bg {
 }
 
 /* Overlay для кращої читабельності тексту */
+.glassmorphism-content-tictactoe::before,
+.glassmorphism-content-tictactoe-small::before,
 .glassmorphism-content-rps::before,
 .glassmorphism-content-rps-small::before {
     content: '';
@@ -1319,6 +1256,8 @@ body.glassmorphism-bg {
 }
 
 /* Забезпечуємо, що контент буде поверх overlay */
+.glassmorphism-content-tictactoe > *,
+.glassmorphism-content-tictactoe-small > *,
 .glassmorphism-content-rps > *,
 .glassmorphism-content-rps-small > * {
     position: relative;

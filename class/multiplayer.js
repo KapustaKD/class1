@@ -872,7 +872,7 @@ class MultiplayerGame extends EducationalPathGame {
         console.log('Тестуємо подію на клітинці:', cellNumber);
         
         const SPECIAL_CELLS = {
-            3: { type: 'mad-libs', questName: 'Хто? Де? Коли?' },
+            3: { type: 'mad-libs-quest', questName: 'Хто? Де? Коли?' },
             5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
             10: { type: 'webnovella', questName: 'Халепа!', eventNumber: 2 },
             14: { type: 'alternative-path', target: 18, cost: 15, description: 'Обхідний шлях до клітинки 18 за 15 ОО' },
@@ -954,7 +954,6 @@ class MultiplayerGame extends EducationalPathGame {
             case 'creative-quest':
                 this.testCreativeQuest(cellNumber, cellData);
                 break;
-            case 'mad-libs':
             case 'mad-libs-quest':
                 this.testMadLibsQuest(cellNumber, cellData);
                 break;

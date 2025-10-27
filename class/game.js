@@ -2,7 +2,7 @@
 
 class EducationalPathGame {
 
-    constructor() {
+    constructor(isBeingExtended = false) {
 
             this.BOARD_SIZE = 101;
             
@@ -194,7 +194,10 @@ class EducationalPathGame {
     
             this.initializeElements();
     
-            this.setupEventListeners();
+            // Вмикаємо setupEventListeners тільки якщо клас не розширюється (тобто для локального режиму)
+            if (!isBeingExtended) {
+                this.setupEventListeners();
+            }
     
         }
     

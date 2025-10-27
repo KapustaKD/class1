@@ -732,21 +732,20 @@ io.on('connection', (socket) => {
 
                 const opponent = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
                 
-                // Вибираємо PvP-гру на основі gameType з клітинки або випадково
-                let selectedGameKey;
+                // Вибираємо PvP-гру на основі gameType з specialCells (обов'язково)
+                let selectedGameKey = 'genius'; // Запасний варіант
                 let selectedGame;
                 
                 if (data.eventData && data.eventData.gameType && pvpGames[data.eventData.gameType]) {
-                    // Використовуємо gameType з клітинки
+                    // Використовуємо gameType з specialCells
                     selectedGameKey = data.eventData.gameType;
                     selectedGame = pvpGames[data.eventData.gameType];
-                    console.log(`Використовуємо gameType з клітинки: ${selectedGameKey}`);
+                    console.log(`Використовуємо gameType з specialCells: ${selectedGameKey}`);
                 } else {
-                    // Вибираємо випадкову гру
-                const gameKeys = Object.keys(pvpGames);
-                    selectedGameKey = gameKeys[Math.floor(Math.random() * gameKeys.length)];
+                    // Якщо gameType не вказано, використовуємо запасний
+                    selectedGameKey = 'genius';
                     selectedGame = pvpGames[selectedGameKey];
-                    console.log(`Вибрано випадкову гру: ${selectedGameKey}`);
+                    console.log(`Використано запасний gameType: ${selectedGameKey}`);
                 }
                 
                 // Створюємо стан гри на швидкість введення тексту

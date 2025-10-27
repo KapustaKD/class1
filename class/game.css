@@ -1137,8 +1137,25 @@ body.glassmorphism-bg {
     overflow: hidden;
 }
 
-/* Overlay для кращої читабельності тексту */
-.glassmorphism-content-robot::before {
+/* Менше модальне вікно для педагобота */
+.glassmorphism-content-robot-small {
+    background-image: url('image/modal_window/robot.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: transparent;
+    position: relative;
+    min-height: 350px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+}
+
+/* Overlay для кращої читабельності тексту педагобота */
+.glassmorphism-content-robot::before,
+.glassmorphism-content-robot-small::before {
     content: '';
     position: absolute;
     top: 0;
@@ -1151,7 +1168,8 @@ body.glassmorphism-bg {
 }
 
 /* Забезпечуємо, що контент буде поверх overlay */
-.glassmorphism-content-robot > * {
+.glassmorphism-content-robot > *,
+.glassmorphism-content-robot-small > * {
     position: relative;
     z-index: 1;
 }

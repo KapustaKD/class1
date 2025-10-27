@@ -1164,21 +1164,21 @@ class EducationalPathGame {
     
        
     
-        checkCell(player) {
-    
-            const cellData = this.specialCells[player.position];
-    
-            if (cellData) {
-    
-                this.handleSpecialCell(player, cellData);
-    
-            } else {
-    
-                this.nextTurn();
-    
-            }
-    
-        }
+    checkCell(player) {
+        // В мультиплеєрному режимі перевірка подій відбувається на сервері
+        // В локальному режимі використовуємо this.specialCells
+        if (!this.isOnlineMode && this.specialCells[player.position]) {
+            const cellData = this.specialCells[player.position];
+            if (cellData) {
+                this.handleSpecialCell(player, cellData);
+            } else {
+                this.nextTurn();
+            }
+        } else {
+            // В мультиплеєрному режимі просто передаємо хід
+            this.nextTurn();
+        }
+    }
     
        
     

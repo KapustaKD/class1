@@ -1389,21 +1389,15 @@ class MultiplayerGame extends EducationalPathGame {
             }
         } else if (data.eventType === 'reincarnation') {
             modalContent = `
-                <h3 class="text-2xl font-bold mb-4">Реінкарнація!</h3>
-                <p class="mb-4">${data.playerName} завершив епоху!</p>
-                <p class="mb-4">Перейти до наступної епохи та отримати ${data.eventData.points} ОО?</p>
+                <h3 class="text-2xl font-bold mb-4">🔄 Реінкарнація!</h3>
+                <p class="mb-4">Ви завершили епоху та готові до нової зустрічі з викликами!</p>
+                <p class="mb-4">Ви отримуєте ${data.eventData.points} ОО та переходите до наступної епохи.</p>
             `;
             
-            if (isMyEvent) {
-                buttons = [
-                    { text: 'Так', callback: () => this.makeEventChoice('yes', data.eventType, data.eventData) },
-                    { text: 'Ні', callback: () => this.makeEventChoice('no', data.eventType, data.eventData) }
-                ];
-            } else {
-                buttons = [
-                    { text: 'Очікуємо вибору...', callback: () => {}, disabled: true }
-                ];
-            }
+            // Завжди одна кнопка для реінкарнації
+            buttons = [
+                { text: 'Ай, шайтаан, знову помер. Відроджуємось та йдемо далі!', callback: () => this.makeEventChoice('yes', data.eventType, data.eventData) }
+            ];
         } else if (data.eventType === 'alternative-path') {
             // Використовуємо glassmorphism дизайн для обхідної дороги
             document.body.classList.add('glassmorphism-bg');
@@ -2291,17 +2285,24 @@ class MultiplayerGame extends EducationalPathGame {
         const isParticipant = data.gameState.players.includes(this.playerId);
         const isMyEvent = data.activePlayerId === this.playerId;
         const gameData = data.gameState.gameData;
+        const isTestMode = this.isTestMode;
         
         // Додаємо клас для фонового зображення
         document.body.classList.add('glassmorphism-bg');
         
         const modalHTML = `
-            <div class="glassmorphism-modal" id="rps-modal">
-                <div class="glassmorphism-content-rps">
+            <div class="glassmorphism-modal glassmorphism-modal-small" id="rps-modal">
+                <div class="glassmorphism-content-rps-small">
                     <div class="glassmorphism-header">
                         <h2>🪨📄✂️ Камінь, Ножиці, Папір</h2>
-                        <p>${gameData.description}</p>
-                        <p>${data.player1.name} проти ${data.player2.name}</p>
+                        ${isTestMode ? `
+                            <button class="close-test-modal-btn" onclick="document.getElementById('rps-modal').remove(); document.body.classList.remove('glassmorphism-bg');">✖</button>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="glassmorphism-info-box">
+                        <p class="text-sm">${gameData.description}</p>
+                        <p class="text-sm font-bold">${data.player1.name} проти ${data.player2.name}</p>
                     </div>
                     
                     <div class="glassmorphism-spacer"></div>
@@ -2320,13 +2321,17 @@ class MultiplayerGame extends EducationalPathGame {
                                 
                                 <div id="rps-result" class="text-lg font-bold mb-2"></div>
                             </div>
-                            <div id="timer" class="text-2xl font-bold text-red-500 text-center mb-4">${data.gameState.timer}</div>
                             <button id="submit-result-btn" class="glassmorphism-btn-primary w-full" disabled>
                                 Завершити гру
                             </button>
                         ` : `
                             <p class="text-center text-gray-600">Спостерігайте за грою</p>
                         `}
+                        ${isTestMode ? `
+                            <button class="glassmorphism-btn-secondary w-full mt-2" onclick="document.getElementById('rps-modal').remove(); document.body.classList.remove('glassmorphism-bg');">
+                                Закрити
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -2345,7 +2350,10 @@ class MultiplayerGame extends EducationalPathGame {
         if (isParticipant) {
             setTimeout(() => {
                 this.initializeRockPaperScissors();
-                this.startTimedTextQuestTimer(data.gameState.timer);
+                // Не запускаємо таймер в режимі тестування
+                if (!isTestMode) {
+                    this.startTimedTextQuestTimer(data.gameState.timer);
+                }
             }, 100);
         }
     }

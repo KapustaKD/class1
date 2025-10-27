@@ -1475,9 +1475,15 @@ class MultiplayerGame extends EducationalPathGame {
             // Показуємо тестове завдання всім гравцям
             this.showTestQuestionForAll(data);
             return; // Виходимо, щоб не показувати стандартне модальне вікно
+        } else if (data.eventType === 'pvp-quest' || data.eventType === 'creative-quest' || data.eventType === 'webnovella-quest' || data.eventType === 'mad-libs') {
+            // Ці події обробляються через інші обробники подій (socket.on)
+            // Не показуємо загальне модальне вікно
+            console.log('Події pvp/creative/webnovella/mad-libs обробляються спеціальними обробниками');
+            return;
+        } else {
+            // Для всіх інших типів подій показуємо загальне модальне вікно
+            this.showQuestModal('Подія', modalContent, buttons, 'image/modal_window/bypass_road.png');
         }
-        
-        this.showQuestModal('Подія', modalContent, buttons, 'image/modal_window/bypass_road.png');
     }
     
     makeEventChoice(choice, eventType, eventData) {

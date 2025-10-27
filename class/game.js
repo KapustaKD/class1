@@ -107,25 +107,33 @@ class EducationalPathGame {
         // Відстеження використаних типів подій для унікальності
         this.usedEventTypes = new Set();
 
+        // Дані про події на клітинках (локальний режим)
+        // В мультиплеєрному режимі використовується server.js з specialCells.js
         this.specialCells = {
-            // Нові міні-ігри на клітинках: 3, 10, 14, 21, 32, 36, 40, 55, 61, 69, 76, 81, 90, 96, 99
-            3: { type: 'pvp-quest', gameType: 'tic_tac_toe' },
-            10: { type: 'creative-quest' },
-            14: { type: 'mad-libs-quest' },
-            21: { type: 'pvp-quest' },
-            32: { type: 'webnovella-quest' },
-            36: { type: 'pvp-quest', gameType: 'cross_early' },
-            40: { type: 'creative-quest' },
-            55: { type: 'pvp-quest', gameType: 'tic_tac_toe' },
-            61: { type: 'mad-libs-quest' },
-            69: { type: 'creative-quest' },
-            76: { type: 'pvp-quest', gameType: 'rock_paper_scissors' },
-            81: { type: 'webnovella-quest' },
-                90: { type: 'pvp-quest' },
-            96: { type: 'mad-libs-quest' },
-            99: { type: 'webnovella-quest' },
+            // Гра "Хто, де, коли?"
+            3: { type: 'mad-libs', questName: 'Хто? Де? Коли?' },
 
-            // Тестові завдання: 2, 8, 11, 17, 20, 23, 26, 29, 35, 38, 41, 44, 47, 50, 53, 56, 59, 62, 65, 68, 71, 74, 77, 80, 83, 86, 89, 92, 95, 98
+            // Вебновели
+            10: { type: 'webnovella-quest', questName: 'Халепа!', eventNumber: 2 },
+            90: { type: 'webnovella-quest', questName: 'Халепа!', eventNumber: 3 },
+
+            // PvP Квести
+            21: { type: 'pvp-quest', gameType: 'megabrain', questName: 'Мегамозок' },
+            55: { type: 'pvp-quest', gameType: 'tic_tac_toe', questName: 'Хреститися рано!' },
+            61: { type: 'pvp-quest', gameType: 'genius', questName: 'Я у мами геній' },
+            81: { type: 'pvp-quest', gameType: 'pedagogobot', questName: 'Педагобот' },
+            99: { type: 'pvp-quest', gameType: 'rock_paper_scissors', questName: 'Ляпіс-форфіцес-папірус' },
+
+            // Творчі квести
+            40: { type: 'creative-quest', gameType: 'great_pedagogical', questName: 'Великий Педагогічний…' },
+            69: { type: 'creative-quest', gameType: 'chronicles', questName: 'Хроніки Неіснуючого Вояжу' },
+            96: { type: 'creative-quest', gameType: 'pedagog_mom', questName: 'Я у мами педагог' },
+
+            // Обхідні шляхи
+            5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
+            46: { type: 'alternative-path', target: 57, cost: 25, description: 'Обхідний шлях до клітинки 57 за 25 ОО' },
+
+            // Тестові завдання
             2: { type: 'test-question' },
             8: { type: 'test-question' },
             11: { type: 'test-question' },
@@ -157,12 +165,7 @@ class EducationalPathGame {
             95: { type: 'test-question' },
             98: { type: 'test-question' },
 
-            // Обхідні шляхи: 5→11, 14→18, 46→57
-            5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
-            14: { type: 'alternative-path', target: 18, cost: 8, description: 'Обхідний шлях до клітинки 18 за 8 ОО' },
-            46: { type: 'alternative-path', target: 57, cost: 15, description: 'Обхідний шлях до клітинки 57 за 15 ОО' },
-
-            // Реінкарнація та випадкова зміна класу: 12, 22, 43, 75, 97
+            // Реінкарнація
             12: { type: 'reincarnation', nextEpoch: 2, points: 30 },
             22: { type: 'reincarnation', nextEpoch: 3, points: 40 },
             43: { type: 'reincarnation', nextEpoch: 4, points: 50 },
@@ -171,7 +174,7 @@ class EducationalPathGame {
 
             // Фінальна подія
             100: { type: 'machine-uprising' }
-            };
+        };
     
            
     

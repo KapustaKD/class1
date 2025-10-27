@@ -533,8 +533,9 @@ body {
     height: 100%;
     background: rgba(0, 0, 0, 0.5); /* Напівпрозорий чорний фон */
     backdrop-filter: blur(5px); /* Розмиття фону */
+    -webkit-backdrop-filter: blur(5px); /* Для Safari */
     z-index: 40; /* Має бути вище за інші елементи, але нижче за modal-content */
-    /* Додай 'hidden' клас з Tailwind, щоб сховати його спочатку */
+    /* Клас hidden додається/видаляється через JS */
 }
 .modal-content {
     position: fixed;
@@ -546,6 +547,7 @@ body {
     border-radius: 16px; /* Округлені кути */
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); /* Тінь */
     backdrop-filter: blur(10px); /* Сильніше розмиття для самого вікна */
+    -webkit-backdrop-filter: blur(10px); /* Для Safari */
     z-index: 50; /* Має бути вище за backdrop */
     color: white; /* Колір тексту - білий */
     width: 90%; /* Ширина на мобільних */
@@ -559,7 +561,7 @@ body {
 .tab-btn {
     background-color: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white; /* Додано колір тексту */
+    color: white;
     padding: 0.5rem 1rem; /* py-2 px-4 */
     border-top-left-radius: 0.5rem; /* rounded-t-lg */
     border-top-right-radius: 0.5rem; /* rounded-t-lg */
@@ -567,16 +569,27 @@ body {
     font-weight: 600; /* font-semibold */
     cursor: pointer;
     transition: background-color 0.3s;
+    border-bottom: none; /* Забираємо нижню межу за замовчуванням */
+    margin-right: 2px; /* Невеликий відступ між кнопками */
 }
 .tab-btn:hover {
      background-color: rgba(255, 255, 255, 0.2);
 }
 .tab-btn.active {
     background-color: rgba(255, 255, 255, 0.3);
-    border-bottom: 2px solid #fbbf24; /* yellow-400 */
+    border-bottom: 2px solid #fbbf24 !important; /* yellow-400, додаємо !important для певності */
+    position: relative; /* Щоб бордер був поверх основного бордера */
+    z-index: 1;
 }
+/* Лінія під неактивними вкладками */
+.modal-content .flex.border-b {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    margin-bottom: 1rem; /* Зменшуємо відступ після вкладок */
+}
+
 .tab-content {
     display: none; /* Вкладки приховані за замовчуванням */
+    padding-top: 1rem; /* Додаємо відступ зверху для контенту */
 }
 .tab-content.active {
     display: block; /* Активна вкладка видима */
@@ -589,7 +602,30 @@ body {
     text-align: center;
     color: #fcd34d; /* text-yellow-300 */
     margin-bottom: 1.5rem; /* mb-6 */
+    padding-top: 0; /* Забираємо зайвий відступ */
 }
+/* Стилізація підзаголовків вкладок */
+.modal-content h3 {
+    font-size: 1.25rem; /* text-xl */
+    font-weight: 700; /* font-bold */
+    color: #fcd34d; /* text-yellow-300 */
+    margin-bottom: 0.5rem; /* mb-2 */
+}
+/* Стилізація параграфів */
+.modal-content p {
+    color: white; /* Білий колір */
+    margin-bottom: 1rem; /* mb-4 */
+    line-height: 1.6;
+}
+.modal-content ul {
+    color: white;
+    list-style-position: inside;
+    margin-left: 0.5rem; /* pl-2 */
+}
+.modal-content li {
+    margin-bottom: 0.25rem; /* space-y-1 */
+}
+
 /* Стилізація кнопки закриття */
  .modal-content #show-setup-btn {
     background-color: #f59e0b; /* bg-yellow-500 */
@@ -602,10 +638,25 @@ body {
     cursor: pointer;
     display: block; /* Щоб центрувати */
     margin: 2rem auto 0 auto; /* mt-8 + центрування */
+    border: none; /* Забираємо можливий бордер */
 }
  .modal-content #show-setup-btn:hover {
     background-color: #d97706; /* hover:bg-yellow-600 */
 }
+
+/* Прибираємо зайві відступи для деяких елементів */
+.modal-content > h2,
+.modal-content > .flex.border-b,
+.modal-content > .tab-content,
+.modal-content > .text-center {
+    margin-left: 0;
+    margin-right: 0;
+}
+.modal-content > .text-center {
+     margin-bottom: 0;
+     padding-bottom: 0; /* Прибираємо нижній падінг у контейнера кнопки */
+}
+
 
 .modal-content.show {
     transform: scale(1);
@@ -1343,4 +1394,5 @@ body.glassmorphism-bg {
     cursor: not-allowed;
     transform: none;
 }
+
 

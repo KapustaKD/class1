@@ -129,6 +129,20 @@ class EducationalPathGame {
             69: { type: 'creative-quest', gameType: 'chronicles', questName: 'Хроніки Неіснуючого Вояжу' },
             96: { type: 'creative-quest', gameType: 'pedagog_mom', questName: 'Я у мами педагог' },
 
+            // Нові розважальні/небезпечні зони
+            7: { type: 'amphitheater', name: 'Амфітеатр' },
+            15: { type: 'tavern', name: 'Шинок' },
+            34: { type: 'tavern', name: 'Шинок' },
+            67: { type: 'casino', name: 'Казино' },
+            93: { type: 'casino', name: 'Казино' },
+
+            // Реінкарнація (рання смерть і миттєве переродження)
+            6: { type: 'early-reincarnation', targetEpoch: 2, points: 50 },
+            18: { type: 'early-reincarnation', targetEpoch: 3, points: 60 },
+            30: { type: 'early-reincarnation', targetEpoch: 4, points: 70 },
+            63: { type: 'early-reincarnation', targetEpoch: 5, points: 80 },
+            85: { type: 'early-reincarnation', targetEpoch: 6, points: 90 },
+
             // Обхідні шляхи
             5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
             46: { type: 'alternative-path', target: 57, cost: 25, description: 'Обхідний шлях до клітинки 57 за 25 ОО' },

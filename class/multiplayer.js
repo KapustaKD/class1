@@ -268,14 +268,15 @@ class MultiplayerGame extends EducationalPathGame {
         // Приховуємо вибір режиму та ігровий контейнер
         this.modeSelection.classList.add('hidden');
         this.gameContainer.classList.add('hidden');
+        this.onlinePanel.classList.add('hidden');
         
-        // Показуємо онлайн панель
-        this.onlinePanel.classList.remove('hidden');
+        // Показуємо правила гри
+        const rulesModal = document.getElementById('rules-modal');
+        if (rulesModal) {
+            rulesModal.classList.remove('hidden');
+        }
         
-        // Підключаємося до сервера
-        this.connectToServer();
-        
-        console.log('Онлайн режим запущено');
+        console.log('Онлайн режим запущено, показуємо правила');
     }
     
     connectToServer() {
@@ -1848,13 +1849,33 @@ class MultiplayerGame extends EducationalPathGame {
                 // Вимикаємо обробник з game.js для локального режиму
                 showSetupBtn.onclick = null;
                 
-                showSetupBtn.addEventListener('click', () => {
+                // Клонуємо кнопку, щоб видалити всі старі обробники
+                const newBtn = showSetupBtn.cloneNode(true);
+                showSetupBtn.parentNode.replaceChild(newBtn, showSetupBtn);
+                
+                // Додаємо новий обробник
+                newBtn.addEventListener('click', () => {
                     rulesModal.classList.add('hidden');
-                    // Після закриття правил показуємо клас
-                    setTimeout(() => {
-                        console.log('🎭 Показуємо клас гравця після правил...');
-                        this.showPlayerClassAssignment();
-                    }, 300);
+                    
+                    // Перевіряємо режим гри
+                    if (this.isOnlineMode) {
+                        // Онлайн режим: показуємо панель створення кімнати та підключаємось до сервера
+                        console.log('Онлайн режим: показуємо панель і підключаємось до сервера');
+                        this.onlinePanel.classList.remove('hidden');
+                        this.connectToServer();
+                    } else {
+                        // Локальний режим: показуємо налаштування гравців
+                        console.log('Локальний режим: показуємо налаштування гравців');
+                        this.modeSelection.classList.add('hidden');
+                        this.onlinePanel.classList.add('hidden');
+                        this.gameContainer.classList.remove('hidden');
+                        
+                        // Показуємо start-modal для локальної гри
+                        const startModal = document.getElementById('start-modal');
+                        if (startModal) {
+                            startModal.classList.remove('hidden');
+                        }
+                    }
                 }, { once: true }); // once: true щоб обробник виконався тільки один раз
             } else {
                 // Якщо кнопка не знайдена, одразу показуємо клас

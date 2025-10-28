@@ -1542,12 +1542,11 @@ io.on('connection', (socket) => {
         io.to(room.id).emit('game_state_update', room.gameData);
     });
     
-    // [НОВИЙ ОБРОБНИК] Для режиму тестування
+    // [НОВИЙ ОБРОБНИК] Для режиму тестування (v2.0 - повна імітація гри)
     socket.on('test_trigger_event', (data) => {
         try {
             console.log(`[TEST MODE] Отримано запит на тестування події на клітинці ${data.cellNumber}`);
             
-            // 1. Отримуємо гравця та кімнату
             const player = players.get(socket.id);
             if (!player || !player.isHost) {
                 console.log('[TEST MODE] Тільки хост може тестувати події.');
@@ -1563,50 +1562,211 @@ io.on('connection', (socket) => {
             }
 
             const cellNumber = data.cellNumber;
-            
-            // 2. Отримуємо дані про подію з "єдиного джерела правди"
             const specialCell = specialCells[cellNumber];
+
             if (!specialCell) {
                 console.log(`[TEST MODE] Немає події для клітинки ${cellNumber}`);
                 socket.emit('error', { message: `На клітинці ${cellNumber} немає події.` });
                 return;
             }
 
-            // 3. Подія буде активована для того гравця, чий хід зараз
             const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
             if (!currentPlayer) {
                 console.log('[TEST MODE] Не знайдено поточного гравця.');
                 return;
             }
 
-            console.log(`[TEST MODE] Хост ${player.name} запускає подію для клітинки ${cellNumber} (${specialCell.type}) від імені ${currentPlayer.name}`);
+            console.log(`[TEST MODE] Хост ${player.name} запускає подію ${specialCell.type} (клітинка ${cellNumber}) від імені ${currentPlayer.name}`);
 
-            // 4. "Телепортуємо" поточного гравця на цю клітинку
+            // ВАЖЛИВО: Телепортуємо гравця на цю клітинку
             currentPlayer.position = cellNumber;
-
-            // 5. Імітуємо 'dice_result'
-            io.to(room.id).emit('dice_result', {
-                playerId: currentPlayer.id,
-                playerName: currentPlayer.name,
-                roll: 0, // Тестовий кидок
-                move: 0, // Тестовий рух
-                newPosition: currentPlayer.position,
-                newPoints: currentPlayer.points,
-                newClass: currentPlayer.class,
-                currentPlayerIndex: room.gameData.currentPlayerIndex,
-                eventInfo: {
-                    hasEvent: true,
-                    eventType: specialCell.type,
-                    eventData: { ...specialCell, cellNumber: cellNumber },
-                    playerId: currentPlayer.id,
-                    playerName: currentPlayer.name
-                }
-            });
-
-            // 6. Встановлюємо 'currentEventPlayerId'
             room.currentEventPlayerId = currentPlayer.id;
 
-            console.log(`[TEST MODE] Подія ${specialCell.type} на клітинці ${cellNumber} запущена для всіх гравців.`);
+            const eventType = specialCell.type;
+            const eventData = { ...specialCell, cellNumber: cellNumber };
+
+            // 1. Обробка миттєвих подій (Амфітеатр, Казино, Шинок)
+            if (eventType === 'amphitheater' || eventType === 'tavern' || eventType === 'casino') {
+                handleImmediateEvent(room, currentPlayer, eventType);
+                passTurnToNextPlayer(room);
+                return;
+            }
+            
+            // 2. Обробка ранньої реінкарнації
+            if (eventType === 'early-reincarnation') {
+                const targetEpoch = eventData.targetEpoch;
+                let targetPosition;
+                if (targetEpoch === 2) targetPosition = 13;
+                else if (targetEpoch === 3) targetPosition = 23;
+                else if (targetEpoch === 4) targetPosition = 43;
+                else if (targetEpoch === 5) targetPosition = 76;
+                else if (targetEpoch === 6) targetPosition = 98;
+                else targetPosition = 13;
+
+                currentPlayer.position = targetPosition;
+                currentPlayer.points += eventData.points;
+                
+                io.to(room.id).emit('chat_message', {
+                    type: 'system',
+                    message: `${currentPlayer.name} зазнав ранньої смерті та переродився у епосі ${targetEpoch}! Переміщено на ${targetPosition}, +${eventData.points} ОО.`
+                });
+                io.to(room.id).emit('game_state_update', room.gameData);
+                passTurnToNextPlayer(room);
+                return;
+            }
+
+            // 3. Обробка подій, що потребують вибору гравця
+            if (eventType === 'portal' || eventType === 'reincarnation' || eventType === 'alternative-path' || eventType === 'machine-uprising' || eventType === 'test-question') {
+                io.to(room.id).emit('show_event_prompt', {
+                    playerId: currentPlayer.id,
+                    playerName: currentPlayer.name,
+                    eventType: eventType,
+                    eventData: eventData,
+                    activePlayerId: currentPlayer.id
+                });
+                return; // Чекаємо на event_choice_made від клієнта
+            }
+
+            // 4. Обробка складних квестів - використовуємо логіку з 'player_on_event'
+            if (eventType === 'pvp-quest') {
+                const availablePlayers = room.gameData.players.filter(p => p.id !== currentPlayer.id && !p.hasWon && !p.hasLost);
+                if (availablePlayers.length === 0) {
+                    io.to(room.id).emit('chat_message', { type: 'system', message: 'Немає опонентів для PvP.' });
+                    passTurnToNextPlayer(room);
+                    return;
+                }
+                const opponent = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
+                
+                const pvpGames = require('./questsData.js').pvpGames;
+                let selectedGameKey = eventData.gameType;
+                let selectedGame = pvpGames[selectedGameKey];
+
+                if (!selectedGame) {
+                    console.log(`[TEST MODE] Не знайдено pvpGame для ${selectedGameKey}, використовуємо 'genius'`);
+                    selectedGameKey = 'genius';
+                    selectedGame = pvpGames[selectedGameKey];
+                }
+                
+                console.log(`[TEST MODE] Запуск PvP: ${selectedGameKey}`);
+
+                if (selectedGameKey === 'tic_tac_toe') {
+                    room.tictactoeState = {
+                        gameType: 'tic_tac_toe', gameData: selectedGame,
+                        players: [currentPlayer.id, opponent.id], 
+                        playerNames: [currentPlayer.name, opponent.name],
+                        board: Array(9).fill(null), 
+                        winner: null, 
+                        currentPlayer: currentPlayer.id,
+                        gameActive: true
+                    };
+                    io.to(room.id).emit('tic_tac_toe_start', {
+                        gameState: room.tictactoeState,
+                        player1: { id: currentPlayer.id, name: currentPlayer.name },
+                        player2: { id: opponent.id, name: opponent.name }
+                    });
+                } else if (selectedGameKey === 'rock_paper_scissors') {
+                    room.rockPaperScissorsState = {
+                        gameType: 'rock_paper_scissors', 
+                        gameData: selectedGame,
+                        players: [currentPlayer.id, opponent.id], 
+                        playerNames: [currentPlayer.name, opponent.name],
+                        currentRound: 1, 
+                        maxRounds: 3,
+                        choices: { [currentPlayer.id]: null, [opponent.id]: null },
+                        scores: { [currentPlayer.id]: 0, [opponent.id]: 0 },
+                        gameActive: true
+                    };
+                    io.to(room.id).emit('rock_paper_scissors_start', {
+                        gameState: room.rockPaperScissorsState,
+                        player1: { id: currentPlayer.id, name: currentPlayer.name },
+                        player2: { id: opponent.id, name: opponent.name }
+                    });
+                } else {
+                    // Стандартний текстовий PvP квест
+                    room.timedTextQuestState = {
+                        gameType: selectedGameKey, 
+                        gameData: selectedGame,
+                        players: [currentPlayer.id, opponent.id], 
+                        playerNames: [currentPlayer.name, opponent.name],
+                        timer: selectedGame.timer, 
+                        startTime: Date.now(), 
+                        results: {}, 
+                        gameActive: true
+                    };
+                    io.to(room.id).emit('start_timed_text_quest', {
+                        gameState: room.timedTextQuestState,
+                        player1: { id: currentPlayer.id, name: currentPlayer.name },
+                        player2: { id: opponent.id, name: opponent.name },
+                        activePlayerId: currentPlayer.id
+                    });
+                }
+            }
+            
+            // 5. Обробка творчих квестів
+            if (eventType === 'creative-quest') {
+                const creativeGames = require('./questsData.js').creativeGames;
+                let selectedGameKey = eventData.gameType || 'great_pedagogical';
+                let selectedGame = creativeGames[selectedGameKey];
+                
+                if (!selectedGame) {
+                    console.log(`[TEST MODE] Не знайдено creativeGame для ${selectedGameKey}`);
+                    selectedGame = creativeGames['great_pedagogical'];
+                }
+                
+                room.creativeWritingState = {
+                    gameType: 'creative_writing',
+                    gameData: selectedGame,
+                    playerId: currentPlayer.id,
+                    submissions: [],
+                    gameActive: true
+                };
+                
+                io.to(room.id).emit('start_creative_submission', {
+                    gameState: room.creativeWritingState,
+                    activePlayerId: currentPlayer.id
+                });
+                return;
+            }
+            
+            // 6. Обробка Mad-Libs квестів
+            if (eventType === 'mad-libs-quest') {
+                const madLibsQuestions = require('./questsData.js').madLibsQuestions;
+                room.madLibsState = {
+                    playerId: currentPlayer.id,
+                    currentQuestionIndex: 0,
+                    answers: [],
+                    gameActive: true
+                };
+                
+                io.to(room.id).emit('mad_libs_question', {
+                    question: madLibsQuestions[0],
+                    currentQuestionIndex: 0,
+                    activePlayerId: currentPlayer.id
+                });
+                return;
+            }
+            
+            // 7. Обробка вебновели
+            if (eventType === 'webnovella-quest') {
+                const webNovella = require('./questsData.js').webNovella;
+                const eventNumber = eventData.eventNumber || 1;
+                let novellaStart = 'start_event_1';
+                if (eventNumber === 2) novellaStart = 'start_event_2';
+                else if (eventNumber === 3) novellaStart = 'start_event_3';
+                
+                room.webNovellaState = {
+                    currentEvent: novellaStart,
+                    playerId: currentPlayer.id,
+                    gameActive: true
+                };
+                
+                io.to(currentPlayer.id).emit('webnovella_event', {
+                    event: webNovella[novellaStart],
+                    gameState: room.webNovellaState,
+                    activePlayerId: currentPlayer.id
+                });
+                return;
+            }
 
         } catch (error) {
             console.error(`[TEST MODE] Помилка обробки test_trigger_event:`, error);

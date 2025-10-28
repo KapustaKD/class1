@@ -1542,6 +1542,78 @@ io.on('connection', (socket) => {
         io.to(room.id).emit('game_state_update', room.gameData);
     });
     
+    // [НОВИЙ ОБРОБНИК] Для режиму тестування
+    socket.on('test_trigger_event', (data) => {
+        try {
+            console.log(`[TEST MODE] Отримано запит на тестування події на клітинці ${data.cellNumber}`);
+            
+            // 1. Отримуємо гравця та кімнату
+            const player = players.get(socket.id);
+            if (!player || !player.isHost) {
+                console.log('[TEST MODE] Тільки хост може тестувати події.');
+                socket.emit('error', { message: 'Тільки хост може тестувати події.' });
+                return; 
+            }
+
+            const room = rooms.get(player.roomId);
+            if (!room || room.gameState !== 'playing') {
+                console.log('[TEST MODE] Гра не активна, тестування неможливе.');
+                socket.emit('error', { message: 'Гра не активна, тестування неможливе.' });
+                return;
+            }
+
+            const cellNumber = data.cellNumber;
+            
+            // 2. Отримуємо дані про подію з "єдиного джерела правди"
+            const specialCell = specialCells[cellNumber];
+            if (!specialCell) {
+                console.log(`[TEST MODE] Немає події для клітинки ${cellNumber}`);
+                socket.emit('error', { message: `На клітинці ${cellNumber} немає події.` });
+                return;
+            }
+
+            // 3. Подія буде активована для того гравця, чий хід зараз
+            const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+            if (!currentPlayer) {
+                console.log('[TEST MODE] Не знайдено поточного гравця.');
+                return;
+            }
+
+            console.log(`[TEST MODE] Хост ${player.name} запускає подію для клітинки ${cellNumber} (${specialCell.type}) від імені ${currentPlayer.name}`);
+
+            // 4. "Телепортуємо" поточного гравця на цю клітинку
+            currentPlayer.position = cellNumber;
+
+            // 5. Імітуємо 'dice_result'
+            io.to(room.id).emit('dice_result', {
+                playerId: currentPlayer.id,
+                playerName: currentPlayer.name,
+                roll: 0, // Тестовий кидок
+                move: 0, // Тестовий рух
+                newPosition: currentPlayer.position,
+                newPoints: currentPlayer.points,
+                newClass: currentPlayer.class,
+                currentPlayerIndex: room.gameData.currentPlayerIndex,
+                eventInfo: {
+                    hasEvent: true,
+                    eventType: specialCell.type,
+                    eventData: { ...specialCell, cellNumber: cellNumber },
+                    playerId: currentPlayer.id,
+                    playerName: currentPlayer.name
+                }
+            });
+
+            // 6. Встановлюємо 'currentEventPlayerId'
+            room.currentEventPlayerId = currentPlayer.id;
+
+            console.log(`[TEST MODE] Подія ${specialCell.type} на клітинці ${cellNumber} запущена для всіх гравців.`);
+
+        } catch (error) {
+            console.error(`[TEST MODE] Помилка обробки test_trigger_event:`, error);
+            socket.emit('error', { message: 'Сталася помилка на сервері під час тестування події.' });
+        }
+    });
+    
     // Гравець покидає кімнату
     socket.on('leave_room', (data) => {
         console.log('Гравець покидає кімнату:', data);

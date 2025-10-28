@@ -967,111 +967,29 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     // Тестування події на конкретній клітинці
+    /**
+     * [TEST MODE] Надсилає запит на сервер для запуску події на клітинці.
+     * Сервер обробить запит і розішле подію всім гравцям.
+     */
     testEventOnCell(cellNumber) {
-        console.log('Тестуємо подію на клітинці:', cellNumber);
+        console.log(`[TEST MODE] Відправка запиту на сервер для клітинки: ${cellNumber}`);
         
-        const SPECIAL_CELLS = {
-            3: { type: 'mad-libs-quest', questName: 'Хто? Де? Коли?' },
-            5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
-            10: { type: 'webnovella', questName: 'Халепа!', eventNumber: 2 },
-            14: { type: 'alternative-path', target: 18, cost: 15, description: 'Обхідний шлях до клітинки 18 за 15 ОО' },
-            21: { type: 'pvp-quest', questName: 'Мегамозок' },
-            32: { type: 'creative-quest', questName: 'Великий Педагогічний…' },
-            40: { type: 'creative-quest', questName: 'Великий Педагогічний…' },
-            46: { type: 'alternative-path', target: 57, cost: 25, description: 'Обхідний шлях до клітинки 57 за 25 ОО' },
-            55: { type: 'pvp-quest', gameType: 'tic_tac_toe', questName: 'Хреститися рано!' },
-            61: { type: 'pvp-quest', questName: 'Я у мами геній' },
-            69: { type: 'webnovella', questName: 'Халепа!', eventNumber: 1 },
-            76: { type: 'creative-quest', questName: 'Я у мами педагог' },
-            81: { type: 'pvp-quest', gameType: 'pedagogobot', questName: 'Педагобот' },
-            90: { type: 'webnovella', questName: 'Халепа!', eventNumber: 3 },
-            96: { type: 'creative-quest', questName: 'Хроніки Неіснуючого Вояжу' },
-            99: { type: 'pvp-quest', gameType: 'rock_paper_scissors', questName: 'Ляпіс-форфіцес-папірус' },
-            
-            // Тестові завдання
-            2: { type: 'test-question' },
-            8: { type: 'test-question' },
-            11: { type: 'test-question' },
-            17: { type: 'test-question' },
-            20: { type: 'test-question' },
-            23: { type: 'test-question' },
-            26: { type: 'test-question' },
-            29: { type: 'test-question' },
-            35: { type: 'test-question' },
-            38: { type: 'test-question' },
-            41: { type: 'test-question' },
-            44: { type: 'test-question' },
-            47: { type: 'test-question' },
-            50: { type: 'test-question' },
-            53: { type: 'test-question' },
-            56: { type: 'test-question' },
-            59: { type: 'test-question' },
-            62: { type: 'test-question' },
-            65: { type: 'test-question' },
-            68: { type: 'test-question' },
-            71: { type: 'test-question' },
-            74: { type: 'test-question' },
-            77: { type: 'test-question' },
-            80: { type: 'test-question' },
-            83: { type: 'test-question' },
-            86: { type: 'test-question' },
-            89: { type: 'test-question' },
-            92: { type: 'test-question' },
-            95: { type: 'test-question' },
-            98: { type: 'test-question' }
-        };
-        
-        const cellData = SPECIAL_CELLS[cellNumber];
-        
-        if (!cellData) {
-            alert(`Клітинка ${cellNumber} не має події`);
+        if (!this.socket || !this.socket.connected) {
+            alert('Помилка: Немає з\'єднання з сервером для тестування.');
             return;
         }
-        
-        console.log('Дані про клітинку:', cellData);
-        
-        // Викликаємо тестування події
-        this.testEventData(cellData, cellNumber);
-    }
-    
-    // Тестування конкретного типу події
-    testEventData(cellData, cellNumber) {
-        const eventType = cellData.type;
-        
-        switch(eventType) {
-            case 'pvp-quest':
-                if (cellData.gameType === 'tic_tac_toe' || cellData.gameType === 'cross_early') {
-                    this.testTicTacToeCell();
-                } else if (cellData.gameType === 'rock_paper_scissors') {
-                    this.testRockPaperScissorsCell();
-                } else if (cellData.gameType === 'pedagogobot') {
-                    this.testPvPQuest(cellNumber, cellData); // Педагобот - це текстовий PvP квест
-                } else {
-                    this.testPvPQuest(cellNumber, cellData);
-                }
-                break;
-            case 'creative-quest':
-                this.testCreativeQuest(cellNumber, cellData);
-                break;
-            case 'mad-libs-quest':
-                this.testMadLibsQuest(cellNumber, cellData);
-                break;
-            case 'webnovella':
-            case 'webnovella-quest':
-                this.testWebNovellaQuest(cellNumber, cellData);
-                break;
-            case 'alternative-path':
-                this.testAlternativePath(cellData, cellNumber);
-                break;
-            case 'reincarnation':
-                this.testReincarnation();
-                break;
-            case 'test-question':
-                this.testQuestionCell(cellNumber);
-                break;
-            default:
-                alert(`Невідомий тип події: ${eventType}`);
-        }
+
+        // Відправляємо запит на сервер
+        // Сервер використає "source of truth" (specialCells.js)
+        // і розішле подію всім гравцям,
+        // симулюючи природний хід гри (включаючи анімацію руху)
+        this.socket.emit('test_trigger_event', { 
+            roomId: this.roomId, 
+            cellNumber: parseInt(cellNumber)
+        });
+
+        // Більше нічого не потрібно на клієнті
+        // Вся логіка тепер на сервері
     }
     
     // Перевизначення методу завершення гри для мультиплеєру

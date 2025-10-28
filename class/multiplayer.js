@@ -483,7 +483,7 @@ class MultiplayerGame extends EducationalPathGame {
                 this.socket.on('quest_started', (data) => {
                     this.handleRemoteQuest(data);
                 });
-                
+
                 this.socket.on('test_result', (data) => {
                     this.handleTestResult(data);
                 });
@@ -1460,13 +1460,13 @@ class MultiplayerGame extends EducationalPathGame {
                 } else {
                     // Для всіх інших типів подій показуємо модальне вікно
                     console.log('Показуємо модальне вікно для типу події:', data.eventInfo.eventType);
-                    this.showEventPrompt({
-                        playerId: data.eventInfo.playerId,
-                        playerName: data.eventInfo.playerName,
-                        eventType: data.eventInfo.eventType,
-                        eventData: data.eventInfo.eventData,
-                        activePlayerId: data.eventInfo.playerId
-                    });
+                this.showEventPrompt({
+                    playerId: data.eventInfo.playerId,
+                    playerName: data.eventInfo.playerName,
+                    eventType: data.eventInfo.eventType,
+                    eventData: data.eventInfo.eventData,
+                    activePlayerId: data.eventInfo.playerId
+                });
                 }
             }
             
@@ -1520,7 +1520,7 @@ class MultiplayerGame extends EducationalPathGame {
             `;
             
             // Завжди одна кнопка для реінкарнації
-            buttons = [
+                buttons = [
                 { text: 'Ай, шайтаан, знову помер. Відроджуємось та йдемо далі!', callback: () => this.makeEventChoice('yes', data.eventType, data.eventData) }
             ];
             
@@ -1639,7 +1639,7 @@ class MultiplayerGame extends EducationalPathGame {
             console.warn('Необроблений тип події:', data.eventType, data);
             // Якщо modalContent порожній, не показуємо вікно
             if (modalContent || buttons.length > 0) {
-                this.showQuestModal('Подія', modalContent, buttons, 'image/modal_window/bypass_road.png');
+        this.showQuestModal('Подія', modalContent, buttons, 'image/modal_window/bypass_road.png');
             } else {
                 console.log('modalContent порожній, не показуємо вікно для типу:', data.eventType);
             }
@@ -2334,10 +2334,18 @@ class MultiplayerGame extends EducationalPathGame {
             return;
         }
         
+        // Визначаємо який фон використовувати (megabrain або megabrain_2)
+        let currentBackground = this.megabrainBackground || 'image/modal_window/megabrain.png';
+        
         let modalContent = `
             <h3 class="text-2xl font-bold mb-4">${gameData.name}!</h3>
             <p class="mb-4">${gameData.description}</p>
             <p class="mb-4">${data.player1.name} проти ${data.player2.name}</p>
+            ${gameData.name === 'Мегамозок' ? `
+                <button id="switch-megabrain-bg" class="mb-2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-1 px-2 rounded text-sm">
+                    🔄 Змінити фон
+                </button>
+            ` : ''}
         `;
         
         if (isParticipant) {
@@ -2390,9 +2398,11 @@ class MultiplayerGame extends EducationalPathGame {
         // Визначаємо картинку залежно від типу гри
         let imagePath = null;
         if (gameData.gameType === 'tic_tac_toe' || gameData.gameType === 'cross_early') {
-            imagePath = 'image/modal_window/tic_tac_toe.png';
+            imagePath = 'image/modal_window/tic_tac_toe.jpg';
         } else if (gameData.gameType === 'rock_paper_scissors') {
-            imagePath = 'image/modal_window/rock_paper_scissor.png';
+            imagePath = 'image/modal_window/rock_paper_scissors.png';
+        } else if (gameData.name === 'Мегамозок') {
+            imagePath = currentBackground;
         }
         
         this.showQuestModal('PvP-квест', modalContent, [], imagePath);
@@ -2415,6 +2425,31 @@ class MultiplayerGame extends EducationalPathGame {
                 }, 100);
             }
             this.startTimedTextQuestTimer(data.gameState.timer);
+            
+            // Додаємо обробник для кнопки зміни фону Мегамозок
+            if (gameData.name === 'Мегамозок') {
+                setTimeout(() => {
+                    const switchBtn = document.getElementById('switch-megabrain-bg');
+                    if (switchBtn) {
+                        switchBtn.addEventListener('click', () => {
+                            // Переключаємо фон між megabrain.png і megabrain_2.jpg
+                            if (!this.megabrainBackground) {
+                                this.megabrainBackground = 'image/modal_window/megabrain_2.jpg';
+                            } else if (this.megabrainBackground === 'image/modal_window/megabrain.png') {
+                                this.megabrainBackground = 'image/modal_window/megabrain_2.jpg';
+                            } else {
+                                this.megabrainBackground = 'image/modal_window/megabrain.png';
+                            }
+                            
+                            // Оновлюємо фонове зображення модального вікна
+                            const modal = document.querySelector('.modal-content');
+                            if (modal) {
+                                modal.style.backgroundImage = `url('${this.megabrainBackground}')`;
+                            }
+                        });
+                    }
+                }, 100);
+            }
         }
     }
     
@@ -3142,7 +3177,7 @@ class MultiplayerGame extends EducationalPathGame {
         const isMyTurn = data.activePlayerId === this.playerId;
         
         let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Хто, де, коли? - Творчий квест</h3>
+            <h3 class="text-2xl font-bold mb-4">🦉 Хто, де, коли? - Творчий квест</h3>
             <p class="mb-4">Питання: <strong>${data.question}</strong></p>
         `;
         
@@ -3161,7 +3196,7 @@ class MultiplayerGame extends EducationalPathGame {
             `;
         }
         
-        this.showQuestModal('Хто, де, коли? - Творчий квест', modalContent, [], null);
+        this.showQuestModal('Хто, де, коли? - Творчий квест', modalContent, [], 'image/modal_window/owl.png');
         
         if (isMyTurn) {
             // Додаємо обробник кнопки
@@ -3184,12 +3219,12 @@ class MultiplayerGame extends EducationalPathGame {
     
     showMadLibsWaiting(data) {
         let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Хто, де, коли? - Творчий квест</h3>
+            <h3 class="text-2xl font-bold mb-4">🦉 Хто, де, коли? - Творчий квест</h3>
             <p class="mb-4">Питання: <strong>${data.question}</strong></p>
             <p class="text-center text-gray-600">Черга гравця ${data.currentPlayer.name}</p>
         `;
         
-        this.showQuestModal('Хто, де, коли? - Творчий квест', modalContent, [], null);
+        this.showQuestModal('Хто, де, коли? - Творчий квест', modalContent, [], 'image/modal_window/owl.png');
     }
     
     submitMadLibsAnswer() {
@@ -3206,7 +3241,7 @@ class MultiplayerGame extends EducationalPathGame {
     
     showMadLibsResult(data) {
         let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Хто, де, коли? завершено!</h3>
+            <h3 class="text-2xl font-bold mb-4">🦉 Хто, де, коли? завершено!</h3>
             <div class="mb-4">
                 <h4 class="font-bold mb-2">Ось історія, яка вийшла:</h4>
                 <div class="bg-gray-100 p-4 rounded text-lg">
@@ -3217,7 +3252,7 @@ class MultiplayerGame extends EducationalPathGame {
         
         this.showQuestModal('Хто, де, коли? - Творчий квест', modalContent, [
             { text: 'Закрити', callback: () => this.closeMiniGame() }
-        ]);
+        ], 'image/modal_window/owl.png');
     }
     
     showWebNovellaEvent(data) {

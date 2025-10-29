@@ -650,15 +650,15 @@ io.on('connection', (socket) => {
         const oldPosition = currentPlayer.position;
         let finalPosition = oldPosition;
         let stopMove = false;
-
+        
         // Поступово переміщуємо гравця крок за кроком
         for (let i = 1; i <= move; i++) {
             const nextStep = oldPosition + i;
             if (EPOCH_BOUNDARIES.includes(nextStep)) {
                 // Гравець ступив на межу епохи (крім 100 - це кінець гри)
                 if (nextStep !== 101) {
-                    finalPosition = nextStep;
-                    stopMove = true;
+                finalPosition = nextStep;
+                stopMove = true;
                     break; // Зупиняємо рух
                 }
             }
@@ -968,24 +968,24 @@ io.on('connection', (socket) => {
                     });
                 } else {
                     // Текстова гра (genius, megabrain, pedagogobot)
-                    room.timedTextQuestState = {
+                room.timedTextQuestState = {
                         gameType: selectedGameKey,
-                        gameData: selectedGame,
-                        players: [player.id, opponent.id],
-                        playerNames: [player.name, opponent.name],
-                        timer: selectedGame.timer,
-                        startTime: Date.now(),
-                        results: {},
-                        gameActive: true
-                    };
+                    gameData: selectedGame,
+                    players: [player.id, opponent.id],
+                    playerNames: [player.name, opponent.name],
+                    timer: selectedGame.timer,
+                    startTime: Date.now(),
+                    results: {},
+                    gameActive: true
+                };
 
-                    // Відправляємо початок гри
-                    io.to(room.id).emit('start_timed_text_quest', {
-                        gameState: room.timedTextQuestState,
-                        player1: { id: player.id, name: player.name },
-                        player2: { id: opponent.id, name: opponent.name },
-                        activePlayerId: player.id
-                    });
+                // Відправляємо початок гри
+                io.to(room.id).emit('start_timed_text_quest', {
+                    gameState: room.timedTextQuestState,
+                    player1: { id: player.id, name: player.name },
+                    player2: { id: opponent.id, name: opponent.name },
+                    activePlayerId: player.id
+                });
                 }
 
             } else if (data.eventType === 'creative-quest') {
@@ -1116,6 +1116,7 @@ io.on('connection', (socket) => {
             } else if (data.eventType === 'early-reincarnation') {
                 // Рання реінкарнація - переміщуємо на початок наступної епохи
                 const targetEpoch = data.eventData.targetEpoch;
+                const cellNumber = data.eventData.cellNumber;
                 let targetPosition;
                 
                 // Визначаємо цільову позицію залежно від епохи
@@ -1132,11 +1133,74 @@ io.on('connection', (socket) => {
                     roomPlayer.points += data.eventData.points;
                     player.position = targetPosition;
                     player.points += data.eventData.points;
+                    
+                    // Присвоюємо новий клас для нової епохи
+                    const newEpoch = getEpochForPosition(targetPosition);
+                    const occupiedClassesInNewEpoch = room.gameData.players
+                        .filter(p => p.id !== player.id && p.class && getEpochForPosition(p.position) === newEpoch)
+                        .map(p => p.class.id);
+                    
+                    const availableClasses = [
+                        { 
+                            id: 'aristocrat', 
+                            name: '⚜️ Аристократ', 
+                            startPoints: 50,
+                            moveModifier: 1, 
+                            description: 'Вітаю! Ви народилися із золотою ложкою в роті! Ваше життя буде легшим, ніж у решти, завдяки безмежним статкам пращурів. Проте все ж один криптоніт маєте – казино та шинки. Якщо ступите ногою у даний заклад, втратите все!'
+                        },
+                        { 
+                            id: 'burgher', 
+                            name: '⚖️ Міщанин', 
+                            startPoints: 20,
+                            moveModifier: 0, 
+                            description: 'Вітаю! Ви народилися в родині, що здатна вас забезпечити! Проте на більше не сподівайтесь. Ваше життя буде посереднім. До казино та шинків також не варто підходити, якщо не хочете втратити половину майна!'
+                        },
+                        { 
+                            id: 'peasant', 
+                            name: '🌱 Селянин', 
+                            startPoints: 0,
+                            moveModifier: -1, 
+                            description: 'Вітаю! Ви народились! На цьому гарні новини для вас скінчились. Життя, сповнене стражданнями та злиднями, відтепер звична реальність. До казино та шинків теж не рекомендуємо ходити, якщо не хочете передчасно померти з голоду.'
+                        }
+                    ];
+                    
+                    const classCounts = {};
+                    for (const classId of occupiedClassesInNewEpoch) {
+                        classCounts[classId] = (classCounts[classId] || 0) + 1;
+                    }
+                    
+                    let availableClassPool = availableClasses.filter(cls => {
+                        const count = classCounts[cls.id] || 0;
+                        if (room.gameData.players.length <= 3) {
+                            return count < 1;
+                        } else {
+                            return count < 2;
+                        }
+                    });
+                    
+                    if (availableClassPool.length === 0) {
+                        availableClassPool = availableClasses;
+                    }
+                    
+                    roomPlayer.class = availableClassPool[Math.floor(Math.random() * availableClassPool.length)];
+                    player.class = roomPlayer.class;
                 }
                 
                 io.to(room.id).emit('chat_message', {
                     type: 'system',
                     message: `${player.name} зазнав ранньої смерті та переродився у епосі ${targetEpoch}! Переміщено на клітинку ${targetPosition}, отримано ${data.eventData.points} ОО.`
+                });
+                
+                // Відправляємо подію для відображення вікна переродження
+                io.to(player.id).emit('early_reincarnation_event', {
+                    playerId: player.id,
+                    cellNumber: cellNumber,
+                    eventData: {
+                        points: data.eventData.points,
+                        targetEpoch: targetEpoch,
+                        cellNumber: cellNumber
+                    },
+                    newClass: roomPlayer.class
                 });
                 
                 io.to(room.id).emit('game_state_update', room.gameData);
@@ -1220,19 +1284,19 @@ io.on('connection', (socket) => {
                     socket.emit('error_message', 'Вам не вистачає очок!');
                     return; // Зупиняємо виконання
                 }
-
+                
                 // Знаходимо гравця в масиві гравців кімнати
                 const roomPlayer = room.gameData.players.find(p => p.id === player.id);
                 
                 // 50% ризик потрапити в реабілітаційний центр
                 if (Math.random() < 0.5) {
                     // УСПІХ: Гравець скорочує шлях
-                    if (roomPlayer) {
-                        roomPlayer.position = data.eventData.target;
-                        roomPlayer.points = Math.max(0, roomPlayer.points - data.eventData.cost);
-                        player.position = data.eventData.target;
-                        player.points = Math.max(0, player.points - data.eventData.cost);
-                    }
+                if (roomPlayer) {
+                    roomPlayer.position = data.eventData.target;
+                    roomPlayer.points = Math.max(0, roomPlayer.points - data.eventData.cost);
+                    player.position = data.eventData.target;
+                    player.points = Math.max(0, player.points - data.eventData.cost);
+                }
                     resultMessage = `${player.name} успішно скоротив шлях! Переміщено на клітинку ${data.eventData.target}, втрачено ${data.eventData.cost} ОО.`;
                 } else {
                     // ПРОВАЛ: "Передозування" та реабілітація
@@ -1311,7 +1375,7 @@ io.on('connection', (socket) => {
         
         // Передаємо хід тільки якщо гра продовжується
         if (shouldContinue) {
-            passTurnToNextPlayer(room);
+        passTurnToNextPlayer(room);
         }
     });
     
@@ -1595,6 +1659,7 @@ io.on('connection', (socket) => {
             // 2. Обробка ранньої реінкарнації
             if (eventType === 'early-reincarnation') {
                 const targetEpoch = eventData.targetEpoch;
+                const cellNumber = eventData.cellNumber;
                 let targetPosition;
                 if (targetEpoch === 2) targetPosition = 13;
                 else if (targetEpoch === 3) targetPosition = 23;
@@ -1606,10 +1671,73 @@ io.on('connection', (socket) => {
                 currentPlayer.position = targetPosition;
                 currentPlayer.points += eventData.points;
                 
+                // Присвоюємо новий клас для нової епохи
+                const newEpoch = getEpochForPosition(targetPosition);
+                const occupiedClassesInNewEpoch = room.gameData.players
+                    .filter(p => p.id !== currentPlayer.id && p.class && getEpochForPosition(p.position) === newEpoch)
+                    .map(p => p.class.id);
+                
+                const availableClasses = [
+                    { 
+                        id: 'aristocrat', 
+                        name: '⚜️ Аристократ', 
+                        startPoints: 50,
+                        moveModifier: 1, 
+                        description: 'Вітаю! Ви народилися із золотою ложкою в роті! Ваше життя буде легшим, ніж у решти, завдяки безмежним статкам пращурів. Проте все ж один криптоніт маєте – казино та шинки. Якщо ступите ногою у даний заклад, втратите все!'
+                    },
+                    { 
+                        id: 'burgher', 
+                        name: '⚖️ Міщанин', 
+                        startPoints: 20,
+                        moveModifier: 0, 
+                        description: 'Вітаю! Ви народилися в родині, що здатна вас забезпечити! Проте на більше не сподівайтесь. Ваше життя буде посереднім. До казино та шинків також не варто підходити, якщо не хочете втратити половину майна!'
+                    },
+                    { 
+                        id: 'peasant', 
+                        name: '🌱 Селянин', 
+                        startPoints: 0,
+                        moveModifier: -1, 
+                        description: 'Вітаю! Ви народились! На цьому гарні новини для вас скінчились. Життя, сповнене стражданнями та злиднями, відтепер звична реальність. До казино та шинків теж не рекомендуємо ходити, якщо не хочете передчасно померти з голоду.'
+                    }
+                ];
+                
+                const classCounts = {};
+                for (const classId of occupiedClassesInNewEpoch) {
+                    classCounts[classId] = (classCounts[classId] || 0) + 1;
+                }
+                
+                let availableClassPool = availableClasses.filter(cls => {
+                    const count = classCounts[cls.id] || 0;
+                    if (room.gameData.players.length <= 3) {
+                        return count < 1;
+                    } else {
+                        return count < 2;
+                    }
+                });
+                
+                if (availableClassPool.length === 0) {
+                    availableClassPool = availableClasses;
+                }
+                
+                currentPlayer.class = availableClassPool[Math.floor(Math.random() * availableClassPool.length)];
+                
                 io.to(room.id).emit('chat_message', {
                     type: 'system',
                     message: `${currentPlayer.name} зазнав ранньої смерті та переродився у епосі ${targetEpoch}! Переміщено на ${targetPosition}, +${eventData.points} ОО.`
                 });
+                
+                // Відправляємо подію для відображення вікна переродження
+                io.to(currentPlayer.id).emit('early_reincarnation_event', {
+                    playerId: currentPlayer.id,
+                    cellNumber: cellNumber,
+                    eventData: {
+                        points: eventData.points,
+                        targetEpoch: targetEpoch,
+                        cellNumber: cellNumber
+                    },
+                    newClass: currentPlayer.class
+                });
+                
                 io.to(room.id).emit('game_state_update', room.gameData);
                 passTurnToNextPlayer(room);
                 return;

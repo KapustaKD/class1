@@ -311,7 +311,7 @@ class GameUI {
         
         diceInner.style.transform = `rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg)`;
         setTimeout(() => {
-            diceInner.style.transform = `${rotations[roll]} translateZ(40px)`;
+            diceInner.style.transform = `${rotations[roll]} translateZ(25px)`;
         }, 1000);
     }
     
@@ -319,6 +319,7 @@ class GameUI {
         const currentPlayerNameEl = document.getElementById('current-player-name');
         const currentPlayerClassEl = document.getElementById('current-player-class');
         const currentPlayerPointsEl = document.getElementById('current-player-points');
+        const currentPlayerAvatarEl = document.getElementById('current-player-avatar');
         
         if (currentPlayerNameEl) {
             currentPlayerNameEl.textContent = player.name;
@@ -330,11 +331,31 @@ class GameUI {
         }
         
         if (currentPlayerPointsEl) {
-            currentPlayerPointsEl.textContent = player.points || 0;
+            // В новій структурі ОО вже є в HTML, просто число
+            const pointsSpan = currentPlayerPointsEl.querySelector('span');
+            if (pointsSpan) {
+                pointsSpan.textContent = player.points || 0;
+            } else {
+                currentPlayerPointsEl.textContent = player.points || 0;
+            }
+        }
+        
+        // Оновлюємо аватар
+        if (currentPlayerAvatarEl && player.name) {
+            const firstLetter = player.name.charAt(0).toUpperCase();
+            const avatarColor = player.color || '#7e22ce';
+            const hexColor = avatarColor.replace('#', '');
+            const rgbColor = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hexColor.length === 3 ? hexColor.split('').map(c => c + c).join('') : hexColor);
+            if (rgbColor) {
+                const r = parseInt(rgbColor[1], 16);
+                const g = parseInt(rgbColor[2], 16);
+                const b = parseInt(rgbColor[3], 16);
+                currentPlayerAvatarEl.src = `https://placehold.co/48x48/${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}/ffffff?text=${encodeURIComponent(firstLetter)}`;
+            }
         }
     }
     
-    updateLeaderboard(players) {
+    updateLeaderboard(players, currentPlayerId = null) {
         const leaderboardEl = document.getElementById('leaderboard');
         if (!leaderboardEl) return;
         
@@ -342,15 +363,33 @@ class GameUI {
             .filter(p => !p.hasLost)
             .sort((a, b) => (b.points || 0) - (a.points || 0));
         
-        leaderboardEl.innerHTML = `
-            <h3 class="text-lg font-semibold mt-2">Таблиця лідерів</h3>
-            ${sortedPlayers.map((p, index) => `
-                <div class="flex justify-between items-center py-1">
-                    <span style="color:${p.color};">${p.name}</span>
-                    <span class="text-yellow-300">${p.points || 0} ОО</span>
+        // Зберігаємо заголовок "Таблиця лідерів", якщо він існує
+        const headerEl = leaderboardEl.querySelector('.cp-header');
+        const headerHTML = headerEl ? headerEl.outerHTML : '<div class="cp-header text-purple-400">Таблиця лідерів</div>';
+        
+        leaderboardEl.innerHTML = headerHTML + sortedPlayers.map((p) => {
+            const isActive = currentPlayerId && p.id === currentPlayerId;
+            const firstLetter = p.name.charAt(0).toUpperCase();
+            const hexColor = (p.color || '#7e22ce').replace('#', '');
+            const rgbColor = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hexColor.length === 3 ? hexColor.split('').map(c => c + c).join('') : hexColor);
+            let avatarUrl = 'https://placehold.co/24x24/7e22ce/ffffff?text=P';
+            if (rgbColor) {
+                const r = parseInt(rgbColor[1], 16);
+                const g = parseInt(rgbColor[2], 16);
+                const b = parseInt(rgbColor[3], 16);
+                avatarUrl = `https://placehold.co/24x24/${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}/ffffff?text=${encodeURIComponent(firstLetter)}`;
+            }
+            
+            return `
+                <div class="cp-leaderboard-item ${isActive ? 'active-player' : ''} bg-black bg-opacity-20">
+                    <div class="flex items-center">
+                        <img src="${avatarUrl}" alt="${p.name} Avatar">
+                        <span class="cp-leaderboard-item-name text-gray-300">${p.name}</span>
+                    </div>
+                    <span class="cp-leaderboard-item-points text-yellow-400">${p.points || 0} ОО</span>
                 </div>
-            `).join('')}
-        `;
+            `;
+        }).join('');
     }
 }
 

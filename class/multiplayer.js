@@ -655,7 +655,21 @@ class MultiplayerGame extends EducationalPathGame {
         this.socket.on('show_reincarnation_class', (data) => {
             console.log('Показ класу після реінкарнації:', data);
             if (data.playerId === this.playerId && data.newClass) {
-                this.displayClassModal(data.newClass);
+                // Використовуємо showReincarnationModal замість displayClassModal
+                this.showReincarnationModal(null, false);
+            }
+        });
+        
+        // Обробник для раннього переродження
+        this.socket.on('early_reincarnation_event', (data) => {
+            console.log('Раннє переродження:', data);
+            if (data.playerId === this.playerId) {
+                // Оновлюємо клас гравця в локальному масиві
+                const player = this.players.find(p => p.id === this.playerId);
+                if (player && data.newClass) {
+                    player.class = data.newClass;
+                }
+                this.showReincarnationModal(data, false);
             }
         });
         
@@ -1430,6 +1444,10 @@ class MultiplayerGame extends EducationalPathGame {
                     { text: 'Очікуємо вибору...', callback: () => {}, disabled: true }
                 ];
             }
+        } else if (data.eventType === 'early-reincarnation') {
+            // Раннє переродження - показуємо спеціальне вікно через early_reincarnation_event
+            // Це вікно буде показано сервером через socket.on('early_reincarnation_event')
+            return;
         } else if (data.eventType === 'reincarnation') {
             modalContent = `
                 <h3 class="text-2xl font-bold mb-4">🔄 Реінкарнація!</h3>
@@ -1474,13 +1492,29 @@ class MultiplayerGame extends EducationalPathGame {
             // Використовуємо glassmorphism дизайн для обхідної дороги
             document.body.classList.add('glassmorphism-bg');
             
+            // Визначаємо епоху на основі клітинки для правильного визначення ціни
+            const cellNumber = data.eventData.cellNumber || 5;
+            let epoch = 1;
+            if (cellNumber <= 12) epoch = 1;
+            else if (cellNumber <= 22) epoch = 2;
+            else if (cellNumber <= 42) epoch = 3;
+            else if (cellNumber <= 75) epoch = 4;
+            else if (cellNumber <= 97) epoch = 5;
+            
+            // Визначаємо ціну залежно від епохи
+            // Ціни за епохами: 1 - 20 ОО, 2 - 12 ОО, 3 - 24 ОО, 4 - 40 ОО, 5 - 40 ОО
+            const epochCosts = { 1: 20, 2: 12, 3: 24, 4: 40, 5: 40 };
+            const cost = epochCosts[epoch] || data.eventData.cost || 20;
+            
+            const newDescription = `Вумний в гору не піде, вумний гору обійде!
+Ви маєте можливість не лише записатись до клубу розумників, а й полегшити своє життя. Але пам'ятайте: дороги навпростець не бувають легкими та безкоштовними! Оплатіть ${cost} ОО за упаковку психотропних речовин.`;
+            
             const modalHTML = `
                 <div class="glassmorphism-modal" id="bypass-road-modal">
                     <div class="glassmorphism-content-bypass">
                         <div class="glassmorphism-header">
                             <h2>🛤️ Обхідна дорога!</h2>
-                            <p>${data.playerName} знайшов обхідний шлях!</p>
-                            <p>${data.eventData.description}</p>
+                            <p class="mb-4">${newDescription}</p>
                         </div>
                         
                         <div class="glassmorphism-spacer"></div>
@@ -1488,7 +1522,7 @@ class MultiplayerGame extends EducationalPathGame {
                         <div class="glassmorphism-actions">
                             ${isMyEvent ? `
                                 <button class="glassmorphism-btn-primary" id="bypass-yes-btn">
-                                    Так, обійти (${data.eventData.cost} ОО)
+                                    Так, обійти (${cost} ОО)
                                 </button>
                                 <button class="glassmorphism-btn-secondary" id="bypass-no-btn">
                                     Ні, йти далі
@@ -1525,7 +1559,9 @@ class MultiplayerGame extends EducationalPathGame {
                                 modal.remove();
                                 document.body.classList.remove('glassmorphism-bg');
                             }
-                            this.makeEventChoice('yes', data.eventType, data.eventData);
+                            // Оновлюємо cost в eventData перед відправкою
+                            const updatedEventData = { ...data.eventData, cost: cost };
+                            this.makeEventChoice('yes', data.eventType, updatedEventData);
                         });
                     }
                     
@@ -1909,37 +1945,73 @@ class MultiplayerGame extends EducationalPathGame {
                 newBtn.addEventListener('click', () => {
                     rulesModal.classList.add('hidden');
                     
-                    // Після закриття правил показуємо присвоєння класів
-                    console.log('Правила закриті, показуємо присвоєння класів');
-                    this.showPlayerClassAssignment();
+                    // Після закриття правил показуємо вікно переродження з класом
+                    console.log('Правила закриті, показуємо переродження з класом');
+                    this.showReincarnationModal(null, true); // true = початок гри
                 }, { once: true }); // once: true щоб обробник виконався тільки один раз
             } else {
-                // Якщо кнопка не знайдена, одразу показуємо клас
+                // Якщо кнопка не знайдена, одразу показуємо переродження
                 setTimeout(() => {
-                    this.showPlayerClassAssignment();
+                    this.showReincarnationModal(null, true);
                 }, 300);
             }
         } else {
-            // Якщо модальне вікно не знайдено, одразу показуємо клас
+            // Якщо модальне вікно не знайдено, одразу показуємо переродження
             setTimeout(() => {
-                this.showPlayerClassAssignment();
+                this.showReincarnationModal(null, true);
             }, 300);
         }
     }
     
-    // Показуємо роздачу класів гравцям
-    showPlayerClassAssignment() {
+    // Показуємо вікно переродження з класом (замість старого showPlayerClassAssignment)
+    showReincarnationModal(earlyReincarnationData = null, isGameStart = false) {
         const myPlayer = this.players.find(p => p.id === this.playerId);
-        if (!myPlayer || !myPlayer.class) {
+        
+        // Якщо передано новий клас в earlyReincarnationData, використовуємо його
+        const classInfo = earlyReincarnationData?.newClass || myPlayer?.class;
+        
+        if (!classInfo) {
             console.log('Клас гравця не знайдено або гравець не існує');
             return;
         }
+        let reincarnationText = '';
+        let pointsText = '';
         
-        console.log('Показуємо клас гравця:', myPlayer.name, myPlayer.class.name);
+        if (isGameStart) {
+            // Початок гри - загальний текст
+            reincarnationText = 'Вітаю! Ви переродились у нового гравця. Вас чекає нове життя з новою родиною та новою долею. Хай щастить!';
+        } else if (earlyReincarnationData) {
+            // Раннє переродження - використовуємо текст залежно від клітинки
+            const cellNumber = earlyReincarnationData.cellNumber || earlyReincarnationData.eventData?.cellNumber;
+            
+            if (cellNumber === 6) {
+                reincarnationText = 'Вітаю! Ви померли! Для когось це може стати сумною новиною, проте точно не для вас, вічного створіння, яке здатне реінкарнувати. Вас чекає нове життя в новому часі з новою родиною та новою долею. Хай щастить!';
+            } else if (cellNumber === 18) {
+                reincarnationText = 'Вітаю! Вас вкусив енцифалітний кліщ і ви померли від бубонної чуми) Попереду чекає нове життя в новому часі з новою родиною та новою долею. Вчіться на своїх помилках і використовуйте засіб від комах!';
+            } else if (cellNumber === 30) {
+                // Епоха 3 -> 4 - потрібно визначити текст
+                reincarnationText = 'Вітаю! Ви померли! Для когось це може стати сумною новиною, проте точно не для вас, вічного створіння, яке здатне реінкарнувати. Вас чекає нове життя в новому часі з новою родиною та новою долею. Хай щастить!';
+            } else if (cellNumber === 63) {
+                // Епоха 4 -> 5
+                reincarnationText = 'Вітаю! Ви померли! Для когось це може стати сумною новиною, проте точно не для вас, вічного створіння, яке здатне реінкарнувати. Вас чекає нове життя в новому часі з новою родиною та новою долею. Хай щастить!';
+            } else if (cellNumber === 85) {
+                reincarnationText = 'Вітаю! Вам не пощастило перебувати в американській школі і ви померли від скулшутінгу. Попереду чекає нове життя в новому часі з новою родиною та новою долею. Вчіться на своїх помилках і народжуйтесь в Україні!';
+            } else {
+                reincarnationText = 'Вітаю! Ви померли! Для когось це може стати сумною новиною, проте точно не для вас, вічного створіння, яке здатне реінкарнувати. Вас чекає нове життя в новому часі з новою родиною та новою долею. Хай щастить!';
+            }
+            
+            // Додаємо інформацію про очки
+            const points = earlyReincarnationData.eventData?.points || earlyReincarnationData.points || 10;
+            pointsText = `+${points} ОО`;
+        } else {
+            // Нормальне переродження (досягнення межі епохи)
+            reincarnationText = 'Вітаю! Ви успішно завершили епоху та переродились у новій епосі!';
+        }
         
-        const classInfo = myPlayer.class;
         const modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Ваш клас!</h3>
+            <h3 class="text-2xl font-bold mb-4">Переродження</h3>
+            <p class="text-lg mb-4">${reincarnationText}</p>
+            ${pointsText ? `<p class="text-xl font-bold text-yellow-300 mb-4">${pointsText}</p>` : ''}
             <div class="text-center mb-6">
                 <div class="text-4xl mb-2">${classInfo.name}</div>
                 <div class="text-lg text-gray-300 mb-2">Стартові очки: ${classInfo.startPoints}</div>
@@ -1957,7 +2029,7 @@ class MultiplayerGame extends EducationalPathGame {
         `;
         
         if (window.gameUI) {
-            window.gameUI.showQuestModal('Роздача класів', modalContent, [], null);
+            window.gameUI.showQuestModal('Переродження', modalContent, [], null);
             
             // Додаємо обробник події
             setTimeout(() => {
@@ -4704,24 +4776,6 @@ class MultiplayerGame extends EducationalPathGame {
         document.getElementById('buff-debuff-modal').classList.add('hidden');
     }
     
-    // Метод для відображення класу при початку гри та реінкарнації
-    displayClassModal(classInfo) {
-        if (!classInfo) return;
-        console.log('Показ модалки класу:', classInfo);
-        
-        const modalContent = `
-            <h3 class="text-2xl font-bold mb-2">${classInfo.name}</h3>
-            <p class="text-lg mb-4"><em>${classInfo.description || 'Опис класу відсутній.'}</em></p>
-            <div class="text-left mb-4 bg-gray-700 p-3 rounded text-gray-300">
-                <p><strong>Стартові ОО:</strong> ${classInfo.startPoints}</p>
-                <p><strong>Модифікатор руху:</strong> ${classInfo.moveModifier > 0 ? '+' : ''}${classInfo.moveModifier}</p>
-            </div>
-            <button onclick="window.game.closeQuestModal()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Зрозуміло</button>
-        `;
-        
-        // Використовуємо існуючу функцію показу модалки квестів
-        this.showQuestModal('Ваш клас', modalContent, [], null);
-    }
     
     closeQuestModal() {
         const modal = document.getElementById('quest-modal');

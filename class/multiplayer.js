@@ -1775,6 +1775,17 @@ class MultiplayerGame extends EducationalPathGame {
         }
     }
     
+    // Перевизначення showQuestModal для підтримки фонових зображень
+    showQuestModal(title, content, buttons = [], backgroundImageUrl = null) {
+        // Якщо є window.gameUI, використовуємо його (підтримує backgroundImageUrl)
+        if (window.gameUI && window.gameUI.showQuestModal) {
+            window.gameUI.showQuestModal(title, content, buttons, backgroundImageUrl);
+        } else {
+            // Fallback на базовий метод з game.js
+            super.showQuestModal(title, typeof content === 'string' ? content : '', buttons, backgroundImageUrl);
+        }
+    }
+    
     handleRemoteQuest(data) {
         // Обробка віддалених квестів
         if (data.eventType === 'test-question') {
@@ -2360,9 +2371,12 @@ class MultiplayerGame extends EducationalPathGame {
                             }
                             
                             // Оновлюємо фонове зображення модального вікна
-                            const modal = document.querySelector('.modal-content');
+                            const modal = document.querySelector('#quest-modal-content') || document.querySelector('.modal-content');
                             if (modal) {
                                 modal.style.backgroundImage = `url('${this.megabrainBackground}')`;
+                                modal.style.backgroundSize = 'cover';
+                                modal.style.backgroundPosition = 'center';
+                                modal.style.backgroundRepeat = 'no-repeat';
                             }
                         });
                     }
@@ -2587,7 +2601,7 @@ class MultiplayerGame extends EducationalPathGame {
         // Логування для діагностики фону педагобота
         setTimeout(() => {
             const robotModal = document.getElementById('pedagogobot-modal');
-            const robotContent = robotModal.querySelector('.glassmorphism-content-robot');
+            const robotContent = robotModal?.querySelector('.glassmorphism-content-robot-small') || robotModal?.querySelector('.glassmorphism-content-robot');
             
             console.log('=== ДІАГНОСТИКА ФОНУ ПЕДАГОБОТА ===');
             console.log('Modal element:', robotModal);
@@ -2601,6 +2615,9 @@ class MultiplayerGame extends EducationalPathGame {
                 console.log('Background position:', computedStyle.backgroundPosition);
                 console.log('Display:', computedStyle.display);
                 console.log('Min-height:', computedStyle.minHeight);
+                console.log('Classes:', robotContent.className);
+            } else {
+                console.log('⚠️ Content element не знайдено!');
             }
             console.log('==================================');
         }, 200);

@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="game.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="/socket.io/socket.io.js"></script>
     <script>
         // Налаштування для продакшн середовища
@@ -52,32 +53,79 @@
             </div>
         </div>
 
-        <!-- Панель керування -->
-        <div class="w-full lg:w-96 bg-gray-700 panel-overlay p-6 rounded-2xl shadow-2xl flex flex-col gap-4 shrink-0">
-            <div>
-                <h2 class="text-2xl font-bold border-b-2 border-yellow-300 pb-2 mb-2">Інформація</h2>
-                <div id="player-info" class="text-lg">Хід гравця: <span id="current-player-name" class="font-bold"></span></div>
-                <div id="player-class-info" class="text-md text-gray-300">Клас: <span id="current-player-class"></span></div>
-                <div id="player-points-info" class="text-lg font-bold">Очки Освіти: <span id="current-player-points" class="text-yellow-300"></span></div>
+       <!-- ******** НОВА ПАНЕЛЬ КЕРУВАННЯ (RPG HUD) ******** -->
+<div id="panel-rpg" class="w-full lg:w-96 control-panel-option flex flex-col shrink-0">
+
+    <!-- Player Info Section -->
+    <div>
+        <div class="cp-header text-emerald-300">Хід Гравця</div>
+        <div class="cp-player-info bg-black bg-opacity-20 border border-gray-700">
+            <!-- Avatar - ID додано для JS -->
+            <img id="current-player-avatar" class="cp-player-avatar border-emerald-400" src="https://placehold.co/48x48/7e22ce/ffffff?text=P" alt="Avatar">
+            <div class="flex-grow">
+                <!-- Player Name - ID збережено -->
+                <div id="current-player-name" class="cp-player-name text-white">Пілатес</div>
+                <!-- Player Class - ID збережено -->
+                <div class="cp-player-class text-gray-400"><i class="fas fa-seedling text-xs"></i><span id="current-player-class">Селянин</span></div>
             </div>
-            <div id="leaderboard"></div>
-            <div class="flex justify-center items-center my-4 h-24">
-                <div class="dice" id="dice">
-                    <div class="dice-inner" id="dice-inner">
-                        <div class="dice-face face-1">1</div>
-                        <div class="dice-face face-2">2</div>
-                        <div class="dice-face face-3">3</div>
-                        <div class="dice-face face-4">4</div>
-                        <div class="dice-face face-5">5</div>
-                        <div class="dice-face face-6">6</div>
-                    </div>
-                </div>
+            <div class="cp-points">
+                <!-- Player Points - ID збережено -->
+                <div class="cp-points-value text-yellow-400"><i class="fas fa-coins text-sm text-yellow-500"></i><span id="current-player-points">0</span></div>
+                <div class="cp-points-label text-gray-500">Очки Освіти</div>
             </div>
-            <button id="roll-dice-btn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition duration-300 shadow-lg text-xl">Кинути кубик</button>
-            <button id="buff-debuff-btn" class="w-full mt-2 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 shadow-lg text-xl" disabled>✨ Бафи/Дебафи</button>
-            <button id="exit-game-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 shadow-lg text-lg mt-2" onclick="window.exitGame()">Вийти з гри</button>
         </div>
     </div>
+
+    <!-- Leaderboard Section -->
+    <!-- ID збережено, але тепер це контейнер для елементів -->
+    <div id="leaderboard" class="cp-leaderboard custom-scrollbar">
+        <div class="cp-header text-purple-400">Таблиця лідерів</div>
+        <!-- Елементи списку лідерів будуть додані сюди через JS -->
+        <!-- Приклад елемента (видалити або замінити через JS): -->
+        <div class="cp-leaderboard-item bg-black bg-opacity-20">
+            <div class="flex items-center"><img src="https://placehold.co/24x24/dc2626/ffffff?text=B" alt="B Avatar"><span class="cp-leaderboard-item-name text-gray-300">Бородівка</span></div>
+            <span class="cp-leaderboard-item-points text-yellow-400">20 ОО</span>
+        </div>
+        <div class="cp-leaderboard-item bg-black bg-opacity-20 active-player"> <!-- Додати клас active-player для поточного гравця -->
+            <div class="flex items-center"><img src="https://placehold.co/24x24/7e22ce/ffffff?text=P" alt="P Avatar"><span class="cp-leaderboard-item-name text-gray-300">Пілатес</span></div>
+            <span class="cp-leaderboard-item-points text-yellow-400">0 ОО</span>
+        </div>
+    </div>
+
+    <!-- Dice Display -->
+    <!-- ID збережено -->
+    <div class="cp-dice-container">
+        <div class="cp-dice" id="dice">
+             <!-- ID збережено -->
+            <div class="cp-dice-inner" id="dice-inner">
+                <div class="cp-dice-face cp-face-1">1</div>
+                <div class="cp-dice-face cp-face-2">2</div>
+                <div class="cp-dice-face cp-face-3">3</div>
+                <div class="cp-dice-face cp-face-4">4</div>
+                <div class="cp-dice-face cp-face-5">5</div>
+                <div class="cp-dice-face cp-face-6">6</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons Section -->
+    <div class="cp-actions border-gray-700">
+        <!-- ID збережено -->
+        <button id="roll-dice-btn" class="cp-button roll">
+            <i class="fas fa-dice-d6"></i><span>Ваш хід - Кинути кубик</span>
+        </button>
+        <!-- ID збережено -->
+        <button id="buff-debuff-btn" class="cp-button buff">
+            <i class="fas fa-star"></i><span>Бафи/Дебафи</span>
+        </button>
+        <!-- ID збережено -->
+        <button id="exit-game-btn" class="cp-button exit" onclick="window.exitGame()">
+            <i class="fas fa-door-open"></i><span>Вийти з гри</span>
+        </button>
+    </div>
+</div>
+<!-- ******** КІНЕЦЬ НОВОЇ ПАНЕЛІ ******** -->
+
 
     <!-- Онлайн панель (прихована спочатку) -->
     <div id="online-panel" class="hidden flex items-center justify-center min-h-screen">
@@ -535,5 +583,6 @@
     
 </body>
 </html>
+
 
 

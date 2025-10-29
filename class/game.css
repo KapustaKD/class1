@@ -582,11 +582,18 @@ body {
     left: 0; 
     width: 100%; 
     height: 100%; 
-    background: rgba(0, 0, 0, 0.5); /* Напівпрозорий чорний фон */
-    backdrop-filter: blur(5px); /* Розмиття фону */
-    -webkit-backdrop-filter: blur(5px); /* Для Safari */
+    background: rgba(0, 0, 0, 0.7); /* Напівпрозорий чорний фон - затемненіше */
+    backdrop-filter: blur(10px); /* Розмиття фону */
+    -webkit-backdrop-filter: blur(10px); /* Для Safari */
     z-index: 40; /* Має бути вище за інші елементи, але нижче за modal-content */
     /* Клас hidden додається/видаляється через JS */
+}
+
+/* Затемнення для quest-modal */
+#quest-modal {
+    background-color: rgba(0, 0, 0, 0.7) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 .modal-content { 
     position: fixed;
@@ -933,12 +940,15 @@ body.bg-gray-800 {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    margin: 0;
+    padding: 0;
 }
 
 .glassmorphism-content {
@@ -1179,6 +1189,22 @@ body.glassmorphism-bg {
 /* Менше модальне вікно для хрестиків-нуликів */
 .glassmorphism-modal-small {
     max-width: 500px !important;
+}
+
+/* Забезпечуємо центрування вмісту в glassmorphism-modal-small */
+.glassmorphism-modal-small .glassmorphism-content-tictactoe-small,
+.glassmorphism-modal-small .glassmorphism-content-rps-small,
+.glassmorphism-modal-small .glassmorphism-content-robot-small {
+    margin: auto;
+    width: 90%;
+    max-width: 100%;
+}
+
+/* Спеціальні стилі для Мегамозок - темніша і розмитіша картинка */
+#quest-modal-content.megabrain-bg,
+.modal-content.megabrain-bg {
+    filter: brightness(0.6) blur(2px);
+    -webkit-filter: brightness(0.6) blur(2px);
 }
 
 /* Чорний контейнер для інформації */

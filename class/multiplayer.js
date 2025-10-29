@@ -1157,11 +1157,20 @@ class MultiplayerGame extends EducationalPathGame {
             this.rollDiceBtn.style.opacity = isMyTurn ? '1' : '0.5';
             this.rollDiceBtn.style.cursor = isMyTurn ? 'pointer' : 'not-allowed';
             
-            // Оновлюємо текст кнопки
+            // Оновлюємо текст кнопки (нова структура має span всередині)
+            const spanEl = this.rollDiceBtn.querySelector('span');
             if (isMyTurn) {
-                this.rollDiceBtn.textContent = 'Кинути кубик';
+                if (spanEl) {
+                    spanEl.textContent = 'Ваш хід - Кинути кубик';
+                } else {
+                    this.rollDiceBtn.textContent = 'Кинути кубик';
+                }
             } else {
-                this.rollDiceBtn.textContent = `Хід: ${currentPlayer?.name || 'Невідомо'}`;
+                if (spanEl) {
+                    spanEl.textContent = `Хід: ${currentPlayer?.name || 'Невідомо'}`;
+                } else {
+                    this.rollDiceBtn.textContent = `Хід: ${currentPlayer?.name || 'Невідомо'}`;
+                }
             }
         }
     }
@@ -1175,6 +1184,7 @@ class MultiplayerGame extends EducationalPathGame {
             const currentPlayerNameEl = document.getElementById('current-player-name');
             const currentPlayerClassEl = document.getElementById('current-player-class');
             const currentPlayerPointsEl = document.getElementById('current-player-points');
+            const currentPlayerAvatarEl = document.getElementById('current-player-avatar');
             
             if (currentPlayerNameEl) {
                 const isMyTurn = this.isOnlineMode && currentPlayer && currentPlayer.id === this.playerId;
@@ -1188,12 +1198,44 @@ class MultiplayerGame extends EducationalPathGame {
             }
             
             if (currentPlayerPointsEl) {
-                currentPlayerPointsEl.textContent = `${currentPlayer.points || 0} ОО`;
+                // В новій структурі ОО вже є в HTML, просто число
+                const pointsSpan = currentPlayerPointsEl.querySelector('span');
+                if (pointsSpan) {
+                    pointsSpan.textContent = currentPlayer.points || 0;
+                } else {
+                    currentPlayerPointsEl.textContent = currentPlayer.points || 0;
+                }
+            }
+            
+            // Оновлюємо аватар
+            if (currentPlayerAvatarEl && currentPlayer.name) {
+                const firstLetter = currentPlayer.name.charAt(0).toUpperCase();
+                const avatarColor = currentPlayer.color || '#7e22ce';
+                // Створюємо URL для аватару з початковою літерою та кольором
+                const rgbColor = this.hexToRgb(avatarColor) || { r: 126, g: 34, b: 206 };
+                currentPlayerAvatarEl.src = `https://placehold.co/48x48/${rgbColor.r.toString(16).padStart(2, '0')}${rgbColor.g.toString(16).padStart(2, '0')}${rgbColor.b.toString(16).padStart(2, '0')}/ffffff?text=${encodeURIComponent(firstLetter)}`;
             }
             
             // Оновлюємо таблицю лідерів
             this.updateLeaderboard();
         }
+    }
+    
+    // Допоміжна функція для конвертації hex в RGB
+    hexToRgb(hex) {
+        if (!hex) return null;
+        // Видаляємо # якщо є
+        hex = hex.replace('#', '');
+        // Обробка скорочених форм (#FFF -> #FFFFFF)
+        if (hex.length === 3) {
+            hex = hex.split('').map(char => char + char).join('');
+        }
+        const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
     }
     
     // Оновлюємо таблицю лідерів
@@ -1205,15 +1247,29 @@ class MultiplayerGame extends EducationalPathGame {
             .filter(p => !p.hasLost)
             .sort((a, b) => (b.points || 0) - (a.points || 0));
         
-        leaderboardEl.innerHTML = `
-            <h3 class="text-lg font-semibold mt-2">Таблиця лідерів</h3>
-            ${sortedPlayers.map((p, index) => `
-                <div class="flex justify-between items-center py-1">
-                    <span style="color:${p.color};">${p.name}</span>
-                    <span class="text-yellow-300">${p.points || 0} ОО</span>
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        const currentPlayerId = currentPlayer ? currentPlayer.id : null;
+        
+        // Зберігаємо заголовок "Таблиця лідерів", якщо він існує
+        const headerEl = leaderboardEl.querySelector('.cp-header');
+        const headerHTML = headerEl ? headerEl.outerHTML : '<div class="cp-header text-purple-400">Таблиця лідерів</div>';
+        
+        leaderboardEl.innerHTML = headerHTML + sortedPlayers.map((p) => {
+            const isActive = p.id === currentPlayerId;
+            const firstLetter = p.name.charAt(0).toUpperCase();
+            const rgbColor = this.hexToRgb(p.color) || { r: 126, g: 34, b: 206 };
+            const avatarUrl = `https://placehold.co/24x24/${rgbColor.r.toString(16).padStart(2, '0')}${rgbColor.g.toString(16).padStart(2, '0')}${rgbColor.b.toString(16).padStart(2, '0')}/ffffff?text=${encodeURIComponent(firstLetter)}`;
+            
+            return `
+                <div class="cp-leaderboard-item ${isActive ? 'active-player' : ''} bg-black bg-opacity-20">
+                    <div class="flex items-center">
+                        <img src="${avatarUrl}" alt="${p.name} Avatar">
+                        <span class="cp-leaderboard-item-name text-gray-300">${p.name}</span>
+                    </div>
+                    <span class="cp-leaderboard-item-points text-yellow-400">${p.points || 0} ОО</span>
                 </div>
-            `).join('')}
-        `;
+            `;
+        }).join('');
     }
     
     rollTheDice() {
@@ -1291,7 +1347,7 @@ class MultiplayerGame extends EducationalPathGame {
         
         this.diceInner.style.transform = `rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg)`;
         setTimeout(() => {
-            this.diceInner.style.transform = `${rotations[data.roll]} translateZ(40px)`;
+            this.diceInner.style.transform = `${rotations[data.roll]} translateZ(25px)`;
             this.movePlayer(player, data.move);
         }, 1000);
         
@@ -2074,7 +2130,13 @@ class MultiplayerGame extends EducationalPathGame {
             // Режим спостерігача - кнопка завжди неактивна
             this.rollDiceBtn.disabled = true;
             this.rollDiceBtn.style.opacity = '0.5';
-            this.rollDiceBtn.textContent = '👁️ Режим спостерігача';
+            // Оновлюємо текст кнопки (нова структура має span всередині)
+            const spanEl = this.rollDiceBtn.querySelector('span');
+            if (spanEl) {
+                spanEl.textContent = '👁️ Режим спостерігача';
+            } else {
+                this.rollDiceBtn.textContent = '👁️ Режим спостерігача';
+            }
             this.rollDiceBtn.style.backgroundColor = '#6b7280'; // Сірий колір
             return;
         }
@@ -2094,11 +2156,21 @@ class MultiplayerGame extends EducationalPathGame {
             this.rollDiceBtn.disabled = !isCurrentPlayer;
             this.rollDiceBtn.style.opacity = isCurrentPlayer ? '1' : '0.5';
             
+            // Оновлюємо текст кнопки (нова структура має span всередині)
+            const spanEl = this.rollDiceBtn.querySelector('span');
             if (isCurrentPlayer) {
-                this.rollDiceBtn.textContent = '🎲 Ваш хід - Кинути кубик';
-                this.rollDiceBtn.style.backgroundColor = '#10b981'; // Зелений колір
+                if (spanEl) {
+                    spanEl.textContent = 'Ваш хід - Кинути кубик';
+                } else {
+                    this.rollDiceBtn.textContent = '🎲 Ваш хід - Кинути кубик';
+                }
+                // Колір вже задано через CSS клас .cp-button.roll
             } else {
-                this.rollDiceBtn.textContent = `⏳ Не ваш хід - Хід гравця ${currentPlayer?.name || 'невідомо'}`;
+                if (spanEl) {
+                    spanEl.textContent = `Не ваш хід - Хід гравця ${currentPlayer?.name || 'невідомо'}`;
+                } else {
+                    this.rollDiceBtn.textContent = `⏳ Не ваш хід - Хід гравця ${currentPlayer?.name || 'невідомо'}`;
+                }
                 this.rollDiceBtn.style.backgroundColor = '#6b7280'; // Сірий колір
             }
             
@@ -2111,8 +2183,14 @@ class MultiplayerGame extends EducationalPathGame {
         } else {
             this.rollDiceBtn.disabled = !this.gameActive;
             this.rollDiceBtn.style.opacity = this.gameActive ? '1' : '0.5';
-            this.rollDiceBtn.textContent = 'Кинути кубик';
-            this.rollDiceBtn.style.backgroundColor = '#eab308'; // Жовтий колір
+            // Оновлюємо текст кнопки (нова структура має span всередині)
+            const spanEl = this.rollDiceBtn.querySelector('span');
+            if (spanEl) {
+                spanEl.textContent = 'Ваш хід - Кинути кубик';
+            } else {
+                this.rollDiceBtn.textContent = 'Кинути кубик';
+            }
+            // Колір вже задано через CSS клас .cp-button.roll
             
             // Управління кнопкою бафів/дебафів для локального режиму
             if (this.buffDebuffBtn) {

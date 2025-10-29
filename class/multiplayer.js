@@ -2336,6 +2336,16 @@ class MultiplayerGame extends EducationalPathGame {
         
         this.showQuestModal('PvP-квест', modalContent, [], imagePath);
         
+        // Додаємо клас для filter Мегамозок (темніша і розмитіша)
+        if (gameData.name === 'Мегамозок') {
+            setTimeout(() => {
+                const modal = document.querySelector('#quest-modal-content') || document.querySelector('.modal-content');
+                if (modal) {
+                    modal.classList.add('megabrain-bg');
+                }
+            }, 100);
+        }
+        
         // Оновлюємо масштаб для нового модального вікна
         if (window.updateGameScaling) {
             setTimeout(() => window.updateGameScaling(), 100);
@@ -2352,8 +2362,10 @@ class MultiplayerGame extends EducationalPathGame {
                 setTimeout(() => {
                     this.initializeRockPaperScissors();
                 }, 100);
+            } else {
+                // Запускаємо таймер тільки для текстових ігор (не для хрестиків-нуликів, не для КНП)
+                this.startTimedTextQuestTimer(data.gameState.timer);
             }
-            this.startTimedTextQuestTimer(data.gameState.timer);
             
             // Додаємо обробник для кнопки зміни фону Мегамозок
             if (gameData.name === 'Мегамозок') {
@@ -2377,6 +2389,8 @@ class MultiplayerGame extends EducationalPathGame {
                                 modal.style.backgroundSize = 'cover';
                                 modal.style.backgroundPosition = 'center';
                                 modal.style.backgroundRepeat = 'no-repeat';
+                                // Додаємо клас для filter (темніша і розмитіша)
+                                modal.classList.add('megabrain-bg');
                             }
                         });
                     }
@@ -2450,10 +2464,7 @@ class MultiplayerGame extends EducationalPathGame {
         if (isParticipant) {
             setTimeout(() => {
                 this.initializeTicTacToeBoard();
-                // Не запускаємо таймер в режимі тестування
-                if (!isTestMode) {
-                    this.startTimedTextQuestTimer(data.gameState.timer);
-                }
+                // Не запускаємо таймер для хрестиків-нуликів
             }, 100);
         } else {
             // Показуємо дошку для спостерігачів
@@ -2533,10 +2544,7 @@ class MultiplayerGame extends EducationalPathGame {
         if (isParticipant) {
             setTimeout(() => {
                 this.initializeRockPaperScissors();
-                // Не запускаємо таймер в режимі тестування
-                if (!isTestMode) {
-                    this.startTimedTextQuestTimer(data.gameState.timer);
-                }
+                // Не запускаємо таймер для камінь-ножиці-папір
             }, 100);
         }
     }

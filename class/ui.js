@@ -64,8 +64,14 @@ class GameUI {
         // Встановлюємо фонове зображення
         if (backgroundImageUrl) {
             modalContent.style.backgroundImage = `url('${backgroundImageUrl}')`;
+            modalContent.style.backgroundSize = 'cover';
+            modalContent.style.backgroundPosition = 'center';
+            modalContent.style.backgroundRepeat = 'no-repeat';
         } else {
             modalContent.style.backgroundImage = 'none';
+            modalContent.style.backgroundSize = '';
+            modalContent.style.backgroundPosition = '';
+            modalContent.style.backgroundRepeat = '';
         }
         
         modalContent.innerHTML = `
@@ -73,6 +79,14 @@ class GameUI {
             <div class="text-lg mb-6">${content}</div>
             <div class="flex justify-center gap-4">${buttonsHTML}</div>
         `;
+        
+        // Після вставки innerHTML знову встановлюємо стилі фонового зображення, якщо воно було
+        if (backgroundImageUrl) {
+            modalContent.style.backgroundImage = `url('${backgroundImageUrl}')`;
+            modalContent.style.backgroundSize = 'cover';
+            modalContent.style.backgroundPosition = 'center';
+            modalContent.style.backgroundRepeat = 'no-repeat';
+        }
         
         this.showModal('quest');
         

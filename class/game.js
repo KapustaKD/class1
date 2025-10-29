@@ -1503,15 +1503,42 @@ class EducationalPathGame {
     
             this.currentPlayerClassEl.textContent = player.class ? player.class.name : '—';
     
-            this.currentPlayerPointsEl.textContent = player.points;
+            // В новій структурі ОО вже є в HTML, просто число
+            const pointsSpan = this.currentPlayerPointsEl.querySelector('span');
+            if (pointsSpan) {
+                pointsSpan.textContent = player.points;
+            } else {
+                this.currentPlayerPointsEl.textContent = player.points;
+            }
     
-            this.leaderboardEl.innerHTML = `<h3 class="text-lg font-semibold mt-2">Таблиця лідерів</h3>` +
+            // Оновлюємо таблицю лідерів з новою структурою
+            const sortedPlayers = this.players.filter(p => !p.hasLost).sort((a,b) => b.points - a.points);
+            const headerEl = this.leaderboardEl.querySelector('.cp-header');
+            const headerHTML = headerEl ? headerEl.outerHTML : '<div class="cp-header text-purple-400">Таблиця лідерів</div>';
     
-                this.players.filter(p => !p.hasLost).sort((a,b) => b.points - a.points).map(p =>
+            this.leaderboardEl.innerHTML = headerHTML + sortedPlayers.map(p => {
+                const isActive = p.id === player.id;
+                const firstLetter = p.name.charAt(0).toUpperCase();
+                const hexColor = (p.color || '#7e22ce').replace('#', '');
+                const rgbColor = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hexColor.length === 3 ? hexColor.split('').map(c => c + c).join('') : hexColor);
+                let avatarUrl = 'https://placehold.co/24x24/7e22ce/ffffff?text=P';
+                if (rgbColor) {
+                    const r = parseInt(rgbColor[1], 16);
+                    const g = parseInt(rgbColor[2], 16);
+                    const b = parseInt(rgbColor[3], 16);
+                    avatarUrl = `https://placehold.co/24x24/${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}/ffffff?text=${encodeURIComponent(firstLetter)}`;
+                }
     
-                    `<div style="color:${p.color};">${p.name}: ${p.points} ОО</div>`
-    
-                ).join('');
+                return `
+                    <div class="cp-leaderboard-item ${isActive ? 'active-player' : ''} bg-black bg-opacity-20">
+                        <div class="flex items-center">
+                            <img src="${avatarUrl}" alt="${p.name} Avatar">
+                            <span class="cp-leaderboard-item-name text-gray-300">${p.name}</span>
+                        </div>
+                        <span class="cp-leaderboard-item-points text-yellow-400">${p.points || 0} ОО</span>
+                    </div>
+                `;
+            }).join('');
     
         }
     

@@ -19,7 +19,7 @@
         };
     </script>
 </head>
-<body class="bg-gray-800 text-white flex flex-col min-h-screen p-4">
+<body class="bg-gray-800 text-white flex flex-col min-h-screen h-screen w-screen overflow-hidden p-4">
 
     <!-- Меню вибору режиму -->
     <div id="mode-selection" class="flex items-center justify-center min-h-screen">
@@ -38,7 +38,7 @@
     </div>
 
     <!-- Основна гра (прихована спочатку) -->
-    <div id="game-container" class="hidden w-full max-w-screen-2xl flex flex-col lg:flex-row gap-8 lg:h-[85vh] justify-start">
+    <div id="game-container" class="hidden w-full h-full flex flex-col lg:flex-row gap-8 justify-start" style="transform: scale(var(--game-scale, 1)); transform-origin: top left;">
         <!-- Ігрове поле -->
         <div class="bg-gray-700 panel-overlay p-2 rounded-2xl shadow-2xl" style="position: relative; width: 1289px; height: 822px;">
             <button id="test-mode-btn" class="absolute top-2 right-2 bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg z-10 hidden">🧪 Режим тесту</button>

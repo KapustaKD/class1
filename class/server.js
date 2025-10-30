@@ -2420,9 +2420,13 @@ io.on('connection', (socket) => {
         room.madLibsState.currentQuestionIndex++;
         
         if (room.madLibsState.currentQuestionIndex < room.madLibsState.questions.length) {
-            // Є ще питання - переходимо до наступного гравця
-            room.madLibsState.currentPlayerIndex = 
-                (room.madLibsState.currentPlayerIndex + 1) % room.madLibsState.players.length;
+            // Є ще питання - логіка: перші два питання відповідає один і той самий гравець
+            if (room.madLibsState.currentQuestionIndex === 1) {
+                // НЕ змінюємо currentPlayerIndex – відповідає той самий гравець
+            } else {
+                room.madLibsState.currentPlayerIndex = 
+                    (room.madLibsState.currentPlayerIndex + 1) % room.madLibsState.players.length;
+            }
             
             const nextPlayer = room.madLibsState.players[room.madLibsState.currentPlayerIndex];
             const nextQuestion = room.madLibsState.questions[room.madLibsState.currentQuestionIndex];
@@ -2449,7 +2453,7 @@ io.on('connection', (socket) => {
                 }
             });
         } else {
-            // Всі питання відповідені - формуємо фінальну історію
+            // Всі питання відповідені - формуємо фінальну історію та нараховуємо очки всім учасникам
             const story = room.madLibsState.answers
                 .sort((a, b) => a.questionIndex - b.questionIndex)
                 .map((answer, index) => {
@@ -2465,10 +2469,20 @@ io.on('connection', (socket) => {
 
             console.log('Фінальна історія:', story);
 
+            const rewardPoints = 20; // Кожному учаснику
+            room.madLibsState.players.forEach(p => {
+                const gp = room.gameData.players.find(x => x.id === p.id);
+                if (gp) gp.points += rewardPoints;
+            });
+
             io.to(room.id).emit('mad_libs_result', {
                 story: story,
-                answers: room.madLibsState.answers
+                answers: room.madLibsState.answers,
+                rewardPoints
             });
+
+            // Оновлюємо стан гри з нарахованими очками
+            io.to(room.id).emit('game_state_update', room.gameData);
 
             room.madLibsState = null;
         }

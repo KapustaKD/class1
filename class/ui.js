@@ -311,7 +311,7 @@ class GameUI {
         
         diceInner.style.transform = `rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg)`;
         setTimeout(() => {
-            diceInner.style.transform = `${rotations[roll]} translateZ(25px)`;
+            diceInner.style.transform = `${rotations[roll]} translateZ(42.5px)`;
         }, 1000);
     }
     

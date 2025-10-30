@@ -97,16 +97,56 @@ function handleImmediateEvent(room, player, eventType) {
                 const lostPoints = Math.floor(roomPlayer.points / 2);
                 roomPlayer.points -= lostPoints;
                 resultMessage = `💰 ${roomPlayer.name} (${playerClassName})! Вітаємо! Ви втратили половину (${lostPoints} ОО) вашого нажитого майна у ${eventName}! Відтепер життя стане дещо складнішим, проте не засмучуйтесь: все ще є шанси перемогти!`;
-            } else { // peasant
-                const lostPoints = roomPlayer.points; // Запам'ятовуємо скільки мав
-                roomPlayer.hasLost = true; // "втрачає життя"
+            } else { // peasant — замість вибування робимо переродження в попередню епоху
+                const lostPoints = roomPlayer.points;
                 roomPlayer.points = 0;
-                resultMessage = `💀 ${roomPlayer.name} (${playerClassName})! Вітаємо! Ви втратили останні гроші (${lostPoints} ОО) на їжу, які мали у ${eventName}! Нехай ваша передчасна смерть від голоду стане щасливим квитком у нове життя. Гравець вибуває!`;
-                // Відправляємо подію про вибування гравця
-                io.to(room.id).emit('player_eliminated', {
+                // Визначаємо поточну і попередню епоху
+                const currentEpoch = getEpochForPosition(roomPlayer.position);
+                const prevEpoch = Math.max(1, currentEpoch - 1);
+                // Стартові позиції епох
+                const epochStart = (epoch) => {
+                    if (epoch === 1) return 0;
+                    if (epoch === 2) return 13;
+                    if (epoch === 3) return 23;
+                    if (epoch === 4) return 43;
+                    if (epoch === 5) return 76;
+                    if (epoch === 6) return 98;
+                    return 0;
+                };
+                const targetPosition = epochStart(prevEpoch);
+                
+                // Переміщуємо
+                roomPlayer.position = targetPosition;
+                const globalPlayer = players.get(roomPlayer.id);
+                if (globalPlayer) globalPlayer.position = targetPosition;
+                
+                // Призначаємо новий клас відповідно до попередньої епохи (правила як для ранньої реінкарнації)
+                const occupiedClassesInEpoch = room.gameData.players
+                    .filter(p => p.id !== roomPlayer.id && p.class && getEpochForPosition(p.position) === prevEpoch)
+                    .map(p => p.class.id);
+                const availableClasses = [
+                    { id: 'aristocrat', name: '⚜️ Аристократ', startPoints: 50, moveModifier: 1 },
+                    { id: 'burgher', name: '⚖️ Міщанин', startPoints: 20, moveModifier: 0 },
+                    { id: 'peasant', name: '🌱 Селянин', startPoints: 0, moveModifier: -1 }
+                ];
+                const classCounts = {};
+                for (const cid of occupiedClassesInEpoch) classCounts[cid] = (classCounts[cid] || 0) + 1;
+                let pool = availableClasses.filter(cls => {
+                    const c = classCounts[cls.id] || 0;
+                    if (room.gameData.players.length <= 3) return c < 1; else return c < 2;
+                });
+                if (pool.length === 0) pool = availableClasses;
+                roomPlayer.class = pool[Math.floor(Math.random() * pool.length)];
+                if (globalPlayer) globalPlayer.class = roomPlayer.class;
+                
+                resultMessage = `💀 ${roomPlayer.name} (${playerClassName}) витратив останні гроші (${lostPoints} ОО) у ${eventName} і переродився на початку попередньої епохи.`;
+                
+                // Показуємо модальне вікно переродження на клієнті
+                io.to(roomPlayer.id).emit('early_reincarnation_event', {
                     playerId: roomPlayer.id,
-                    playerName: roomPlayer.name,
-                    reason: `загинув від голоду після відвідування ${eventName}`
+                    cellNumber: roomPlayer.position,
+                    eventData: { points: 0, targetEpoch: prevEpoch, cellNumber: roomPlayer.position },
+                    newClass: roomPlayer.class
                 });
             }
             break;
@@ -776,6 +816,10 @@ io.on('connection', (socket) => {
             // 4. Присвоюємо випадковий клас з доступних
             currentPlayer.class = availableClassPool[Math.floor(Math.random() * availableClassPool.length)];
             
+            // Нараховуємо бонус за переродження (кінець епохи)
+            const reincarnationBonus = 10;
+            currentPlayer.points += reincarnationBonus;
+            
             console.log(`${currentPlayer.name} отримав новий клас: ${currentPlayer.class.name}`);
             
             // Повідомлення про зміну класу
@@ -784,7 +828,8 @@ io.on('connection', (socket) => {
             // Відправляємо подію для відображення класу
             io.to(room.id).emit('show_reincarnation_class', {
                 playerId: currentPlayer.id,
-                newClass: currentPlayer.class
+                newClass: currentPlayer.class,
+                bonusPoints: reincarnationBonus
             });
         }
         

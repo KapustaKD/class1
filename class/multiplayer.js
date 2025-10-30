@@ -2077,44 +2077,58 @@ class MultiplayerGame extends EducationalPathGame {
             pointsText = `+${points} ОО`;
         }
         // Якщо це не раннє переродження, текст вже встановлено залежно від класу вище
-        
-        const modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Переродження</h3>
-            <p class="text-lg mb-4">${reincarnationText}</p>
-            ${pointsText ? `<p class="text-xl font-bold text-yellow-300 mb-4">${pointsText}</p>` : ''}
-            <div class="text-center mb-6">
-                <div class="text-4xl mb-2">${classInfo.name}</div>
-                <div class="text-lg text-gray-300 mb-2">Стартові очки: ${classInfo.startPoints}</div>
-                <div class="text-lg text-gray-300">Модифікатор руху: ${classInfo.moveModifier > 0 ? '+' : ''}${classInfo.moveModifier}</div>
+
+        // Створюємо нове модальне вікно V2 (поза загальним quest-modal)
+        const backdrop = document.createElement('div');
+        backdrop.className = 'reincarnation-backdrop-v2';
+        backdrop.id = 'reincarnation-backdrop-v2';
+
+        const content = document.createElement('div');
+        content.className = 'reincarnation-content-v2';
+        content.innerHTML = `
+            <div class=\"reincarnation-header-v2\"><h2>Переродження</h2></div>
+            <div class=\"reincarnation-body-v2\">
+                ${pointsText ? `<div class=\"bonus-points\">${pointsText}</div>` : ''}
+                <div class=\"class-icon\">${classInfo.icon || ''}</div>
+                <div class=\"class-name\">${classInfo.name || ''}</div>
+
+                <div class=\"reincarnation-stats-v2\">
+                    <div>
+                        <div class=\"stat-label\">Стартові очки</div>
+                        <div class=\"stat-value\">${classInfo.startPoints ?? 0}</div>
+                    </div>
+                    <div>
+                        <div class=\"stat-label\">Модифікатор руху</div>
+                        <div class=\"stat-value\">${classInfo.moveModifier > 0 ? '+' : ''}${classInfo.moveModifier ?? 0}</div>
+                    </div>
+                </div>
+
+                <p class=\"description\">${reincarnationText}</p>
+
+                <div class=\"reincarnation-features-v2\">
+                    <ul>
+                        ${this.getClassDescription(classInfo.id)}
+                    </ul>
+                </div>
             </div>
-            <div class="bg-gray-800 p-4 rounded-lg mb-4">
-                <h4 class="font-bold mb-2">Особливості класу:</h4>
-                <ul class="text-sm text-gray-300">
-                    ${this.getClassDescription(classInfo.id)}
-                </ul>
+            <div class=\"reincarnation-footer-v2\">
+                <button id=\"close-class-modal-btn\" class=\"reincarnation-button-v2\"><span>Зрозуміло</span></button>
             </div>
-            <button id="close-class-modal-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                Зрозуміло
-            </button>
         `;
-        
-        if (window.gameUI) {
-            window.gameUI.showQuestModal('Переродження', modalContent, [], null);
-            
-            // Додаємо обробник події
-            setTimeout(() => {
-                const closeBtn = document.getElementById('close-class-modal-btn');
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', () => {
-                        if (window.gameUI) {
-                            window.gameUI.hideModal('quest');
-                        }
-                    });
-                }
-            }, 100);
-        } else {
-            console.error('window.gameUI не знайдено');
-        }
+
+        backdrop.appendChild(content);
+        document.body.appendChild(backdrop);
+
+        // Закриття
+        setTimeout(() => {
+            const closeBtn = document.getElementById('close-class-modal-btn');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    const el = document.getElementById('reincarnation-backdrop-v2');
+                    if (el) el.remove();
+                });
+            }
+        }, 50);
     }
     
     // Отримуємо опис класу
@@ -3281,10 +3295,32 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     showMadLibsQuestion(data) {
-        const isMyTurn = data.activePlayerId === this.playerId;
+        // Інструкції та оформлення
+        const rewardText = data.rewardPoints ? `${data.rewardPoints} ОО` : 'ХХ ОО';
+
+        // Встановимо темніший/блюр фон для модалки
+        if (this.questModalContent) {
+            this.questModalContent.classList.add('madlibs-bg');
+        }
+
+        // Логіка: перші два питання відповідає один і той самий гравець
+        // Зберігаємо першого активного гравця для питання 0
+        if (typeof this.madLibsFirstPlayerId === 'undefined' && data.questionIndex === 0) {
+            this.madLibsFirstPlayerId = data.activePlayerId;
+        }
+        // Визначаємо, чи це хід мого гравця з урахуванням правила для другого питання
+        let effectiveActivePlayerId = data.activePlayerId;
+        if (data.questionIndex === 1 && this.madLibsFirstPlayerId) {
+            effectiveActivePlayerId = this.madLibsFirstPlayerId;
+        }
+        const isMyTurn = effectiveActivePlayerId === this.playerId;
         
         let modalContent = `
             <h3 class="text-2xl font-bold mb-4">🦉 Хто, де, коли? - Творчий квест</h3>
+            <div class="text-sm text-gray-300 bg-black bg-opacity-30 p-3 rounded mb-3">
+                Вам необхідно по черзі одним словом відповісти на питання “Хто?”, “Де?”, “Коли?”, “З ким?”, “Як”, “Що робив?”. Таким чином у кінці вийде цікавенька міністорія.<br>
+                Обмеження у часі відсутнє. Переможця немає, кожен гравець-учасник здобуває по ${rewardText} у кінці гри.
+            </div>
             <p class="mb-4">Питання: <strong>${data.question}</strong></p>
         `;
         
@@ -3325,12 +3361,14 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     showMadLibsWaiting(data) {
+        if (this.questModalContent) {
+            this.questModalContent.classList.add('madlibs-bg');
+        }
         let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">🦉 Хто, де, коли? - Творчий квест</h3>
-            <p class="mb-4">Питання: <strong>${data.question}</strong></p>
-            <p class="text-center text-gray-600">Черга гравця ${data.currentPlayer.name}</p>
+            <h3 class=\"text-2xl font-bold mb-4\">🦉 Хто, де, коли? - Творчий квест</h3>
+            <p class=\"mb-4\">Питання: <strong>${data.question}</strong></p>
+            <p class=\"text-center text-gray-400\">Черга гравця ${data.currentPlayer.name}</p>
         `;
-        
         this.showQuestModal('Хто, де, коли? - Творчий квест', modalContent, [], 'image/modal_window/owl.png');
     }
     
@@ -3347,14 +3385,19 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     showMadLibsResult(data) {
+        if (this.questModalContent) {
+            this.questModalContent.classList.add('madlibs-bg');
+        }
+        const rewardText = data.rewardPoints ? `${data.rewardPoints} ОО` : 'ХХ ОО';
         let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">🦉 Хто, де, коли? завершено!</h3>
-            <div class="mb-4">
-                <h4 class="font-bold mb-2">Ось історія, яка вийшла:</h4>
-                <div class="bg-gray-100 p-4 rounded text-lg">
+            <h3 class=\"text-2xl font-bold mb-4\">🦉 Хто, де, коли? завершено!</h3>
+            <div class=\"mb-4\">
+                <h4 class=\"font-bold mb-2\">Ось історія, яка вийшла:</h4>
+                <div class=\"bg-gray-100 p-4 rounded text-lg text-gray-900\">
                     ${data.story}
                 </div>
             </div>
+            <div class=\"text-center text-emerald-300 font-bold text-xl\">Вітаю, Ви здобули ${rewardText}!</div>
         `;
         
         this.showQuestModal('Хто, де, коли? - Творчий квест', modalContent, [

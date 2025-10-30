@@ -3298,9 +3298,10 @@ class MultiplayerGame extends EducationalPathGame {
         // Інструкції та оформлення
         const rewardText = data.rewardPoints ? `${data.rewardPoints} ОО` : 'ХХ ОО';
 
-        // Встановимо темніший/блюр фон для модалки
+        // Встановимо темніший/блюр фон тільки для фону (через CSS змінну і псевдоелемент)
         if (this.questModalContent) {
             this.questModalContent.classList.add('madlibs-bg');
+            this.questModalContent.style.setProperty('--quest-bg', "url('image/modal_window/owl.png')");
         }
 
         // Логіка: перші два питання відповідає один і той самий гравець
@@ -3363,6 +3364,7 @@ class MultiplayerGame extends EducationalPathGame {
     showMadLibsWaiting(data) {
         if (this.questModalContent) {
             this.questModalContent.classList.add('madlibs-bg');
+            this.questModalContent.style.setProperty('--quest-bg', "url('image/modal_window/owl.png')");
         }
         let modalContent = `
             <h3 class=\"text-2xl font-bold mb-4\">🦉 Хто, де, коли? - Творчий квест</h3>
@@ -3387,6 +3389,7 @@ class MultiplayerGame extends EducationalPathGame {
     showMadLibsResult(data) {
         if (this.questModalContent) {
             this.questModalContent.classList.add('madlibs-bg');
+            this.questModalContent.style.setProperty('--quest-bg', "url('image/modal_window/owl.png')");
         }
         const rewardText = data.rewardPoints ? `${data.rewardPoints} ОО` : 'ХХ ОО';
         let modalContent = `

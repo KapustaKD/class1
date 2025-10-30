@@ -1634,11 +1634,30 @@ body.glassmorphism-bg {
 
 /* --- КІНЕЦЬ СТИЛІВ ДЛЯ ПАНЕЛІ --- */
 
-/* Хто? Де? Коли? — затемнення і блюр фону модалки */
+/* Хто? Де? Коли? — затемнення і блюр ТІЛЬКИ фону модалки */
 #quest-modal-content.madlibs-bg,
 .modal-content.madlibs-bg {
+    position: relative;
+    background-image: none !important; /* фон рендеримо через ::before */
+}
+#quest-modal-content.madlibs-bg::before,
+.modal-content.madlibs-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--quest-bg);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     filter: brightness(0.6) blur(2px);
     -webkit-filter: brightness(0.6) blur(2px);
+    z-index: 0;
+    border-radius: inherit;
+}
+#quest-modal-content.madlibs-bg > *,
+.modal-content.madlibs-bg > * {
+    position: relative;
+    z-index: 1; /* Текст і кнопки чіткі поверх */
 }
 
 /* Reincarnation v2 styles */

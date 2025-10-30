@@ -1134,44 +1134,70 @@ class MultiplayerGame extends EducationalPathGame {
             console.log('Масштаб карти встановлено');
         }, 100);
         
+        // Встановлюємо адаптивний масштаб гри
+        if (typeof this.updateGameScale === 'function') {
+            this.updateGameScale();
+        }
+        
         console.log('Ігровий інтерфейс показано');
         this.updateDiceButtonState();
     }
 
     // Вмикаємо/вимикаємо кнопку кидка кубика залежно від черги
     updateDiceButtonState() {
-        if (!this.isOnlineMode) return;
-        const currentPlayer = this.players && this.players[this.currentPlayerIndex];
-        const isMyTurn = currentPlayer && currentPlayer.id === this.playerId && this.gameActive;
+        if (!this.isOnlineMode || !this.rollDiceBtn) return;
+        
+        // Перевірка на наявність гравців та поточного гравця
+        if (!this.players || this.players.length === 0) {
+            this.rollDiceBtn.disabled = true;
+            this.rollDiceBtn.style.opacity = '0.5';
+            this.rollDiceBtn.style.cursor = 'not-allowed';
+            return;
+        }
+        
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        if (!currentPlayer) {
+            this.rollDiceBtn.disabled = true;
+            this.rollDiceBtn.style.opacity = '0.5';
+            this.rollDiceBtn.style.cursor = 'not-allowed';
+            return;
+        }
+        
+        // Перевірка чи це мій хід
+        const isMyTurn = currentPlayer.id === this.playerId && this.gameActive;
         
         console.log('updateDiceButtonState:', {
             currentPlayer: currentPlayer?.name,
+            currentPlayerId: currentPlayer?.id,
             myPlayerId: this.playerId,
             isMyTurn,
             gameActive: this.gameActive
         });
         
-        if (this.rollDiceBtn) {
-            this.rollDiceBtn.disabled = !isMyTurn;
-            // Не приховуємо кнопку, а просто робимо її неактивною
-            this.rollDiceBtn.style.opacity = isMyTurn ? '1' : '0.5';
-            this.rollDiceBtn.style.cursor = isMyTurn ? 'pointer' : 'not-allowed';
-            
-            // Оновлюємо текст кнопки (нова структура має span всередині)
-            const spanEl = this.rollDiceBtn.querySelector('span');
-            if (isMyTurn) {
-                if (spanEl) {
-                    spanEl.textContent = 'Ваш хід - Кинути кубик';
-                } else {
-                    this.rollDiceBtn.textContent = 'Кинути кубик';
-                }
+        // Встановлюємо стан кнопки
+        this.rollDiceBtn.disabled = !isMyTurn;
+        this.rollDiceBtn.style.opacity = isMyTurn ? '1' : '0.5';
+        this.rollDiceBtn.style.cursor = isMyTurn ? 'pointer' : 'not-allowed';
+        
+        // Оновлюємо текст кнопки (нова структура має span всередині)
+        const spanEl = this.rollDiceBtn.querySelector('span');
+        if (isMyTurn) {
+            if (spanEl) {
+                spanEl.textContent = 'Ваш хід - Кинути кубик';
             } else {
-                if (spanEl) {
-                    spanEl.textContent = `Хід: ${currentPlayer?.name || 'Невідомо'}`;
-                } else {
-                    this.rollDiceBtn.textContent = `Хід: ${currentPlayer?.name || 'Невідомо'}`;
-                }
+                this.rollDiceBtn.textContent = 'Кинути кубик';
             }
+            // Оновлюємо стиль кнопки для активного стану
+            this.rollDiceBtn.style.backgroundColor = '';
+            this.rollDiceBtn.classList.remove('disabled');
+        } else {
+            if (spanEl) {
+                spanEl.textContent = `Не ваш хід - Хід гравця ${currentPlayer?.name || 'Невідомо'}`;
+            } else {
+                this.rollDiceBtn.textContent = `Хід: ${currentPlayer?.name || 'Невідомо'}`;
+            }
+            // Встановлюємо сірий фон для неактивного стану
+            this.rollDiceBtn.style.backgroundColor = '#6b7280';
         }
     }
     
@@ -1347,7 +1373,7 @@ class MultiplayerGame extends EducationalPathGame {
         
         this.diceInner.style.transform = `rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg)`;
         setTimeout(() => {
-            this.diceInner.style.transform = `${rotations[data.roll]} translateZ(25px)`;
+            this.diceInner.style.transform = `${rotations[data.roll]} translateZ(42.5px)`;
             this.movePlayer(player, data.move);
         }, 1000);
         
@@ -2033,36 +2059,24 @@ class MultiplayerGame extends EducationalPathGame {
         let reincarnationText = '';
         let pointsText = '';
         
-        if (isGameStart) {
-            // Початок гри - загальний текст
-            reincarnationText = 'Вітаю! Ви переродились у нового гравця. Вас чекає нове життя з новою родиною та новою долею. Хай щастить!';
-        } else if (earlyReincarnationData) {
-            // Раннє переродження - використовуємо текст залежно від клітинки
-            const cellNumber = earlyReincarnationData.cellNumber || earlyReincarnationData.eventData?.cellNumber;
-            
-            if (cellNumber === 6) {
-                reincarnationText = 'Вітаю! Ви померли! Для когось це може стати сумною новиною, проте точно не для вас, вічного створіння, яке здатне реінкарнувати. Вас чекає нове життя в новому часі з новою родиною та новою долею. Хай щастить!';
-            } else if (cellNumber === 18) {
-                reincarnationText = 'Вітаю! Вас вкусив енцифалітний кліщ і ви померли від бубонної чуми) Попереду чекає нове життя в новому часі з новою родиною та новою долею. Вчіться на своїх помилках і використовуйте засіб від комах!';
-            } else if (cellNumber === 30) {
-                // Епоха 3 -> 4 - потрібно визначити текст
-                reincarnationText = 'Вітаю! Ви померли! Для когось це може стати сумною новиною, проте точно не для вас, вічного створіння, яке здатне реінкарнувати. Вас чекає нове життя в новому часі з новою родиною та новою долею. Хай щастить!';
-            } else if (cellNumber === 63) {
-                // Епоха 4 -> 5
-                reincarnationText = 'Вітаю! Ви померли! Для когось це може стати сумною новиною, проте точно не для вас, вічного створіння, яке здатне реінкарнувати. Вас чекає нове життя в новому часі з новою родиною та новою долею. Хай щастить!';
-            } else if (cellNumber === 85) {
-                reincarnationText = 'Вітаю! Вам не пощастило перебувати в американській школі і ви померли від скулшутінгу. Попереду чекає нове життя в новому часі з новою родиною та новою долею. Вчіться на своїх помилках і народжуйтесь в Україні!';
-            } else {
-                reincarnationText = 'Вітаю! Ви померли! Для когось це може стати сумною новиною, проте точно не для вас, вічного створіння, яке здатне реінкарнувати. Вас чекає нове життя в новому часі з новою родиною та новою долею. Хай щастить!';
-            }
-            
-            // Додаємо інформацію про очки
+        // Визначаємо текст переродження залежно від класу
+        if (classInfo.id === 'aristocrat') {
+            reincarnationText = 'Вітаю! Ви народилися із золотою ложкою в роті! Ваше життя буде легшим, ніж у решти, завдяки безмежним статкам пращурів. Проте все ж один криптоніт маєте – казино та шинки. Якщо ступите ногою у даний заклад, втратите все!';
+        } else if (classInfo.id === 'burgher') {
+            reincarnationText = 'Вітаю! Ви народилися в родині, що здатна вас забезпечити! Проте на більше не сподівайтесь. Ваше життя буде посереднім. До казино та шинків також не варто підходити, якщо не хочете втратити половину майна!';
+        } else if (classInfo.id === 'peasant') {
+            reincarnationText = 'Вітаю! Ви народились! На цьому гарні новини для вас скінчились. Життя, сповнене стражданнями та злиднями, відтепер звична реальність. До казино та шинків теж не рекомендуємо ходити, якщо не хочете передчасно померти з голоду.';
+        } else {
+            // Запасний варіант
+            reincarnationText = 'Вітаю! Ви переродились! Вас чекає нове життя з новою родиною та новою долею. Хай щастить!';
+        }
+        
+        if (earlyReincarnationData) {
+            // Раннє переродження - додаємо інформацію про очки
             const points = earlyReincarnationData.eventData?.points || earlyReincarnationData.points || 10;
             pointsText = `+${points} ОО`;
-        } else {
-            // Нормальне переродження (досягнення межі епохи)
-            reincarnationText = 'Вітаю! Ви успішно завершили епоху та переродились у новій епосі!';
         }
+        // Якщо це не раннє переродження, текст вже встановлено залежно від класу вище
         
         const modalContent = `
             <h3 class="text-2xl font-bold mb-4">Переродження</h3>

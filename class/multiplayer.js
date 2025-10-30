@@ -655,8 +655,9 @@ class MultiplayerGame extends EducationalPathGame {
         this.socket.on('show_reincarnation_class', (data) => {
             console.log('Показ класу після реінкарнації:', data);
             if (data.playerId === this.playerId && data.newClass) {
-                // Використовуємо showReincarnationModal замість displayClassModal
-                this.showReincarnationModal(null, false);
+                // Використовуємо нове модальне вікно V2 і показуємо бонусні очки
+                const payload = { newClass: data.newClass, points: data.bonusPoints || 0 };
+                this.showReincarnationModal(payload, false);
             }
         });
         
@@ -2441,18 +2442,13 @@ class MultiplayerGame extends EducationalPathGame {
             return;
         }
         
-        // Визначаємо який фон використовувати (megabrain або megabrain_2)
-        let currentBackground = this.megabrainBackground || 'image/modal_window/megabrain.png';
+        // Визначаємо фон за типом гри
         
         let modalContent = `
             <h3 class="text-2xl font-bold mb-4">${gameData.name}!</h3>
             <p class="mb-4">${gameData.description}</p>
             <p class="mb-4">${data.player1.name} проти ${data.player2.name}</p>
-            ${gameData.name === 'Мегамозок' ? `
-                <button id="switch-megabrain-bg" class="mb-2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-1 px-2 rounded text-sm">
-                    🔄 Змінити фон
-                </button>
-            ` : ''}
+            
         `;
         
         if (isParticipant) {
@@ -2509,7 +2505,9 @@ class MultiplayerGame extends EducationalPathGame {
         } else if (gameData.gameType === 'rock_paper_scissors') {
             imagePath = 'image/modal_window/rock_paper_scissors.png';
         } else if (gameData.name === 'Мегамозок') {
-            imagePath = currentBackground;
+            imagePath = 'image/modal_window/megabrain_2.jpg';
+        } else if (gameData.gameType === 'genius') {
+            imagePath = 'image/modal_window/i_am_a_genius.png';
         }
         
         this.showQuestModal('PvP-квест', modalContent, [], imagePath);
@@ -2545,35 +2543,7 @@ class MultiplayerGame extends EducationalPathGame {
                 this.startTimedTextQuestTimer(data.gameState.timer);
             }
             
-            // Додаємо обробник для кнопки зміни фону Мегамозок
-            if (gameData.name === 'Мегамозок') {
-                setTimeout(() => {
-                    const switchBtn = document.getElementById('switch-megabrain-bg');
-                    if (switchBtn) {
-                        switchBtn.addEventListener('click', () => {
-                            // Переключаємо фон між megabrain.png і megabrain_2.jpg
-                            if (!this.megabrainBackground) {
-                                this.megabrainBackground = 'image/modal_window/megabrain_2.jpg';
-                            } else if (this.megabrainBackground === 'image/modal_window/megabrain.png') {
-                                this.megabrainBackground = 'image/modal_window/megabrain_2.jpg';
-                            } else {
-                                this.megabrainBackground = 'image/modal_window/megabrain.png';
-                            }
-                            
-                            // Оновлюємо фонове зображення модального вікна
-                            const modal = document.querySelector('#quest-modal-content') || document.querySelector('.modal-content');
-                            if (modal) {
-                                modal.style.backgroundImage = `url('${this.megabrainBackground}')`;
-                                modal.style.backgroundSize = 'cover';
-                                modal.style.backgroundPosition = 'center';
-                                modal.style.backgroundRepeat = 'no-repeat';
-                                // Додаємо клас для filter (темніша і розмитіша)
-                                modal.classList.add('megabrain-bg');
-                            }
-                        });
-                    }
-                }, 100);
-            }
+            // Прибрано зміну фону в Мегамозку — використовується основна картинка
         }
     }
     

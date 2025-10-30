@@ -55,6 +55,11 @@ class GameUI {
     
     showQuestModal(title, content, buttons = [], backgroundImageUrl = null) {
         const modalContent = document.getElementById('quest-modal-content');
+        // Скидаємо можливі класи/фон від інших модалок (наприклад, madlibs-bg)
+        if (modalContent) {
+            modalContent.classList.remove('madlibs-bg');
+            modalContent.style.removeProperty('--quest-bg');
+        }
         const buttonsHTML = buttons.map((btn, index) => 
             `<button id="modal-btn-${index}" class="px-4 py-2 rounded-lg text-white font-semibold transition ${
                 index === 0 ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'

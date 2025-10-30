@@ -378,7 +378,54 @@ class EducationalPathGame {
     
        
     
-        setupEventListeners() {
+        // Функція для адаптивного масштабування гри
+    updateGameScale() {
+        // Базові розміри гри (ширина + панель керування)
+        const baseWidth = 1600; // Приблизна ширина гри з панеллю
+        const baseHeight = 900; // Приблизна висота гри
+        
+        // Отримуємо поточні розміри вікна
+        const currentWidth = window.innerWidth;
+        const currentHeight = window.innerHeight;
+        
+        // Розраховуємо коефіцієнти масштабування
+        const scaleX = currentWidth / baseWidth;
+        const scaleY = currentHeight / baseHeight;
+        
+        // Використовуємо мінімальний коефіцієнт, щоб все поміщалося
+        const scaleFactor = Math.min(scaleX, scaleY, 1); // Не збільшуємо більше 1
+        
+        // Встановлюємо CSS-змінну
+        document.documentElement.style.setProperty('--game-scale', scaleFactor);
+        
+        console.log('📏 Оновлено масштаб гри:', {
+            currentWidth,
+            currentHeight,
+            baseWidth,
+            baseHeight,
+            scaleFactor
+        });
+    }
+    
+    setupEventListeners() {
+        // Додаємо обробник зміни розміру вікна для масштабування
+        window.addEventListener('resize', () => {
+            if (typeof this.updateGameScale === 'function') {
+                this.updateGameScale();
+            }
+        });
+        
+        // Викликаємо updateGameScale при завантаженні
+        if (typeof this.updateGameScale === 'function') {
+            // Чекаємо, поки DOM буде готовий
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    this.updateGameScale();
+                });
+            } else {
+                this.updateGameScale();
+            }
+        }
     
             // Основні події гри
     

@@ -380,30 +380,32 @@ class EducationalPathGame {
     
         // Функція для адаптивного масштабування гри
     updateGameScale() {
-        // Базові розміри гри (ширина + панель керування)
-        const baseWidth = 1600; // Приблизна ширина гри з панеллю
-        const baseHeight = 900; // Приблизна висота гри
+        // Базові розміри гри (той самий розмір, що вказано в HTML style)
+        const BASE_WIDTH = 1700;
+        const BASE_HEIGHT = 900;
         
         // Отримуємо поточні розміри вікна
         const currentWidth = window.innerWidth;
         const currentHeight = window.innerHeight;
         
-        // Розраховуємо коефіцієнти масштабування
-        const scaleX = currentWidth / baseWidth;
-        const scaleY = currentHeight / baseHeight;
+        // Розраховуємо масштаб, щоб гра вписалася в екран, зберігши пропорції
+        const scale = Math.min(
+            currentWidth / BASE_WIDTH,
+            currentHeight / BASE_HEIGHT
+        );
         
-        // Використовуємо мінімальний коефіцієнт, щоб все поміщалося
-        const scaleFactor = Math.min(scaleX, scaleY, 1); // Не збільшуємо більше 1
-        
-        // Встановлюємо CSS-змінну
-        document.documentElement.style.setProperty('--game-scale', scaleFactor);
+        // Застосовуємо масштаб до game-container
+        const gameContainer = document.getElementById('game-container');
+        if (gameContainer) {
+            gameContainer.style.transform = `scale(${scale})`;
+        }
         
         console.log('📏 Оновлено масштаб гри:', {
             currentWidth,
             currentHeight,
-            baseWidth,
-            baseHeight,
-            scaleFactor
+            BASE_WIDTH,
+            BASE_HEIGHT,
+            scale
         });
     }
     
@@ -2008,15 +2010,17 @@ class EducationalPathGame {
     
             ).join(' ');
     
-           
+            // Перевіряємо, чи це відео файл
+            const isVideo = backgroundImageUrl && backgroundImageUrl.toLowerCase().endsWith('.mp4');
     
             const contentHTML = `
     
-                <h3 class="text-2xl font-bold mb-2">${title}</h3>
-    
-                <div class="text-lg mb-6">${text}</div>
-    
-                <div class="flex justify-center gap-4">${buttonsHTML}</div>
+                ${isVideo ? `<video class="modal-background-video" autoplay muted loop playsinline style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; pointer-events: none;"><source src="${backgroundImageUrl}" type="video/mp4"></video>` : ''}
+                <div style="position: relative; z-index: 1;">
+                    <h3 class="text-2xl font-bold mb-2">${title}</h3>
+                    <div class="text-lg mb-6">${text}</div>
+                    <div class="flex justify-center gap-4">${buttonsHTML}</div>
+                </div>
     
             `;
     
@@ -2024,12 +2028,38 @@ class EducationalPathGame {
     
             this.showQuestModalWithContent(contentHTML, () => {
     
-                // Встановлюємо фонове зображення, якщо воно було передано
+                // Видаляємо старе відео, якщо воно існує
+                const existingVideo = this.questModalContent.querySelector('.modal-background-video');
+                if (existingVideo) {
+                    existingVideo.pause();
+                    existingVideo.remove();
+                }
+    
+                // Встановлюємо фонове зображення або відео
                 if (backgroundImageUrl) {
-                    this.questModalContent.style.backgroundImage = `url('${backgroundImageUrl}')`;
-                    this.questModalContent.style.backgroundSize = 'cover';
-                    this.questModalContent.style.backgroundPosition = 'center';
-                    this.questModalContent.style.backgroundRepeat = 'no-repeat';
+                    if (isVideo) {
+                        // Створюємо відео елемент як фон
+                        this.questModalContent.style.backgroundImage = 'none';
+                        this.questModalContent.style.backgroundSize = '';
+                        this.questModalContent.style.backgroundPosition = '';
+                        this.questModalContent.style.backgroundRepeat = '';
+                        this.questModalContent.style.position = 'relative';
+                        this.questModalContent.style.overflow = 'hidden';
+    
+                        // Запускаємо відео
+                        const video = this.questModalContent.querySelector('.modal-background-video');
+                        if (video) {
+                            video.play().catch(e => {
+                                console.log('Не вдалося відтворити відео:', e);
+                            });
+                        }
+                    } else {
+                        // Звичайне зображення
+                        this.questModalContent.style.backgroundImage = `url('${backgroundImageUrl}')`;
+                        this.questModalContent.style.backgroundSize = 'cover';
+                        this.questModalContent.style.backgroundPosition = 'center';
+                        this.questModalContent.style.backgroundRepeat = 'no-repeat';
+                    }
                 } else {
                     this.questModalContent.style.backgroundImage = 'none';
                     this.questModalContent.style.backgroundSize = '';

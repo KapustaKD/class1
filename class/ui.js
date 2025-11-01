@@ -59,6 +59,13 @@ class GameUI {
         if (modalContent) {
             modalContent.classList.remove('madlibs-bg');
             modalContent.style.removeProperty('--quest-bg');
+            
+            // Видаляємо старе відео, якщо воно існує
+            const existingVideo = modalContent.querySelector('.modal-background-video');
+            if (existingVideo) {
+                existingVideo.pause();
+                existingVideo.remove();
+            }
         }
         const buttonsHTML = buttons.map((btn, index) => 
             `<button id="modal-btn-${index}" class="px-4 py-2 rounded-lg text-white font-semibold transition ${
@@ -66,12 +73,28 @@ class GameUI {
             }">${btn.text}</button>`
         ).join(' ');
         
-        // Встановлюємо фонове зображення
+        // Перевіряємо, чи це відео файл
+        const isVideo = backgroundImageUrl && backgroundImageUrl.toLowerCase().endsWith('.mp4');
+        
+        // Встановлюємо фонове зображення або відео
         if (backgroundImageUrl) {
-            modalContent.style.backgroundImage = `url('${backgroundImageUrl}')`;
-            modalContent.style.backgroundSize = 'cover';
-            modalContent.style.backgroundPosition = 'center';
-            modalContent.style.backgroundRepeat = 'no-repeat';
+            if (isVideo) {
+                // Створюємо відео елемент як фон
+                modalContent.style.backgroundImage = 'none';
+                modalContent.style.backgroundSize = '';
+                modalContent.style.backgroundPosition = '';
+                modalContent.style.backgroundRepeat = '';
+                
+                // Встановлюємо позиціонування для відео
+                modalContent.style.position = 'relative';
+                modalContent.style.overflow = 'hidden';
+            } else {
+                // Звичайне зображення
+                modalContent.style.backgroundImage = `url('${backgroundImageUrl}')`;
+                modalContent.style.backgroundSize = 'cover';
+                modalContent.style.backgroundPosition = 'center';
+                modalContent.style.backgroundRepeat = 'no-repeat';
+            }
         } else {
             modalContent.style.backgroundImage = 'none';
             modalContent.style.backgroundSize = '';
@@ -80,13 +103,26 @@ class GameUI {
         }
         
         modalContent.innerHTML = `
-            <h3 class="text-2xl font-bold mb-2">${title}</h3>
-            <div class="text-lg mb-6">${content}</div>
-            <div class="flex justify-center gap-4">${buttonsHTML}</div>
+            ${isVideo ? `<video class="modal-background-video" autoplay muted loop playsinline style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; pointer-events: none;"><source src="${backgroundImageUrl}" type="video/mp4"></video>` : ''}
+            <div style="position: relative; z-index: 1;">
+                <h3 class="text-2xl font-bold mb-2">${title}</h3>
+                <div class="text-lg mb-6">${content}</div>
+                <div class="flex justify-center gap-4">${buttonsHTML}</div>
+            </div>
         `;
         
-        // Після вставки innerHTML знову встановлюємо стилі фонового зображення, якщо воно було
-        if (backgroundImageUrl) {
+        // Якщо це відео, запускаємо його
+        if (isVideo) {
+            const video = modalContent.querySelector('.modal-background-video');
+            if (video) {
+                video.play().catch(e => {
+                    console.log('Не вдалося відтворити відео:', e);
+                });
+            }
+        }
+        
+        // Після вставки innerHTML знову встановлюємо стилі фонового зображення, якщо воно було (і це не відео)
+        if (backgroundImageUrl && !isVideo) {
             modalContent.style.backgroundImage = `url('${backgroundImageUrl}')`;
             modalContent.style.backgroundSize = 'cover';
             modalContent.style.backgroundPosition = 'center';

@@ -604,18 +604,14 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.2); /* Ледь помітна біла рамка */
     border-radius: 16px; /* Округлені кути */
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); /* Тінь */
+    backdrop-filter: blur(10px); /* Сильніше розмиття для самого вікна */
+    -webkit-backdrop-filter: blur(10px); /* Для Safari */
     z-index: 50; /* Має бути вище за backdrop */
     color: white; /* Колір тексту - білий */
     width: 90%; /* Ширина на мобільних */
     max-width: 600px; /* Максимальна ширина на десктопах */
     max-height: 80vh; /* Максимальна висота, щоб вміщалося на екрані */
     overflow-y: auto; /* Додаємо скрол, якщо контент не вміщається */
-}
-
-/* Непрозорий фон для вікна правил */
-#rules-modal .modal-content {
-    background: rgba(55, 65, 81, 0.95) !important; /* Темно-сірий непрозорий фон */
-    backdrop-filter: blur(10px);
     padding: 1.5rem; /* Внутрішні відступи (p-6 з Tailwind) */
 }
 
@@ -1615,68 +1611,6 @@ body.glassmorphism-bg {
 .cp-button.exit:hover {
     background: linear-gradient(to right, #dc2626, #b91c1c); /* hover:from-red-600 hover:to-rose-700 */
 }
-.cp-button.chat {
-    background: linear-gradient(to right, #3b82f6, #2563eb); /* bg-gradient-to-r from-blue-500 to-blue-600 */
-    color: white;
-    position: relative;
-}
-.cp-button.chat:hover {
-    background: linear-gradient(to right, #2563eb, #1d4ed8); /* hover:from-blue-600 hover:to-blue-700 */
-}
-#chat-notification-badge {
-    font-size: 0.625rem; /* text-xs */
-    font-weight: 700; /* font-bold */
-}
-
-/* Стилі для ігрового чату */
-#ingame-chat-panel {
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-}
-#ingame-chat-messages {
-    scrollbar-width: thin;
-    scrollbar-color: #4a5568 rgba(0, 0, 0, 0.2);
-}
-#ingame-chat-messages::-webkit-scrollbar {
-    width: 6px;
-}
-#ingame-chat-messages::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 3px;
-}
-#ingame-chat-messages::-webkit-scrollbar-thumb {
-    background: #4a5568;
-    border-radius: 3px;
-}
-#ingame-chat-messages::-webkit-scrollbar-thumb:hover {
-    background: #718096;
-}
-
-/* Стилі для кастомних випадаючих списків */
-.custom-select-wrapper {
-    position: relative;
-}
-.custom-select-btn {
-    cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.2s;
-}
-.custom-select-btn:hover {
-    background-color: rgba(55, 65, 81, 0.8) !important;
-    border-color: rgba(255, 255, 255, 0.2);
-}
-.custom-select-list {
-    margin-top: 0.25rem;
-    border: 1px solid #4b5563;
-}
-.custom-select-item {
-    transition: background-color 0.2s;
-}
-.custom-select-item:hover {
-    background-color: rgba(55, 65, 81, 0.9) !important;
-}
-.custom-select-item img {
-    flex-shrink: 0;
-}
 
 /* Custom Scrollbar for Leaderboard */
 .custom-scrollbar::-webkit-scrollbar {
@@ -1715,8 +1649,8 @@ body.glassmorphism-bg {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    filter: brightness(0.4) blur(2px);
-    -webkit-filter: brightness(0.4) blur(2px);
+    filter: brightness(0.6) blur(2px);
+    -webkit-filter: brightness(0.6) blur(2px);
     z-index: 0;
     border-radius: inherit;
 }
@@ -1884,4 +1818,3 @@ body.glassmorphism-bg {
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
 }
-

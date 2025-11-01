@@ -454,6 +454,23 @@ class MultiplayerGame extends EducationalPathGame {
             this.addChatMessage('system', `${data.player.name} покинув гру`);
         });
         
+        // Обробник для вигнання гравця
+        this.socket.on('player_kicked', (data) => {
+            console.log('Гравця вигнано:', data);
+            // Показуємо модальне вікно з повідомленням
+            this.showQuestModal(
+                'Вигнано з гри',
+                `<p class="mb-4 text-lg">${data.message}</p>`,
+                [{ text: 'Зрозуміло', callback: () => {
+                    this.closeQuestModal();
+                    // Повертаємося до вибору режиму
+                    this.gameContainer.classList.add('hidden');
+                    this.modeSelection.classList.remove('hidden');
+                }}],
+                null
+            );
+        });
+        
         this.socket.on('player_reconnected', (data) => {
             this.addChatMessage('system', `${data.playerName} повернувся до гри`);
         });
@@ -815,13 +832,13 @@ class MultiplayerGame extends EducationalPathGame {
         console.log('Створюємо кімнату:', { customRoomCode, playerName });
         
         if (!customRoomCode || !playerName) {
-            alert('Будь ласка, заповніть всі поля');
+            this.showAlertModal('Помилка', 'Будь ласка, заповніть всі поля');
             return;
         }
         
         // Перевіряємо, чи код містить тільки цифри
         if (!/^\d+$/.test(customRoomCode)) {
-            alert('Код кімнати повинен містити тільки цифри');
+            this.showAlertModal('Помилка', 'Код кімнати повинен містити тільки цифри');
             return;
         }
         
@@ -838,7 +855,7 @@ class MultiplayerGame extends EducationalPathGame {
         const playerName = this.joinPlayerNameInput.value.trim();
         
         if (!roomCode || !playerName) {
-            alert('Будь ласка, заповніть всі поля');
+            this.showAlertModal('Помилка', 'Будь ласка, заповніть всі поля');
             return;
         }
         
@@ -850,22 +867,27 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     leaveRoom() {
-        if (confirm('Ви впевнені, що хочете покинути кімнату?')) {
-            this.socket.emit('leave_room', { roomId: this.roomId });
-            
-            // Повертаємося до вибору режиму
-            this.onlinePanel.classList.add('hidden');
-            this.modeSelection.classList.remove('hidden');
-            this.leaveRoomBtn.classList.add('hidden');
-            
-            // Очищуємо дані
-            this.roomId = null;
-            this.isHost = false;
-            this.isSpectator = false;
-            this.players = [];
-            this.spectators = [];
-            this.gameActive = false;
-            this.currentPlayerIndex = 0;
+        this.showConfirmModal(
+            'Покинути кімнату',
+            'Ви впевнені, що хочете покинути кімнату?',
+            () => {
+                this.socket.emit('leave_room', { roomId: this.roomId });
+                
+                // Повертаємося до вибору режиму
+                this.onlinePanel.classList.add('hidden');
+                this.modeSelection.classList.remove('hidden');
+                this.leaveRoomBtn.classList.add('hidden');
+                
+                // Очищуємо дані
+                this.roomId = null;
+                this.isHost = false;
+                this.isSpectator = false;
+                this.players = [];
+                this.spectators = [];
+                this.gameActive = false;
+                this.currentPlayerIndex = 0;
+            }
+        );
             
             // Очищуємо поля вводу
             if (this.roomNameInput) this.roomNameInput.value = '';
@@ -999,18 +1021,18 @@ class MultiplayerGame extends EducationalPathGame {
             this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
         }
         
-        // Додаємо повідомлення в ігровий чат
-        if (this.ingameChatMessages) {
+        // Додаємо повідомлення в ігровий чат ТІЛЬКИ якщо це повідомлення від гравця (не системне)
+        if (this.ingameChatMessages && type === 'player') {
             this.ingameChatMessages.appendChild(messageDiv);
             this.ingameChatMessages.scrollTop = this.ingameChatMessages.scrollHeight;
-        }
-        
-        // Оновлюємо лічильник непрочитаних, якщо панель прихована
-        if (this.ingameChatPanel && this.ingameChatPanel.classList.contains('hidden')) {
-            this.unreadChatCount++;
-            if (this.chatNotificationBadge) {
-                this.chatNotificationBadge.classList.remove('hidden');
-                this.chatNotificationBadge.textContent = this.unreadChatCount.toString();
+            
+            // Оновлюємо лічильник непрочитаних, якщо панель прихована
+            if (this.ingameChatPanel && this.ingameChatPanel.classList.contains('hidden')) {
+                this.unreadChatCount++;
+                if (this.chatNotificationBadge) {
+                    this.chatNotificationBadge.classList.remove('hidden');
+                    this.chatNotificationBadge.textContent = this.unreadChatCount.toString();
+                }
             }
         }
     }
@@ -1430,14 +1452,47 @@ class MultiplayerGame extends EducationalPathGame {
         kickButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const targetId = e.currentTarget.dataset.playerId;
-                if (targetId && confirm('Ви впевнені, що хочете видалити цього гравця?')) {
-                    this.socket.emit('kick_player', {
-                        roomId: this.roomId,
-                        targetPlayerId: targetId
-                    });
+                if (targetId) {
+                    // Показуємо модальне вікно замість confirm
+                    this.showConfirmModal(
+                        'Видалити гравця',
+                        'Ви впевнені, що хочете видалити цього гравця?',
+                        () => {
+                            this.socket.emit('kick_player', {
+                                roomId: this.roomId,
+                                targetPlayerId: targetId
+                            });
+                        }
+                    );
                 }
             });
         });
+    }
+    
+    // Функція для показу модального вікна з підтвердженням
+    showConfirmModal(title, message, onConfirm) {
+        this.showQuestModal(
+            title,
+            `<p class="mb-4">${message}</p>`,
+            [
+                { text: 'Так', callback: () => {
+                    this.closeQuestModal();
+                    if (onConfirm) onConfirm();
+                }},
+                { text: 'Ні', callback: () => this.closeQuestModal() }
+            ],
+            null
+        );
+    }
+    
+    // Функція для показу модального вікна з інформацією (замість alert)
+    showAlertModal(title, message) {
+        this.showQuestModal(
+            title,
+            `<p class="mb-4">${message}</p>`,
+            [{ text: 'Зрозуміло', callback: () => this.closeQuestModal() }],
+            null
+        );
     }
     
     rollTheDice() {
@@ -5008,9 +5063,15 @@ class MultiplayerGame extends EducationalPathGame {
             const item = document.createElement('div');
             item.className = 'custom-select-item flex items-center gap-2 p-2 hover:bg-gray-700 cursor-pointer';
             item.dataset.playerId = player.id;
+            // Отримуємо позицію гравця
+            const playerPosition = player.position || 0;
+            const epoch = Math.floor(playerPosition / 20) + 1;
+            const cellInEpoch = (playerPosition % 20) + 1;
+            
             item.innerHTML = `
                 <img src="${avatarUrl}" alt="${player.name}" class="w-6 h-6 rounded-full">
                 <span>${player.name}</span>
+                <span class="text-xs text-gray-400 ml-2">(Клітинка: ${playerPosition + 1})</span>
             `;
             return item;
         };
@@ -5141,7 +5202,7 @@ class MultiplayerGame extends EducationalPathGame {
         if (!currentPlayer) return;
         
         if (currentPlayer.points < cost) {
-            alert('Недостатньо ОО для цього бафа/дебафа!');
+            this.showAlertModal('Помилка', 'Недостатньо ОО для цього бафа/дебафа!');
             return;
         }
         
@@ -5151,21 +5212,21 @@ class MultiplayerGame extends EducationalPathGame {
         if (effectType === 'hateClone') {
             const btn = document.getElementById('hate-target-btn');
             if (!btn || !btn.dataset.selectedId) {
-                alert('Оберіть ціль!');
+                this.showAlertModal('Помилка', 'Оберіть ціль!');
                 return;
             }
             targetPlayerId = btn.dataset.selectedId;
         } else if (effectType === 'procrastination') {
             const btn = document.getElementById('procrastination-target-btn');
             if (!btn || !btn.dataset.selectedId) {
-                alert('Оберіть ціль!');
+                this.showAlertModal('Помилка', 'Оберіть ціль!');
                 return;
             }
             targetPlayerId = btn.dataset.selectedId;
         } else if (effectType === 'pushBack') {
             const btn = document.getElementById('pushback-target-btn');
             if (!btn || !btn.dataset.selectedId) {
-                alert('Оберіть ціль!');
+                this.showAlertModal('Помилка', 'Оберіть ціль!');
                 return;
             }
             targetPlayerId = btn.dataset.selectedId;

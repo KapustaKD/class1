@@ -109,10 +109,23 @@
                 <button id="buff-debuff-btn" class="cp-button buff">
                     <i class="fas fa-star"></i><span>Бафи/Дебафи</span>
                 </button>
+                <!-- Кнопка чату -->
+                <button id="toggle-chat-btn" class="cp-button chat">
+                    <i class="fas fa-comments"></i><span>Чат</span>
+                    <span id="chat-notification-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+                </button>
                 <!-- ID збережено -->
                 <button id="exit-game-btn" class="cp-button exit" onclick="window.exitGame()">
                     <i class="fas fa-door-open"></i><span>Вийти з гри</span>
                 </button>
+                <!-- Ігровий чат -->
+                <div id="ingame-chat-panel" class="hidden absolute bottom-full left-0 mb-2 w-full bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50" style="max-height: 300px;">
+                    <div id="ingame-chat-messages" class="overflow-y-auto p-3 mb-2" style="max-height: 200px; min-height: 150px;"></div>
+                    <div class="flex gap-2 p-2 border-t border-gray-700">
+                        <input id="ingame-chat-input" type="text" class="flex-1 p-2 rounded bg-gray-700 text-white" placeholder="Написати повідомлення...">
+                        <button id="ingame-send-btn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded">Відпр.</button>
+                    </div>
+                </div>
             </div>
         </div>
         <!-- ******** КІНЕЦЬ НОВОЇ ПАНЕЛІ ******** -->
@@ -323,7 +336,12 @@
                 <p class="duration mb-2">Діє 3 ходи цілі.</p>
                 <div class="player-selection mb-2">
                     <label for="hate-target">Обрати ціль:</label>
-                    <select id="hate-target" class="w-full p-2 rounded bg-gray-700 text-white"></select>
+                    <div class="custom-select-wrapper relative">
+                        <button id="hate-target-btn" class="custom-select-btn w-full p-2 rounded bg-gray-700 text-white text-left flex items-center gap-2" data-selected-id="">
+                            <span class="custom-select-text">Оберіть гравця...</span>
+                        </button>
+                        <div id="hate-target-list" class="custom-select-list hidden absolute w-full mt-1 bg-gray-800 border border-gray-600 rounded shadow-lg z-50 max-h-48 overflow-y-auto"></div>
+                    </div>
                 </div>
                 <button id="apply-hate-btn" data-cost="100" data-type="hateClone" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded" disabled>Застосувати</button>
             </div>
@@ -343,7 +361,12 @@
                 <p class="duration mb-2">Діє 1 хід цілі.</p>
                 <div class="player-selection mb-2">
                     <label for="procrastination-target">Обрати ціль:</label>
-                    <select id="procrastination-target" class="w-full p-2 rounded bg-gray-700 text-white"></select>
+                    <div class="custom-select-wrapper relative">
+                        <button id="procrastination-target-btn" class="custom-select-btn w-full p-2 rounded bg-gray-700 text-white text-left flex items-center gap-2" data-selected-id="">
+                            <span class="custom-select-text">Оберіть гравця...</span>
+                        </button>
+                        <div id="procrastination-target-list" class="custom-select-list hidden absolute w-full mt-1 bg-gray-800 border border-gray-600 rounded shadow-lg z-50 max-h-48 overflow-y-auto"></div>
+                    </div>
                 </div>
                 <button id="apply-procrastination-btn" data-cost="50" data-type="procrastination" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded" disabled>Застосувати</button>
             </div>
@@ -355,7 +378,12 @@
                 <p class="duration mb-2">Миттєва дія.</p>
                 <div class="player-selection mb-2">
                     <label for="pushback-target">Обрати ціль:</label>
-                    <select id="pushback-target" class="w-full p-2 rounded bg-gray-700 text-white"></select>
+                    <div class="custom-select-wrapper relative">
+                        <button id="pushback-target-btn" class="custom-select-btn w-full p-2 rounded bg-gray-700 text-white text-left flex items-center gap-2" data-selected-id="">
+                            <span class="custom-select-text">Оберіть гравця...</span>
+                        </button>
+                        <div id="pushback-target-list" class="custom-select-list hidden absolute w-full mt-1 bg-gray-800 border border-gray-600 rounded shadow-lg z-50 max-h-48 overflow-y-auto"></div>
+                    </div>
                 </div>
                 <button id="apply-pushback-btn" data-cost="50" data-type="pushBack" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded" disabled>Застосувати</button>
             </div>

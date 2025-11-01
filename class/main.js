@@ -89,13 +89,13 @@ function setupGlobalEventListeners() {
             }
         }
         
-        // Enter - кинути кубик (якщо можливо)
-        if (event.key === 'Enter' && window.game && window.game.gameActive) {
-            const rollBtn = document.getElementById('roll-dice-btn');
-            if (rollBtn && !rollBtn.disabled) {
-                rollBtn.click();
-            }
-        }
+        // Enter - кинути кубик відключено
+        // if (event.key === 'Enter' && window.game && window.game.gameActive) {
+        //     const rollBtn = document.getElementById('roll-dice-btn');
+        //     if (rollBtn && !rollBtn.disabled) {
+        //         rollBtn.click();
+        //     }
+        // }
         
         // R - перезавантажити гру
         if (event.key === 'r' || event.key === 'R') {

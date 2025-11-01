@@ -98,15 +98,6 @@ class MultiplayerGame extends EducationalPathGame {
         this.testModeBtn = document.getElementById('test-mode-btn');
         this.isTestMode = false;
         
-        // Додаємо елементи для ігрового чату
-        this.toggleChatBtn = document.getElementById('toggle-chat-btn');
-        this.ingameChatPanel = document.getElementById('ingame-chat-panel');
-        this.ingameChatMessages = document.getElementById('ingame-chat-messages');
-        this.ingameChatInput = document.getElementById('ingame-chat-input');
-        this.ingameSendBtn = document.getElementById('ingame-send-btn');
-        this.chatNotificationBadge = document.getElementById('chat-notification-badge');
-        this.unreadChatCount = 0;
-        
         // Додаємо елемент для виходу з кімнати
         this.leaveRoomBtn = document.getElementById('leave-room-btn');
         
@@ -169,31 +160,6 @@ class MultiplayerGame extends EducationalPathGame {
             });
         } else {
             console.error('Поле вводу чату не знайдено!');
-        }
-        
-        // Обробники для ігрового чату
-        if (this.toggleChatBtn && this.ingameChatPanel) {
-            this.toggleChatBtn.addEventListener('click', () => {
-                const isHidden = this.ingameChatPanel.classList.contains('hidden');
-                if (isHidden) {
-                    this.ingameChatPanel.classList.remove('hidden');
-                    // Скидаємо лічильник непрочитаних
-                    this.unreadChatCount = 0;
-                    if (this.chatNotificationBadge) {
-                        this.chatNotificationBadge.classList.add('hidden');
-                        this.chatNotificationBadge.textContent = '0';
-                    }
-                } else {
-                    this.ingameChatPanel.classList.add('hidden');
-                }
-            });
-        }
-        
-        if (this.ingameSendBtn && this.ingameChatInput) {
-            this.ingameSendBtn.addEventListener('click', () => this.sendMessage());
-            this.ingameChatInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') this.sendMessage();
-            });
         }
         
         // Обробник для кнопки початку гри
@@ -454,23 +420,6 @@ class MultiplayerGame extends EducationalPathGame {
             this.addChatMessage('system', `${data.player.name} покинув гру`);
         });
         
-        // Обробник для вигнання гравця
-        this.socket.on('player_kicked', (data) => {
-            console.log('Гравця вигнано:', data);
-            // Показуємо модальне вікно з повідомленням
-            this.showQuestModal(
-                'Вигнано з гри',
-                `<p class="mb-4 text-lg">${data.message}</p>`,
-                [{ text: 'Зрозуміло', callback: () => {
-                    this.closeQuestModal();
-                    // Повертаємося до вибору режиму
-                    this.gameContainer.classList.add('hidden');
-                    this.modeSelection.classList.remove('hidden');
-                }}],
-                null
-            );
-        });
-        
         this.socket.on('player_reconnected', (data) => {
             this.addChatMessage('system', `${data.playerName} повернувся до гри`);
         });
@@ -551,40 +500,6 @@ class MultiplayerGame extends EducationalPathGame {
                 this.socket.on('rock_paper_scissors_start', (data) => {
                     console.log('Початок гри "Камінь-ножиці-папір":', data);
                     this.showRockPaperScissorsModal(data);
-                });
-                
-                // Обробник завершення гри Камінь-Ножиці-Папір
-                this.socket.on('rps_game_end', (data) => {
-                    console.log('Гра "Камінь-ножиці-папір" завершена:', data);
-                    
-                    // Оновлюємо UI з результатами (якщо потрібно)
-                    // Результати можуть бути в data
-                    
-                    // Закриваємо вікно для всіх гравців через 3 секунди
-                    setTimeout(() => {
-                        const modal = document.getElementById('rps-modal');
-                        if (modal) {
-                            modal.remove();
-                            document.body.classList.remove('glassmorphism-bg');
-                        }
-                    }, 3000);
-                });
-                
-                // Обробник завершення гри Хрестики-Нулики
-                this.socket.on('tic_tac_toe_end', (data) => {
-                    console.log('Гра "Хрестики-Нулики" завершена:', data);
-                    
-                    // Оновлюємо UI з результатами (якщо потрібно)
-                    // Результати можуть бути в data
-                    
-                    // Закриваємо вікно для всіх гравців через 3 секунди
-                    setTimeout(() => {
-                        const modal = document.getElementById('tictactoe-modal');
-                        if (modal) {
-                            modal.remove();
-                            document.body.classList.remove('glassmorphism-bg');
-                        }
-                    }, 3000);
                 });
                 
                 // Обмін місцями
@@ -741,29 +656,16 @@ class MultiplayerGame extends EducationalPathGame {
         // Обробник для відображення класу при реінкарнації
         this.socket.on('show_reincarnation_class', (data) => {
             console.log('Показ класу після реінкарнації:', data);
-            const playerName = this.players.find(p => p.id === data.playerId)?.name || 'Гравець';
-            
             if (data.playerId === this.playerId && data.newClass) {
                 // Використовуємо нове модальне вікно V2 і показуємо бонусні очки
                 const payload = { newClass: data.newClass, points: data.bonusPoints || 0 };
                 this.showReincarnationModal(payload, false);
-            } else if (data.newClass) {
-                // Показуємо просте вікно для інших гравців
-                const text = `Гравець <strong>${playerName}</strong> переродився і стає <strong>${data.newClass.name}</strong>!`;
-                this.showQuestModal(
-                    '🔮 Реінкарнація!',
-                    text,
-                    [{ text: 'Чудово!', callback: () => this.closeQuestModal() }],
-                    null
-                );
             }
         });
         
         // Обробник для раннього переродження
         this.socket.on('early_reincarnation_event', (data) => {
             console.log('Раннє переродження:', data);
-            const playerName = this.players.find(p => p.id === data.playerId)?.name || 'Гравець';
-            
             if (data.playerId === this.playerId) {
                 // Оновлюємо клас гравця в локальному масиві
                 const player = this.players.find(p => p.id === this.playerId);
@@ -771,15 +673,6 @@ class MultiplayerGame extends EducationalPathGame {
                     player.class = data.newClass;
                 }
                 this.showReincarnationModal(data, false);
-            } else if (data.newClass) {
-                // Показуємо просте вікно для інших гравців
-                const text = `Гравець <strong>${playerName}</strong> переродився і стає <strong>${data.newClass.name}</strong>!`;
-                this.showQuestModal(
-                    '🔮 Реінкарнація!',
-                    text,
-                    [{ text: 'Чудово!', callback: () => this.closeQuestModal() }],
-                    null
-                );
             }
         });
         
@@ -832,13 +725,13 @@ class MultiplayerGame extends EducationalPathGame {
         console.log('Створюємо кімнату:', { customRoomCode, playerName });
         
         if (!customRoomCode || !playerName) {
-            this.showAlertModal('Помилка', 'Будь ласка, заповніть всі поля');
+            alert('Будь ласка, заповніть всі поля');
             return;
         }
         
         // Перевіряємо, чи код містить тільки цифри
         if (!/^\d+$/.test(customRoomCode)) {
-            this.showAlertModal('Помилка', 'Код кімнати повинен містити тільки цифри');
+            alert('Код кімнати повинен містити тільки цифри');
             return;
         }
         
@@ -855,7 +748,7 @@ class MultiplayerGame extends EducationalPathGame {
         const playerName = this.joinPlayerNameInput.value.trim();
         
         if (!roomCode || !playerName) {
-            this.showAlertModal('Помилка', 'Будь ласка, заповніть всі поля');
+            alert('Будь ласка, заповніть всі поля');
             return;
         }
         
@@ -867,27 +760,22 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     leaveRoom() {
-        this.showConfirmModal(
-            'Покинути кімнату',
-            'Ви впевнені, що хочете покинути кімнату?',
-            () => {
-                this.socket.emit('leave_room', { roomId: this.roomId });
-                
-                // Повертаємося до вибору режиму
-                this.onlinePanel.classList.add('hidden');
-                this.modeSelection.classList.remove('hidden');
-                this.leaveRoomBtn.classList.add('hidden');
-                
-                // Очищуємо дані
-                this.roomId = null;
-                this.isHost = false;
-                this.isSpectator = false;
-                this.players = [];
-                this.spectators = [];
-                this.gameActive = false;
-                this.currentPlayerIndex = 0;
-            }
-        );
+        if (confirm('Ви впевнені, що хочете покинути кімнату?')) {
+            this.socket.emit('leave_room', { roomId: this.roomId });
+            
+            // Повертаємося до вибору режиму
+            this.onlinePanel.classList.add('hidden');
+            this.modeSelection.classList.remove('hidden');
+            this.leaveRoomBtn.classList.add('hidden');
+            
+            // Очищуємо дані
+            this.roomId = null;
+            this.isHost = false;
+            this.isSpectator = false;
+            this.players = [];
+            this.spectators = [];
+            this.gameActive = false;
+            this.currentPlayerIndex = 0;
             
             // Очищуємо поля вводу
             if (this.roomNameInput) this.roomNameInput.value = '';
@@ -981,14 +869,7 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     sendMessage() {
-        // Перевіряємо, яке поле вводу активне
-        const input = this.ingameChatPanel && !this.ingameChatPanel.classList.contains('hidden') 
-            ? this.ingameChatInput 
-            : this.chatInput;
-            
-        if (!input) return;
-        
-        const message = input.value.trim();
+        const message = this.chatInput.value.trim();
         if (!message) return;
         
         this.socket.emit('chat_message', {
@@ -997,7 +878,7 @@ class MultiplayerGame extends EducationalPathGame {
             roomId: this.roomId
         });
         
-        input.value = '';
+        this.chatInput.value = '';
     }
     
     addChatMessage(type, message, player = null) {
@@ -1014,27 +895,8 @@ class MultiplayerGame extends EducationalPathGame {
         }
         
         messageDiv.textContent = prefix + message;
-        
-        // Додаємо повідомлення в лобі чат
-        if (this.chatMessages) {
-            this.chatMessages.appendChild(messageDiv.cloneNode(true));
-            this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-        }
-        
-        // Додаємо повідомлення в ігровий чат ТІЛЬКИ якщо це повідомлення від гравця (не системне)
-        if (this.ingameChatMessages && type === 'player') {
-            this.ingameChatMessages.appendChild(messageDiv);
-            this.ingameChatMessages.scrollTop = this.ingameChatMessages.scrollHeight;
-            
-            // Оновлюємо лічильник непрочитаних, якщо панель прихована
-            if (this.ingameChatPanel && this.ingameChatPanel.classList.contains('hidden')) {
-                this.unreadChatCount++;
-                if (this.chatNotificationBadge) {
-                    this.chatNotificationBadge.classList.remove('hidden');
-                    this.chatNotificationBadge.textContent = this.unreadChatCount.toString();
-                }
-            }
-        }
+        this.chatMessages.appendChild(messageDiv);
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
     }
     
     // Перевизначення методів для мультиплеєру
@@ -1427,72 +1289,16 @@ class MultiplayerGame extends EducationalPathGame {
             const rgbColor = this.hexToRgb(p.color) || { r: 126, g: 34, b: 206 };
             const avatarUrl = `https://placehold.co/24x24/${rgbColor.r.toString(16).padStart(2, '0')}${rgbColor.g.toString(16).padStart(2, '0')}${rgbColor.b.toString(16).padStart(2, '0')}/ffffff?text=${encodeURIComponent(firstLetter)}`;
             
-            const kickButton = (this.isHost && p.id !== this.playerId) 
-                ? `<button class="kick-btn text-red-500 hover:text-red-700 ml-2" data-player-id="${p.id}" title="Видалити гравця">❌</button>` 
-                : '';
-            
             return `
                 <div class="cp-leaderboard-item ${isActive ? 'active-player' : ''} bg-black bg-opacity-20">
                     <div class="flex items-center">
                         <img src="${avatarUrl}" alt="${p.name} Avatar">
                         <span class="cp-leaderboard-item-name text-gray-300">${p.name}</span>
-                        ${kickButton}
-                    </div>
+                </div>
                     <span class="cp-leaderboard-item-points text-yellow-400">${p.points || 0} ОО</span>
                 </div>
         `;
         }).join('');
-        
-        // Додаємо обробники для кнопок кіка
-        this.addKickButtonListeners();
-    }
-    
-    addKickButtonListeners() {
-        const kickButtons = document.querySelectorAll('.kick-btn');
-        kickButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const targetId = e.currentTarget.dataset.playerId;
-                if (targetId) {
-                    // Показуємо модальне вікно замість confirm
-                    this.showConfirmModal(
-                        'Видалити гравця',
-                        'Ви впевнені, що хочете видалити цього гравця?',
-                        () => {
-                            this.socket.emit('kick_player', {
-                                roomId: this.roomId,
-                                targetPlayerId: targetId
-                            });
-                        }
-                    );
-                }
-            });
-        });
-    }
-    
-    // Функція для показу модального вікна з підтвердженням
-    showConfirmModal(title, message, onConfirm) {
-        this.showQuestModal(
-            title,
-            `<p class="mb-4">${message}</p>`,
-            [
-                { text: 'Так', callback: () => {
-                    this.closeQuestModal();
-                    if (onConfirm) onConfirm();
-                }},
-                { text: 'Ні', callback: () => this.closeQuestModal() }
-            ],
-            null
-        );
-    }
-    
-    // Функція для показу модального вікна з інформацією (замість alert)
-    showAlertModal(title, message) {
-        this.showQuestModal(
-            title,
-            `<p class="mb-4">${message}</p>`,
-            [{ text: 'Зрозуміло', callback: () => this.closeQuestModal() }],
-            null
-        );
     }
     
     rollTheDice() {
@@ -1984,20 +1790,6 @@ class MultiplayerGame extends EducationalPathGame {
             document.body.classList.remove('glassmorphism-bg');
         }
         
-        // Закриваємо модальне вікно хрестиків-нуликів, якщо воно відкрите
-        const tictactoeModal = document.getElementById('tictactoe-modal');
-        if (tictactoeModal) {
-            tictactoeModal.remove();
-            document.body.classList.remove('glassmorphism-bg');
-        }
-        
-        // Закриваємо модальне вікно камінь-ножиці-папір, якщо воно відкрите
-        const rpsModal = document.getElementById('rps-modal');
-        if (rpsModal) {
-            rpsModal.remove();
-            document.body.classList.remove('glassmorphism-bg');
-        }
-        
         // Оновлюємо UI
         this.updatePlayerInfo();
         this.updateLeaderboard();
@@ -2069,7 +1861,6 @@ class MultiplayerGame extends EducationalPathGame {
         this.players = data.players;
         this.currentPlayerIndex = data.currentPlayerIndex;
         this.gameActive = data.gameActive;
-        this.buffsUsedThisRound = data.buffsUsedThisRound || [];
         
         this.updatePlayerInfo();
         this.updateDiceButtonState();
@@ -3007,16 +2798,15 @@ class MultiplayerGame extends EducationalPathGame {
         
         let timeLeft = seconds;
         
-        // Зберігаємо таймер у this для доступу з обробника кліку
-        this.timerInterval = setInterval(() => {
+        const timer = setInterval(() => {
             timerElement.textContent = timeLeft;
             timeLeft--;
             
             if (timeLeft < 0) {
-                clearInterval(this.timerInterval);
-                submitBtn.disabled = true;
-                if (textInput) textInput.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-check"></i> Відповідь відправлено!';
+                clearInterval(timer);
+                submitBtn.disabled = false;
+                textInput.disabled = true;
+                submitBtn.textContent = 'Відправити результат';
                 
                 // Зупиняємо звук таймера
                 this.stopTimerSound();
@@ -3025,31 +2815,6 @@ class MultiplayerGame extends EducationalPathGame {
                 this.submitTimedTextResult();
             }
         }, 1000);
-        
-        // Додаємо обробник кліку для кнопки відправки
-        setTimeout(() => {
-            if (submitBtn) {
-                submitBtn.addEventListener('click', () => {
-                    // Вимкнути кнопку та поле вводу
-                    submitBtn.disabled = true;
-                    if (textInput) textInput.disabled = true;
-                    
-                    // Зупинити таймер
-                    if (this.timerInterval) {
-                        clearInterval(this.timerInterval);
-                    }
-                    
-                    // Зупиняємо звук таймера
-                    this.stopTimerSound();
-                    
-                    // Змінити текст кнопки
-                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Відповідь відправлено!';
-                    
-                    // Відправити результат
-                    this.submitTimedTextResult();
-                });
-            }
-        }, 100);
     }
     
     submitTimedTextResult() {
@@ -3415,24 +3180,15 @@ class MultiplayerGame extends EducationalPathGame {
     startCreativeSubmissionTimer(seconds) {
         let timeLeft = seconds;
         const timerElement = document.getElementById('creative-submission-timer');
-        const submitBtn = document.getElementById('submit-creative-entry-btn');
-        const textInput = document.getElementById('creative-submission-input');
         
-        // Зберігаємо таймер у this для доступу з обробника кліку
-        this.timerInterval = setInterval(() => {
+        const timer = setInterval(() => {
             timeLeft--;
             if (timerElement) {
                 timerElement.textContent = timeLeft;
             }
             
             if (timeLeft <= 0) {
-                clearInterval(this.timerInterval);
-                // Вимкнути кнопку та поле вводу
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Відповідь відправлено!';
-                }
-                if (textInput) textInput.disabled = true;
+                clearInterval(timer);
                 // Автоматично відправляємо результат
                 this.submitCreativeEntry();
             }
@@ -3440,26 +3196,9 @@ class MultiplayerGame extends EducationalPathGame {
         
         // Додаємо обробник кнопки
         setTimeout(() => {
-            const submitButton = document.getElementById('submit-creative-entry-btn');
-            const creativeInput = document.getElementById('creative-submission-input');
-            
-            if (submitButton) {
-                submitButton.addEventListener('click', () => {
-                    // Вимкнути кнопку та поле вводу
-                    submitButton.disabled = true;
-                    if (creativeInput) creativeInput.disabled = true;
-                    
-                    // Зупинити таймер
-                    if (this.timerInterval) {
-                        clearInterval(this.timerInterval);
-                    }
-                    
-                    // Змінити текст кнопки
-                    submitButton.innerHTML = '<i class="fas fa-check"></i> Відповідь відправлено!';
-                    
-                    // Відправити результат
-                    this.submitCreativeEntry();
-                });
+            const submitBtn = document.getElementById('submit-creative-entry-btn');
+            if (submitBtn) {
+                submitBtn.addEventListener('click', () => this.submitCreativeEntry());
             }
         }, 100);
     }
@@ -3558,7 +3297,7 @@ class MultiplayerGame extends EducationalPathGame {
         const isMyTurn = effectiveActivePlayerId === this.playerId;
         
         let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">🦉 Творчий квест</h3>
+            <h3 class="text-2xl font-bold mb-4">🦉 Хто, де, коли? - Творчий квест</h3>
             <div class="text-sm text-gray-300 bg-black bg-opacity-30 p-3 rounded mb-3">
                 Вам необхідно по черзі одним словом відповісти на питання “Хто?”, “Де?”, “Коли?”, “З ким?”, “Як”, “Що робив?”. Таким чином у кінці вийде цікавенька міністорія.<br>
                 Обмеження у часі відсутнє. Переможця немає, кожен гравець-учасник здобуває по ${rewardText} у кінці гри.
@@ -5047,108 +4786,27 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     populateTargets() {
-        const hateList = document.getElementById('hate-target-list');
-        const hateBtn = document.getElementById('hate-target-btn');
-        const procList = document.getElementById('procrastination-target-list');
-        const procBtn = document.getElementById('procrastination-target-btn');
-        const pushbackList = document.getElementById('pushback-target-list');
-        const pushbackBtn = document.getElementById('pushback-target-btn');
+        const hateSelect = document.getElementById('hate-target');
+        const procSelect = document.getElementById('procrastination-target');
+        const pushbackSelect = document.getElementById('pushback-target');
         
-        // Функція для створення елемента списку з аватаром
-        const createPlayerItem = (player) => {
-            const firstLetter = player.name.charAt(0).toUpperCase();
-            const rgbColor = this.hexToRgb(player.color) || { r: 126, g: 34, b: 206 };
-            const avatarUrl = `https://placehold.co/32x32/${rgbColor.r.toString(16).padStart(2, '0')}${rgbColor.g.toString(16).padStart(2, '0')}${rgbColor.b.toString(16).padStart(2, '0')}/ffffff?text=${encodeURIComponent(firstLetter)}`;
+        if (hateSelect && procSelect) {
+            // Очищаємо списки
+            hateSelect.innerHTML = '';
+            procSelect.innerHTML = '';
+            if (pushbackSelect) pushbackSelect.innerHTML = '';
             
-            const item = document.createElement('div');
-            item.className = 'custom-select-item flex items-center gap-2 p-2 hover:bg-gray-700 cursor-pointer';
-            item.dataset.playerId = player.id;
-            // Отримуємо позицію гравця
-            const playerPosition = player.position || 0;
-            const epoch = Math.floor(playerPosition / 20) + 1;
-            const cellInEpoch = (playerPosition % 20) + 1;
-            
-            item.innerHTML = `
-                <img src="${avatarUrl}" alt="${player.name}" class="w-6 h-6 rounded-full">
-                <span>${player.name}</span>
-                <span class="text-xs text-gray-400 ml-2">(Клітинка: ${playerPosition + 1})</span>
-            `;
-            return item;
-        };
-        
-        // Очищаємо та заповнюємо списки
-        const updateList = (list, btnId) => {
-            if (!list) return;
-            list.innerHTML = '';
-            
+            // Додаємо опції для інших гравців
             this.players.forEach(player => {
                 if (player.id !== this.playerId && !player.hasLost) {
-                    const item = createPlayerItem(player);
-                    item.addEventListener('click', () => {
-                        // Оновлюємо кнопку (отримуємо актуальну, оскільки вона могла бути клонована)
-                        const currentBtn = document.getElementById(btnId);
-                        if (!currentBtn) return;
-                        
-                        const firstLetter = player.name.charAt(0).toUpperCase();
-                        const rgbColor = this.hexToRgb(player.color) || { r: 126, g: 34, b: 206 };
-                        const avatarUrl = `https://placehold.co/24x24/${rgbColor.r.toString(16).padStart(2, '0')}${rgbColor.g.toString(16).padStart(2, '0')}${rgbColor.b.toString(16).padStart(2, '0')}/ffffff?text=${encodeURIComponent(firstLetter)}`;
-                        
-                        currentBtn.dataset.selectedId = player.id;
-                        const textSpan = currentBtn.querySelector('.custom-select-text');
-                        if (textSpan) {
-                            textSpan.innerHTML = `<img src="${avatarUrl}" alt="${player.name}" class="w-5 h-5 rounded-full inline-block mr-2">${player.name}`;
-                        }
-                        
-                        // Ховаємо список
-                        list.classList.add('hidden');
-                        
-                        // Оновлюємо стан кнопок
-                        this.updateBuffButtonsState();
-                    });
-                    list.appendChild(item);
+                    const option = document.createElement('option');
+                    option.value = player.id;
+                    option.textContent = player.name;
+                    hateSelect.appendChild(option.cloneNode(true));
+                    procSelect.appendChild(option.cloneNode(true));
+                    if (pushbackSelect) pushbackSelect.appendChild(option.cloneNode(true));
                 }
             });
-        };
-        
-        updateList(hateList, 'hate-target-btn');
-        updateList(procList, 'procrastination-target-btn');
-        updateList(pushbackList, 'pushback-target-btn');
-        
-        // Додаємо обробники для кнопок випадаючих списків
-        const setupSelectButton = (btnId, list) => {
-            const btn = document.getElementById(btnId);
-            if (!btn || !list) return;
-            
-            // Видаляємо старі обробники через клонування
-            const newBtn = btn.cloneNode(true);
-            btn.parentNode.replaceChild(newBtn, btn);
-            
-            newBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                // Закриваємо інші списки
-                document.querySelectorAll('.custom-select-list').forEach(otherList => {
-                    if (otherList !== list) {
-                        otherList.classList.add('hidden');
-                    }
-                });
-                list.classList.toggle('hidden');
-            });
-        };
-        
-        setupSelectButton('hate-target-btn', hateList);
-        setupSelectButton('procrastination-target-btn', procList);
-        setupSelectButton('pushback-target-btn', pushbackList);
-        
-        // Закриваємо списки при кліку поза ними (використовуємо один обробник через делегування)
-        if (!this.closeDropdownsHandlerBound) {
-            this.closeDropdownsHandlerBound = (e) => {
-                if (!e.target.closest('.custom-select-wrapper')) {
-                    document.querySelectorAll('.custom-select-list').forEach(list => {
-                        list.classList.add('hidden');
-                    });
-                }
-            };
-            document.addEventListener('click', this.closeDropdownsHandlerBound);
         }
     }
     
@@ -5166,34 +4824,25 @@ class MultiplayerGame extends EducationalPathGame {
         const applyBoostForwardBtn = document.getElementById('apply-boost-forward-btn');
         
         const hasOtherPlayers = this.players.filter(p => p.id !== this.playerId && !p.hasLost).length > 0;
-        const hasUsedBuffThisRound = (this.buffsUsedThisRound || []).includes(this.playerId);
-        
-        // Перевіряємо, чи вибрано ціль у кастомних списках
-        const hateBtn = document.getElementById('hate-target-btn');
-        const procrastinationBtn = document.getElementById('procrastination-target-btn');
-        const pushbackBtn = document.getElementById('pushback-target-btn');
-        const hasHateTarget = hateBtn && hateBtn.dataset.selectedId;
-        const hasProcTarget = procrastinationBtn && procrastinationBtn.dataset.selectedId;
-        const hasPushbackTarget = pushbackBtn && pushbackBtn.dataset.selectedId;
         
         if (applyHateBtn) {
-            applyHateBtn.disabled = points < 100 || !hasOtherPlayers || hasUsedBuffThisRound || !hasHateTarget;
+            applyHateBtn.disabled = points < 100 || !hasOtherPlayers;
         }
         
         if (applyHappinessBtn) {
-            applyHappinessBtn.disabled = points < 100 || hasUsedBuffThisRound;
+            applyHappinessBtn.disabled = points < 100;
         }
         
         if (applyProcrastinationBtn) {
-            applyProcrastinationBtn.disabled = points < 50 || !hasOtherPlayers || hasUsedBuffThisRound || !hasProcTarget;
+            applyProcrastinationBtn.disabled = points < 50 || !hasOtherPlayers;
         }
         
         if (applyPushbackBtn) {
-            applyPushbackBtn.disabled = points < 50 || !hasOtherPlayers || hasUsedBuffThisRound || !hasPushbackTarget;
+            applyPushbackBtn.disabled = points < 50 || !hasOtherPlayers;
         }
         
         if (applyBoostForwardBtn) {
-            applyBoostForwardBtn.disabled = points < 50 || hasUsedBuffThisRound;
+            applyBoostForwardBtn.disabled = points < 50;
         }
     }
     
@@ -5202,7 +4851,7 @@ class MultiplayerGame extends EducationalPathGame {
         if (!currentPlayer) return;
         
         if (currentPlayer.points < cost) {
-            this.showAlertModal('Помилка', 'Недостатньо ОО для цього бафа/дебафа!');
+            alert('Недостатньо ОО для цього бафа/дебафа!');
             return;
         }
         
@@ -5210,26 +4859,26 @@ class MultiplayerGame extends EducationalPathGame {
         
         // Для дебафів потрібна ціль
         if (effectType === 'hateClone') {
-            const btn = document.getElementById('hate-target-btn');
-            if (!btn || !btn.dataset.selectedId) {
-                this.showAlertModal('Помилка', 'Оберіть ціль!');
+            const select = document.getElementById('hate-target');
+            if (!select || !select.value) {
+                alert('Оберіть ціль!');
                 return;
             }
-            targetPlayerId = btn.dataset.selectedId;
+            targetPlayerId = select.value;
         } else if (effectType === 'procrastination') {
-            const btn = document.getElementById('procrastination-target-btn');
-            if (!btn || !btn.dataset.selectedId) {
-                this.showAlertModal('Помилка', 'Оберіть ціль!');
+            const select = document.getElementById('procrastination-target');
+            if (!select || !select.value) {
+                alert('Оберіть ціль!');
                 return;
             }
-            targetPlayerId = btn.dataset.selectedId;
+            targetPlayerId = select.value;
         } else if (effectType === 'pushBack') {
-            const btn = document.getElementById('pushback-target-btn');
-            if (!btn || !btn.dataset.selectedId) {
-                this.showAlertModal('Помилка', 'Оберіть ціль!');
+            const select = document.getElementById('pushback-target');
+            if (!select || !select.value) {
+                alert('Оберіть ціль!');
                 return;
             }
-            targetPlayerId = btn.dataset.selectedId;
+            targetPlayerId = select.value;
         }
         
         // Відправляємо подію на сервер

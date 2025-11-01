@@ -7,6 +7,12 @@ const path = require('path');
 function passTurnToNextPlayer(room) {
     // Переходимо до наступного гравця
     console.log('Старий currentPlayerIndex:', room.gameData.currentPlayerIndex);
+    
+    // Очищаємо список використаних бафів на початку нового кола
+    if (room.gameData.currentPlayerIndex === 0) {
+        room.gameData.buffsUsedThisRound = [];
+    }
+    
     room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
     console.log('Новий currentPlayerIndex:', room.gameData.currentPlayerIndex);
     
@@ -97,12 +103,11 @@ function handleImmediateEvent(room, player, eventType) {
                 const lostPoints = Math.floor(roomPlayer.points / 2);
                 roomPlayer.points -= lostPoints;
                 resultMessage = `💰 ${roomPlayer.name} (${playerClassName})! Вітаємо! Ви втратили половину (${lostPoints} ОО) вашого нажитого майна у ${eventName}! Відтепер життя стане дещо складнішим, проте не засмучуйтесь: все ще є шанси перемогти!`;
-            } else { // peasant — замість вибування робимо переродження в попередню епоху
+            } else { // peasant — замість вибування робимо переродження на початок поточної епохи
                 const lostPoints = roomPlayer.points;
                 roomPlayer.points = 0;
-                // Визначаємо поточну і попередню епоху
+                // Визначаємо поточну епоху
                 const currentEpoch = getEpochForPosition(roomPlayer.position);
-                const prevEpoch = Math.max(1, currentEpoch - 1);
                 // Стартові позиції епох
                 const epochStart = (epoch) => {
                     if (epoch === 1) return 0;
@@ -113,16 +118,16 @@ function handleImmediateEvent(room, player, eventType) {
                     if (epoch === 6) return 98;
                     return 0;
                 };
-                const targetPosition = epochStart(prevEpoch);
+                const targetPosition = epochStart(currentEpoch);
                 
                 // Переміщуємо
                 roomPlayer.position = targetPosition;
                 const globalPlayer = players.get(roomPlayer.id);
                 if (globalPlayer) globalPlayer.position = targetPosition;
                 
-                // Призначаємо новий клас відповідно до попередньої епохи (правила як для ранньої реінкарнації)
+                // Призначаємо новий клас відповідно до поточної епохи (правила як для ранньої реінкарнації)
                 const occupiedClassesInEpoch = room.gameData.players
-                    .filter(p => p.id !== roomPlayer.id && p.class && getEpochForPosition(p.position) === prevEpoch)
+                    .filter(p => p.id !== roomPlayer.id && p.class && getEpochForPosition(p.position) === currentEpoch)
                     .map(p => p.class.id);
                 const availableClasses = [
                     { id: 'aristocrat', name: '⚜️ Аристократ', startPoints: 50, moveModifier: 1 },
@@ -139,13 +144,13 @@ function handleImmediateEvent(room, player, eventType) {
                 roomPlayer.class = pool[Math.floor(Math.random() * pool.length)];
                 if (globalPlayer) globalPlayer.class = roomPlayer.class;
                 
-                resultMessage = `💀 ${roomPlayer.name} (${playerClassName}) витратив останні гроші (${lostPoints} ОО) у ${eventName} і переродився на початку попередньої епохи.`;
+                resultMessage = `💀 ${roomPlayer.name} (${playerClassName}) витратив останні гроші (${lostPoints} ОО) у ${eventName} і переродився на початку поточної епохи.`;
                 
                 // Показуємо модальне вікно переродження на клієнті
                 io.to(roomPlayer.id).emit('early_reincarnation_event', {
                     playerId: roomPlayer.id,
                     cellNumber: roomPlayer.position,
-                    eventData: { points: 0, targetEpoch: prevEpoch, cellNumber: roomPlayer.position },
+                    eventData: { points: 0, targetEpoch: currentEpoch, cellNumber: roomPlayer.position },
                     newClass: roomPlayer.class
                 });
             }
@@ -524,6 +529,7 @@ io.on('connection', (socket) => {
         // Додаємо нові поля для вибору аватарів
         room.gameData.avatarSelections = {};
         room.gameData.readyPlayers = [];
+        room.gameData.buffsUsedThisRound = [];
         
         // Повідомляємо всіх гравців
         io.to(room.id).emit('game_started', {
@@ -1523,6 +1529,16 @@ io.on('connection', (socket) => {
             return;
         }
         
+        // Перевірка, чи гравець вже використав баф у цьому колі
+        if (!room.gameData.buffsUsedThisRound) {
+            room.gameData.buffsUsedThisRound = [];
+        }
+        if (room.gameData.buffsUsedThisRound.includes(caster.id)) {
+            console.log('Гравець вже використав баф у цьому колі');
+            socket.emit('error', { message: 'Ви вже використали баф у цьому колі!' });
+            return;
+        }
+        
         // Перевірка, чи це хід гравця
         const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
         if (currentPlayer.id !== caster.id) {
@@ -1637,6 +1653,11 @@ io.on('connection', (socket) => {
         }
         
         // Відправляємо сповіщення
+        // Додаємо гравця до списку тих, хто використав баф у цьому колі
+        if (!room.gameData.buffsUsedThisRound.includes(caster.id)) {
+            room.gameData.buffsUsedThisRound.push(caster.id);
+        }
+        
         io.to(room.id).emit('effect_applied', {
             casterId: caster.id,
             casterName: caster.name,
@@ -1649,6 +1670,83 @@ io.on('connection', (socket) => {
         
         // Оновлюємо стан гри
         io.to(room.id).emit('game_state_update', room.gameData);
+    });
+    
+    // Обробник для кіка гравця хостом
+    socket.on('kick_player', (data) => {
+        console.log('Отримано запит на кік гравця:', data);
+        const player = players.get(socket.id);
+        if (!player || !player.isHost) {
+            console.log('Тільки хост може кікати гравців');
+            socket.emit('error', { message: 'Тільки хост може видаляти гравців' });
+            return;
+        }
+        
+        const room = rooms.get(data.roomId);
+        if (!room) {
+            console.log('Кімната не знайдена');
+            return;
+        }
+        
+        const targetPlayer = room.gameData.players.find(p => p.id === data.targetPlayerId);
+        if (!targetPlayer) {
+            console.log('Гравець для кіку не знайдений');
+            return;
+        }
+        
+        // Позначаємо гравця як видаленого
+        targetPlayer.hasLost = true;
+        targetPlayer.kicked = true;
+        
+        // Видаляємо гравця з глобального списку
+        const targetGlobalPlayer = players.get(targetPlayer.id);
+        if (targetGlobalPlayer) {
+            const targetSocketId = targetGlobalPlayer.id || targetPlayer.id;
+            const targetSocket = io.sockets.sockets.get(targetSocketId);
+            if (targetSocket) {
+                targetSocket.leave(room.id);
+                targetSocket.disconnect(true);
+            }
+            players.delete(targetPlayer.id);
+        }
+        
+        // Зберігаємо індекс видаленого гравця до фільтрації
+        const removedPlayerIndex = room.gameData.players.findIndex(p => p.id === data.targetPlayerId);
+        const wasCurrentPlayer = removedPlayerIndex === room.gameData.currentPlayerIndex;
+        
+        // Оновлюємо список гравців у кімнаті
+        room.gameData.players = room.gameData.players.filter(p => p.id !== data.targetPlayerId);
+        room.players = room.players.filter(p => p.id !== data.targetPlayerId);
+        
+        // Коригуємо індекс поточного гравця, якщо видалений був до нього
+        if (removedPlayerIndex !== -1 && removedPlayerIndex < room.gameData.currentPlayerIndex) {
+            room.gameData.currentPlayerIndex--;
+        }
+        
+        // Якщо індекс вийшов за межі або видалений гравець був поточним, передаємо хід
+        if (wasCurrentPlayer || room.gameData.currentPlayerIndex >= room.gameData.players.length) {
+            if (room.gameData.players.length > 0) {
+                passTurnToNextPlayer(room);
+            } else {
+                room.gameData.currentPlayerIndex = 0;
+            }
+        }
+        
+        // Відправляємо повідомлення всім гравцям
+        io.to(room.id).emit('player_left', {
+            player: targetPlayer,
+            players: room.gameData.players
+        });
+        
+        io.to(room.id).emit('chat_message', {
+            type: 'system',
+            message: `🚫 Хост видалив ${targetPlayer.name} з гри`
+        });
+        
+        // Оновлюємо стан гри
+        io.to(room.id).emit('game_state_update', room.gameData);
+        
+        console.log(`Гравець ${targetPlayer.name} був видалений хостом ${player.name}`);
     });
     
     // [НОВИЙ ОБРОБНИК] Для режиму тестування (v2.0 - повна імітація гри)

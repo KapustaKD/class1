@@ -285,56 +285,32 @@ function setupMusicController() {
         }
     });
     
-    // Ініціалізуємо фонову музику
-    let backgroundMusic1 = new Audio('sound/fon/main_fon.m4a');
-    backgroundMusic1.preload = 'auto';
-    backgroundMusic1.loop = true;
-    backgroundMusic1.volume = 0.05;
-    
-    let backgroundMusic2 = new Audio('sound/fon/rumbling_fon_2.mp3');
-    backgroundMusic2.preload = 'auto';
-    backgroundMusic2.loop = true;
-    backgroundMusic2.volume = 0.05;
-    
-    let currentMusic = backgroundMusic1;
-    let isPlaying = false;
-    
     // Кнопка вмикання/вимикання музики
     musicToggleBtn.addEventListener('click', () => {
-        if (isPlaying) {
-            currentMusic.pause();
-            musicIcon.textContent = '🔇';
-            isPlaying = false;
-        } else {
-            currentMusic.play().catch(e => {
-                console.log('Не вдалося відтворити музику:', e);
-            });
-            musicIcon.textContent = '🎵';
-            isPlaying = true;
+        if (window.game && window.game.currentBackgroundMusic) {
+            if (!window.game.currentBackgroundMusic.paused) {
+                window.game.stopBackgroundMusic();
+                musicIcon.textContent = '🔇';
+            } else {
+                window.game.startBackgroundMusic();
+                musicIcon.textContent = '🎵';
+            }
         }
     });
     
     // Кнопка перемикання музики
     musicSwitchBtn.addEventListener('click', () => {
-        const wasPlaying = isPlaying;
-        if (wasPlaying) {
-            currentMusic.pause();
-        }
-        
-        currentMusic = currentMusic === backgroundMusic1 ? backgroundMusic2 : backgroundMusic1;
-        
-        if (wasPlaying) {
-            currentMusic.play().catch(e => {
-                console.log('Не вдалося відтворити музику:', e);
-            });
+        if (window.game && window.game.switchBackgroundMusic) {
+            window.game.switchBackgroundMusic();
         }
     });
     
     // Слайдер гучності
     musicVolumeSlider.addEventListener('input', (e) => {
         const volume = e.target.value / 100;
-        backgroundMusic1.volume = volume;
-        backgroundMusic2.volume = volume;
+        if (window.game && window.game.setBackgroundVolume) {
+            window.game.setBackgroundVolume(volume);
+        }
         musicVolumeText.textContent = e.target.value + '%';
     });
     

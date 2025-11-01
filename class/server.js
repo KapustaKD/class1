@@ -1704,8 +1704,17 @@ io.on('connection', (socket) => {
             const targetSocketId = targetGlobalPlayer.id || targetPlayer.id;
             const targetSocket = io.sockets.sockets.get(targetSocketId);
             if (targetSocket) {
-                targetSocket.leave(room.id);
-                targetSocket.disconnect(true);
+                // Відправляємо повідомлення про вигнання ПЕРЕД відключенням
+                targetSocket.emit('player_kicked', {
+                    message: 'Вас було вигнано з гри хостом',
+                    playerName: targetPlayer.name
+                });
+                
+                // Даємо час на обробку повідомлення
+                setTimeout(() => {
+                    targetSocket.leave(room.id);
+                    targetSocket.disconnect(true);
+                }, 100);
             }
             players.delete(targetPlayer.id);
         }

@@ -3084,7 +3084,15 @@ class MultiplayerGame extends EducationalPathGame {
                 </button>
             `;
             
-            this.showQuestModal('Творчий квест', modalContent, [], data.gameState.gameType === 'pedagog_mom' ? 'image/modal_window/i_am_a_teacher.png' : null);
+            // Визначаємо фонову картинку залежно від типу творчого квесту
+            let backgroundImage = null;
+            if (data.gameState.gameType === 'pedagog_mom') {
+                backgroundImage = 'image/modal_window/i_am_a_teacher.png';
+            } else if (data.gameState.gameType === 'great_pedagogical') {
+                backgroundImage = 'image/modal_window/big_pedagogik.png';
+            }
+            
+            this.showQuestModal('Творчий квест', modalContent, [], backgroundImage);
             this.startCreativeTimer(data.gameState.timer);
         }
     }

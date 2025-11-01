@@ -7,7 +7,6 @@ body {
 /* Контейнер ігрового поля */
 #game-container {
     min-height: 500px; /* Мінімальна висота для контейнера */
-    transform-origin: center center;
 }
 
 /* Ігрове поле */

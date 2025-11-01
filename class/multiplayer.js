@@ -14,25 +14,6 @@ class MultiplayerGame extends EducationalPathGame {
         // Ініціалізуємо адаптивність
         this.initResponsiveDesign();
         
-        // Додаємо обробник зміни розміру вікна для масштабування
-        window.addEventListener('resize', () => {
-            if (typeof this.updateGameScale === 'function') {
-                this.updateGameScale();
-            }
-        });
-        
-        // Викликаємо updateGameScale при завантаженні
-        if (typeof this.updateGameScale === 'function') {
-            // Чекаємо, поки DOM буде готовий
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', () => {
-                    setTimeout(() => this.updateGameScale(), 100);
-                });
-            } else {
-                setTimeout(() => this.updateGameScale(), 100);
-            }
-        }
-        
         // Встановлюємо випадковий фон для мультиплеєра
         this.setRandomBackground();
         
@@ -143,7 +124,7 @@ class MultiplayerGame extends EducationalPathGame {
         } else {
             console.error('Кнопка локального режиму не знайдена!');
         }
-
+        
         if (this.onlineModeBtn) {
             this.onlineModeBtn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -1197,13 +1178,13 @@ class MultiplayerGame extends EducationalPathGame {
         });
         
         // Встановлюємо стан кнопки
-        this.rollDiceBtn.disabled = !isMyTurn;
-        this.rollDiceBtn.style.opacity = isMyTurn ? '1' : '0.5';
-        this.rollDiceBtn.style.cursor = isMyTurn ? 'pointer' : 'not-allowed';
-        
+            this.rollDiceBtn.disabled = !isMyTurn;
+            this.rollDiceBtn.style.opacity = isMyTurn ? '1' : '0.5';
+            this.rollDiceBtn.style.cursor = isMyTurn ? 'pointer' : 'not-allowed';
+            
         // Оновлюємо текст кнопки (нова структура має span всередині)
         const spanEl = this.rollDiceBtn.querySelector('span');
-        if (isMyTurn) {
+            if (isMyTurn) {
             if (spanEl) {
                 spanEl.textContent = 'Ваш хід - Кинути кубик';
             } else {
@@ -1313,10 +1294,10 @@ class MultiplayerGame extends EducationalPathGame {
                     <div class="flex items-center">
                         <img src="${avatarUrl}" alt="${p.name} Avatar">
                         <span class="cp-leaderboard-item-name text-gray-300">${p.name}</span>
-                    </div>
+                </div>
                     <span class="cp-leaderboard-item-points text-yellow-400">${p.points || 0} ОО</span>
                 </div>
-            `;
+        `;
         }).join('');
     }
     
@@ -2118,7 +2099,7 @@ class MultiplayerGame extends EducationalPathGame {
                     <div>
                         <div class=\"stat-label\">Стартові очки</div>
                         <div class=\"stat-value\">${classInfo.startPoints ?? 0}</div>
-                    </div>
+            </div>
                     <div>
                         <div class=\"stat-label\">Модифікатор руху</div>
                         <div class=\"stat-value\">${classInfo.moveModifier > 0 ? '+' : ''}${classInfo.moveModifier ?? 0}</div>
@@ -2129,9 +2110,9 @@ class MultiplayerGame extends EducationalPathGame {
 
                 <div class=\"reincarnation-features-v2\">
                     <ul>
-                        ${this.getClassDescription(classInfo.id)}
-                    </ul>
-                </div>
+                    ${this.getClassDescription(classInfo.id)}
+                </ul>
+            </div>
             </div>
             <div class=\"reincarnation-footer-v2\">
                 <button id=\"close-class-modal-btn\" class=\"reincarnation-button-v2\"><span>Зрозуміло</span></button>
@@ -2142,14 +2123,14 @@ class MultiplayerGame extends EducationalPathGame {
         document.body.appendChild(backdrop);
 
         // Закриття
-        setTimeout(() => {
-            const closeBtn = document.getElementById('close-class-modal-btn');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
+            setTimeout(() => {
+                const closeBtn = document.getElementById('close-class-modal-btn');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => {
                     const el = document.getElementById('reincarnation-backdrop-v2');
                     if (el) el.remove();
-                });
-            }
+                    });
+                }
         }, 50);
     }
     
@@ -2185,7 +2166,7 @@ class MultiplayerGame extends EducationalPathGame {
             if (spanEl) {
                 spanEl.textContent = '👁️ Режим спостерігача';
             } else {
-                this.rollDiceBtn.textContent = '👁️ Режим спостерігача';
+            this.rollDiceBtn.textContent = '👁️ Режим спостерігача';
             }
             this.rollDiceBtn.style.backgroundColor = '#6b7280'; // Сірий колір
             return;
@@ -2212,14 +2193,14 @@ class MultiplayerGame extends EducationalPathGame {
                 if (spanEl) {
                     spanEl.textContent = 'Ваш хід - Кинути кубик';
                 } else {
-                    this.rollDiceBtn.textContent = '🎲 Ваш хід - Кинути кубик';
+                this.rollDiceBtn.textContent = '🎲 Ваш хід - Кинути кубик';
                 }
                 // Колір вже задано через CSS клас .cp-button.roll
             } else {
                 if (spanEl) {
                     spanEl.textContent = `Не ваш хід - Хід гравця ${currentPlayer?.name || 'невідомо'}`;
-                } else {
-                    this.rollDiceBtn.textContent = `⏳ Не ваш хід - Хід гравця ${currentPlayer?.name || 'невідомо'}`;
+            } else {
+                this.rollDiceBtn.textContent = `⏳ Не ваш хід - Хід гравця ${currentPlayer?.name || 'невідомо'}`;
                 }
                 this.rollDiceBtn.style.backgroundColor = '#6b7280'; // Сірий колір
             }
@@ -2238,7 +2219,7 @@ class MultiplayerGame extends EducationalPathGame {
             if (spanEl) {
                 spanEl.textContent = 'Ваш хід - Кинути кубик';
             } else {
-                this.rollDiceBtn.textContent = 'Кинути кубик';
+            this.rollDiceBtn.textContent = 'Кинути кубик';
             }
             // Колір вже задано через CSS клас .cp-button.roll
             
@@ -2802,7 +2783,7 @@ class MultiplayerGame extends EducationalPathGame {
         // Додаємо обробники подій
         if (isParticipant) {
             setTimeout(() => {
-                this.startTimedTextQuestTimer(data.gameState.timer);
+            this.startTimedTextQuestTimer(data.gameState.timer);
             }, 100);
         }
     }

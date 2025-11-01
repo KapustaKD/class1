@@ -14,6 +14,25 @@ class MultiplayerGame extends EducationalPathGame {
         // Ініціалізуємо адаптивність
         this.initResponsiveDesign();
         
+        // Додаємо обробник зміни розміру вікна для масштабування
+        window.addEventListener('resize', () => {
+            if (typeof this.updateGameScale === 'function') {
+                this.updateGameScale();
+            }
+        });
+        
+        // Викликаємо updateGameScale при завантаженні
+        if (typeof this.updateGameScale === 'function') {
+            // Чекаємо, поки DOM буде готовий
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    setTimeout(() => this.updateGameScale(), 100);
+                });
+            } else {
+                setTimeout(() => this.updateGameScale(), 100);
+            }
+        }
+        
         // Встановлюємо випадковий фон для мультиплеєра
         this.setRandomBackground();
         
@@ -118,16 +137,18 @@ class MultiplayerGame extends EducationalPathGame {
             this.localModeBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 console.log('Натиснуто локальний режим');
+                this.startBackgroundMusic();
                 this.startLocalMode();
             });
         } else {
             console.error('Кнопка локального режиму не знайдена!');
         }
-        
+
         if (this.onlineModeBtn) {
             this.onlineModeBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 console.log('Натиснуто онлайн режим');
+                this.startBackgroundMusic();
                 this.startOnlineMode();
             });
         } else {
@@ -3087,7 +3108,7 @@ class MultiplayerGame extends EducationalPathGame {
             // Визначаємо фонову картинку залежно від типу творчого квесту
             let backgroundImage = null;
             if (data.gameState.gameType === 'pedagog_mom') {
-                backgroundImage = 'image/modal_window/i_am_a_teacher.png';
+                backgroundImage = 'image/modal_window/i_am_a_teacher.mp4';
             } else if (data.gameState.gameType === 'great_pedagogical') {
                 backgroundImage = 'image/modal_window/big_pedagogik.png';
             }

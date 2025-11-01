@@ -610,6 +610,12 @@ body {
     max-width: 600px; /* Максимальна ширина на десктопах */
     max-height: 80vh; /* Максимальна висота, щоб вміщалося на екрані */
     overflow-y: auto; /* Додаємо скрол, якщо контент не вміщається */
+}
+
+/* Непрозорий фон для вікна правил */
+#rules-modal .modal-content {
+    background: rgba(55, 65, 81, 0.95) !important; /* Темно-сірий непрозорий фон */
+    backdrop-filter: blur(10px);
     padding: 1.5rem; /* Внутрішні відступи (p-6 з Tailwind) */
 }
 

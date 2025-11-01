@@ -1,67 +1,17 @@
 // Головний файл гри
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('📦 DOMContentLoaded - перевірка завантаження класів...');
-    
-    // Перевіряємо, чи всі необхідні класи завантажені
-    console.log('EducationalPathGame:', typeof EducationalPathGame);
-    console.log('MultiplayerGame:', typeof MultiplayerGame);
-    console.log('GameUI:', typeof GameUI);
-    
-    if (typeof GameUI === 'undefined') {
-        console.error('❌ GameUI не визначено. Перевірте, чи правильно завантажено ui.js');
-        return;
-    }
-    
-    if (typeof EducationalPathGame === 'undefined') {
-        console.error('❌ EducationalPathGame не визначено. Перевірте, чи правильно завантажено game.js');
-        return;
-    }
-    
     // Ініціалізуємо UI
-    try {
-        window.gameUI = new GameUI();
-    } catch (error) {
-        console.error('❌ Помилка створення GameUI:', error);
-        return;
-    }
+    window.gameUI = new GameUI();
     
     // Перевіряємо, чи є збережений стан гри
     const savedGameState = localStorage.getItem('educationalPathGameState');
     if (savedGameState) {
         try {
-            let gameState;
-            try {
-                gameState = JSON.parse(savedGameState);
-            } catch (parseError) {
-                console.error('❌ Помилка парсингу JSON:', parseError);
-                console.error('Некоректний JSON:', savedGameState);
-                // Видаляємо некоректний стан
-                localStorage.removeItem('educationalPathGameState');
-                // Продовжуємо без відновлення стану
-                gameState = null;
-            }
-            
-            if (!gameState) {
-                // Якщо не вдалося розпарсити, створюємо нову гру
-                if (typeof MultiplayerGame !== 'undefined') {
-                    window.game = new MultiplayerGame();
-                } else {
-                    console.error('❌ MultiplayerGame не визначено. Використовуємо EducationalPathGame');
-                    window.game = new EducationalPathGame();
-                }
-                return; // Виходимо, бо вже створили гру
-            }
+            const gameState = JSON.parse(savedGameState);
             console.log('🔄 Відновлюємо збережений стан гри:', gameState);
             
-            // Перевіряємо, чи клас MultiplayerGame доступний
-            if (typeof MultiplayerGame === 'undefined') {
-                console.error('❌ MultiplayerGame не визначено. Перевірте, чи правильно завантажено multiplayer.js');
-                // Створюємо базову гру
-                window.game = new EducationalPathGame();
-            } else {
-                // Ініціалізуємо гру з збереженим станом
-                window.game = new MultiplayerGame();
-            }
+            // Ініціалізуємо гру з збереженим станом
+            window.game = new MultiplayerGame();
             
             // Відновлюємо стан гри
             if (gameState.isOnlineMode && gameState.roomId) {
@@ -82,50 +32,24 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('❌ Помилка відновлення стану гри:', error);
             // Якщо не вдалося відновити, створюємо нову гру
-            if (typeof MultiplayerGame !== 'undefined') {
-                window.game = new MultiplayerGame();
-            } else {
-                console.error('❌ MultiplayerGame не визначено. Використовуємо EducationalPathGame');
-                window.game = new EducationalPathGame();
-            }
+            window.game = new MultiplayerGame();
         }
     } else {
         // Ініціалізуємо нову гру
-        if (typeof MultiplayerGame !== 'undefined') {
-            window.game = new MultiplayerGame();
-        } else {
-            console.error('❌ MultiplayerGame не визначено. Використовуємо EducationalPathGame');
-            window.game = new EducationalPathGame();
-        }
+        window.game = new MultiplayerGame();
     }
     
-    // Перевіряємо, чи всі функції визначені перед викликом
-    if (typeof setupGlobalEventListeners === 'function') {
-        setupGlobalEventListeners();
-    } else {
-        console.error('❌ setupGlobalEventListeners не визначено');
-    }
+    // Додаємо глобальні обробники подій
+    setupGlobalEventListeners();
     
     // Налаштовуємо звуки
-    if (typeof setupGlobalSounds === 'function') {
-        setupGlobalSounds();
-    } else {
-        console.warn('⚠️ setupGlobalSounds не визначено');
-    }
+    setupGlobalSounds();
     
     // Налаштовуємо контролер музики
-    if (typeof setupMusicController === 'function') {
-        setupMusicController();
-    } else {
-        console.warn('⚠️ setupMusicController не визначено');
-    }
+    setupMusicController();
     
     // Додаємо обробники кнопок режимів
-    if (typeof setupModeButtons === 'function') {
-        setupModeButtons();
-    } else {
-        console.warn('⚠️ setupModeButtons не визначено');
-    }
+    setupModeButtons();
     
     console.log('🎮 Освітній Шлях: Революція завантажено!');
 });
@@ -165,13 +89,13 @@ function setupGlobalEventListeners() {
             }
         }
         
-        // Enter - кинути кубик відключено
-        // if (event.key === 'Enter' && window.game && window.game.gameActive) {
-        //     const rollBtn = document.getElementById('roll-dice-btn');
-        //     if (rollBtn && !rollBtn.disabled) {
-        //         rollBtn.click();
-        //     }
-        // }
+        // Enter - кинути кубик (якщо можливо)
+        if (event.key === 'Enter' && window.game && window.game.gameActive) {
+            const rollBtn = document.getElementById('roll-dice-btn');
+            if (rollBtn && !rollBtn.disabled) {
+                rollBtn.click();
+            }
+        }
         
         // R - перезавантажити гру
         if (event.key === 'r' || event.key === 'R') {
@@ -361,40 +285,58 @@ function setupMusicController() {
         }
     });
     
+    // Ініціалізуємо фонову музику
+    let backgroundMusic1 = new Audio('sound/fon/main_fon.m4a');
+    backgroundMusic1.preload = 'auto';
+    backgroundMusic1.loop = true;
+    backgroundMusic1.volume = 0.05;
+    
+    let backgroundMusic2 = new Audio('sound/fon/rumbling_fon_2.mp3');
+    backgroundMusic2.preload = 'auto';
+    backgroundMusic2.loop = true;
+    backgroundMusic2.volume = 0.05;
+    
+    let currentMusic = backgroundMusic1;
+    let isPlaying = false;
+    
     // Кнопка вмикання/вимикання музики
-    if (musicToggleBtn && musicIcon) {
-        musicToggleBtn.addEventListener('click', () => {
-            if (window.game && window.game.currentBackgroundMusic) {
-                if (!window.game.currentBackgroundMusic.paused) {
-                    window.game.stopBackgroundMusic();
-                    musicIcon.textContent = '🔇';
-                } else {
-                    window.game.startBackgroundMusic();
-                    musicIcon.textContent = '🎵';
-                }
-            }
-        });
-    }
+    musicToggleBtn.addEventListener('click', () => {
+        if (isPlaying) {
+            currentMusic.pause();
+            musicIcon.textContent = '🔇';
+            isPlaying = false;
+        } else {
+            currentMusic.play().catch(e => {
+                console.log('Не вдалося відтворити музику:', e);
+            });
+            musicIcon.textContent = '🎵';
+            isPlaying = true;
+        }
+    });
     
     // Кнопка перемикання музики
-    if (musicSwitchBtn) {
-        musicSwitchBtn.addEventListener('click', () => {
-            if (window.game && window.game.switchBackgroundMusic) {
-                window.game.switchBackgroundMusic();
-            }
-        });
-    }
+    musicSwitchBtn.addEventListener('click', () => {
+        const wasPlaying = isPlaying;
+        if (wasPlaying) {
+            currentMusic.pause();
+        }
+        
+        currentMusic = currentMusic === backgroundMusic1 ? backgroundMusic2 : backgroundMusic1;
+        
+        if (wasPlaying) {
+            currentMusic.play().catch(e => {
+                console.log('Не вдалося відтворити музику:', e);
+            });
+        }
+    });
     
     // Слайдер гучності
-    if (musicVolumeSlider && musicVolumeText) {
-        musicVolumeSlider.addEventListener('input', (e) => {
-            const volume = e.target.value / 100;
-            if (window.game && window.game.setBackgroundVolume) {
-                window.game.setBackgroundVolume(volume);
-            }
-            musicVolumeText.textContent = e.target.value + '%';
-        });
-    }
+    musicVolumeSlider.addEventListener('input', (e) => {
+        const volume = e.target.value / 100;
+        backgroundMusic1.volume = volume;
+        backgroundMusic2.volume = volume;
+        musicVolumeText.textContent = e.target.value + '%';
+    });
     
     // Кнопка тестування звуків
     const testSoundsBtn = document.getElementById('test-sounds-btn');

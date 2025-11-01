@@ -380,30 +380,32 @@ class EducationalPathGame {
     
         // Функція для адаптивного масштабування гри
     updateGameScale() {
-        // Базові розміри гри (ширина + панель керування)
-        const baseWidth = 1600; // Приблизна ширина гри з панеллю
-        const baseHeight = 900; // Приблизна висота гри
+        // Базові розміри гри (той самий розмір, що вказано в HTML style)
+        const BASE_WIDTH = 1700;
+        const BASE_HEIGHT = 900;
         
         // Отримуємо поточні розміри вікна
         const currentWidth = window.innerWidth;
         const currentHeight = window.innerHeight;
         
-        // Розраховуємо коефіцієнти масштабування
-        const scaleX = currentWidth / baseWidth;
-        const scaleY = currentHeight / baseHeight;
+        // Розраховуємо масштаб, щоб гра вписалася в екран, зберігши пропорції
+        const scale = Math.min(
+            currentWidth / BASE_WIDTH,
+            currentHeight / BASE_HEIGHT
+        );
         
-        // Використовуємо мінімальний коефіцієнт, щоб все поміщалося
-        const scaleFactor = Math.min(scaleX, scaleY, 1); // Не збільшуємо більше 1
-        
-        // Встановлюємо CSS-змінну
-        document.documentElement.style.setProperty('--game-scale', scaleFactor);
+        // Застосовуємо масштаб до game-container
+        const gameContainer = document.getElementById('game-container');
+        if (gameContainer) {
+            gameContainer.style.transform = `scale(${scale})`;
+        }
         
         console.log('📏 Оновлено масштаб гри:', {
             currentWidth,
             currentHeight,
-            baseWidth,
-            baseHeight,
-            scaleFactor
+            BASE_WIDTH,
+            BASE_HEIGHT,
+            scale
         });
     }
     

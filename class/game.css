@@ -1130,7 +1130,7 @@ body.glassmorphism-bg {
     position: relative;
 }
 
-/* Додаємо затемнення (як у реінкарнації) */
+/* Додаємо легкий overlay для кращої читабельності тексту (як було) */
 .glassmorphism-content-bypass::before {
     content: '';
     position: absolute;
@@ -1138,7 +1138,7 @@ body.glassmorphism-bg {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0) 100%);
     border-radius: 16px;
     pointer-events: none;
 }

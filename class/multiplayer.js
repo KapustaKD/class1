@@ -750,6 +750,12 @@ class MultiplayerGame extends EducationalPathGame {
             alert(data.message || 'Помилка застосування ефекту');
         });
         
+        this.socket.on('player_kicked', (data) => {
+            alert(`Вас вигнали з гри: ${data.reason || 'Невідома причина'}`);
+            // Перенаправляємо на головну сторінку або показуємо повідомлення
+            window.location.href = '/';
+        });
+        
         this.socket.on('game_ended', (data) => {
             this.handleRemoteGameEnd(data);
         });
@@ -874,10 +880,28 @@ class MultiplayerGame extends EducationalPathGame {
                 </div>
                 <div class="text-sm text-gray-400">${player.class?.name || 'Очікує...'}</div>
                 <div class="text-sm">${player.points || 0} ОО</div>
+                ${this.isHost && this.gameActive && player.id !== this.playerId ? `
+                    <button class="kick-player-btn mt-2 px-2 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded" data-player-id="${player.id}">
+                        Викинути
+                    </button>
+                ` : ''}
             `;
             
             if (player.id === this.playerId) {
                 playerCard.classList.add('current-player');
+            }
+            
+            // Додаємо обробник для кнопки викинути гравця
+            const kickBtn = playerCard.querySelector('.kick-player-btn');
+            if (kickBtn) {
+                kickBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const playerId = kickBtn.dataset.playerId || e.target.dataset.playerId;
+                    const playerName = player.name;
+                    if (confirm(`Ви впевнені, що хочете викинути гравця ${playerName}?`)) {
+                        this.kickPlayer(playerId);
+                    }
+                });
             }
             
             this.playersContainer.appendChild(playerCard);
@@ -2797,9 +2821,7 @@ class MultiplayerGame extends EducationalPathGame {
                 <div class="glassmorphism-content-tictactoe-small">
                     <div class="glassmorphism-header">
                         <h2>🎯 Хреститися рано!</h2>
-                        ${isTestMode ? `
-                            <button class="close-test-modal-btn" onclick="document.getElementById('tictactoe-modal').remove(); document.body.classList.remove('glassmorphism-bg');">✖</button>
-                        ` : ''}
+                        <button class="close-test-modal-btn" onclick="document.getElementById('tictactoe-modal').remove(); document.body.classList.remove('glassmorphism-bg');">✖</button>
                     </div>
                     
                     <div class="glassmorphism-info-box">
@@ -2824,11 +2846,9 @@ class MultiplayerGame extends EducationalPathGame {
                                 <div id="game-status-view" class="text-center text-lg font-bold mb-2">Очікуємо хід гравця...</div>
                             </div>
                         `}
-                        ${isTestMode ? `
-                            <button class="glassmorphism-btn-secondary w-full mt-2" onclick="document.getElementById('tictactoe-modal').remove(); document.body.classList.remove('glassmorphism-bg');">
-                                Закрити
-                            </button>
-                        ` : ''}
+                        <button class="glassmorphism-btn-secondary w-full mt-2" onclick="document.getElementById('tictactoe-modal').remove(); document.body.classList.remove('glassmorphism-bg');">
+                            Закрити
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2872,9 +2892,7 @@ class MultiplayerGame extends EducationalPathGame {
                 <div class="glassmorphism-content-rps-small">
                     <div class="glassmorphism-header">
                         <h2>🪨📄✂️ Камінь, Ножиці, Папір</h2>
-                        ${isTestMode ? `
-                            <button class="close-test-modal-btn" onclick="document.getElementById('rps-modal').remove(); document.body.classList.remove('glassmorphism-bg');">✖</button>
-                        ` : ''}
+                        <button class="close-test-modal-btn" onclick="document.getElementById('rps-modal').remove(); document.body.classList.remove('glassmorphism-bg');">✖</button>
                     </div>
                     
                     <div class="glassmorphism-info-box">
@@ -2904,11 +2922,9 @@ class MultiplayerGame extends EducationalPathGame {
                         ` : `
                             <p class="text-center text-gray-600">Спостерігайте за грою</p>
                         `}
-                        ${isTestMode ? `
-                            <button class="glassmorphism-btn-secondary w-full mt-2" onclick="document.getElementById('rps-modal').remove(); document.body.classList.remove('glassmorphism-bg');">
-                                Закрити
-                            </button>
-                        ` : ''}
+                        <button class="glassmorphism-btn-secondary w-full mt-2" onclick="document.getElementById('rps-modal').remove(); document.body.classList.remove('glassmorphism-bg');">
+                            Закрити
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2947,9 +2963,7 @@ class MultiplayerGame extends EducationalPathGame {
                 <div class="glassmorphism-content-robot-small">
                     <div class="glassmorphism-header">
                         <h2>🤖 Педагобот!</h2>
-                        ${isTestMode ? `
-                            <button class="close-test-modal-btn" onclick="document.getElementById('pedagogobot-modal').remove(); document.body.classList.remove('glassmorphism-bg');">✖</button>
-                        ` : ''}
+                        <button class="close-test-modal-btn" onclick="document.getElementById('pedagogobot-modal').remove(); document.body.classList.remove('glassmorphism-bg');">✖</button>
                     </div>
                     
                     <div class="glassmorphism-info-box">
@@ -2970,11 +2984,9 @@ class MultiplayerGame extends EducationalPathGame {
                         ` : `
                             <p class="text-center text-gray-600">Спостерігайте за грою</p>
                         `}
-                        ${isTestMode ? `
-                            <button class="glassmorphism-btn-secondary w-full mt-2" onclick="document.getElementById('pedagogobot-modal').remove(); document.body.classList.remove('glassmorphism-bg');">
-                                Закрити
-                            </button>
-                        ` : ''}
+                        <button class="glassmorphism-btn-secondary w-full mt-2" onclick="document.getElementById('pedagogobot-modal').remove(); document.body.classList.remove('glassmorphism-bg');">
+                            Закрити
+                        </button>
                     </div>
                 </div>
             </div>
@@ -4981,9 +4993,7 @@ class MultiplayerGame extends EducationalPathGame {
                 <div class="glassmorphism-content-bypass">
                     <div class="glassmorphism-header">
                         <h2>🛤️ Обхідна дорога!</h2>
-                        ${isTestMode ? `
-                            <button class="close-test-modal-btn" onclick="document.getElementById('test-bypass-modal').remove(); document.body.classList.remove('glassmorphism-bg');">✖</button>
-                        ` : ''}
+                        <button class="close-test-modal-btn" onclick="document.getElementById('test-bypass-modal').remove(); document.body.classList.remove('glassmorphism-bg');">✖</button>
                         <p>Тестовий гравець знайшов обхідний шлях!</p>
                         <p>${description}</p>
                     </div>
@@ -5286,6 +5296,16 @@ class MultiplayerGame extends EducationalPathGame {
     closeQuestModal() {
         const modal = document.getElementById('quest-modal');
         if (modal) modal.classList.add('hidden');
+    }
+    
+    // Викинути гравця з гри
+    kickPlayer(playerId) {
+        if (!this.isHost || !this.socket) return;
+        
+        this.socket.emit('kick_player', {
+            roomId: this.roomId,
+            playerId: playerId
+        });
     }
 }
 

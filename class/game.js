@@ -2223,7 +2223,7 @@ class EducationalPathGame {
             </div>
         `;
 
-        this.showQuestModal('Тестове завдання', modalContent, [], null);
+        this.showQuestModal('Тестове завдання', modalContent, [], 'image/modal_window/tests.png');
 
         // Додаємо обробники для кнопок відповідей
         setTimeout(() => {

@@ -3305,8 +3305,14 @@ class MultiplayerGame extends EducationalPathGame {
         const isActivePlayer = data.activePlayerId === this.playerId;
         
         if (isActivePlayer) {
+            // Визначаємо заголовок залежно від типу гри
+            let contentTitle = data.gameState.gameData.name;
+            if (data.gameState.gameType === 'great_pedagogical') {
+                contentTitle = 'Великий Педагогічний...';
+            }
+            
             let modalContent = `
-                <h3 class="text-2xl font-bold mb-4">${data.gameState.gameData.name}</h3>
+                <h3 class="text-2xl font-bold mb-4">${contentTitle}</h3>
                 <p class="mb-4">${data.gameState.gameData.description}</p>
                 <div class="mb-4">
                     <div id="creative-timer" class="text-xl font-bold text-red-500">${data.gameState.timer}</div>
@@ -3321,13 +3327,15 @@ class MultiplayerGame extends EducationalPathGame {
             
             // Визначаємо фонову картинку залежно від типу творчого квесту
             let backgroundImage = null;
+            let modalTitle = 'Творчий квест';
             if (data.gameState.gameType === 'pedagog_mom') {
                 backgroundImage = 'image/modal_window/i_am_a_teacher.jpg';
             } else if (data.gameState.gameType === 'great_pedagogical') {
                 backgroundImage = 'image/modal_window/big_pedagogik.png';
+                modalTitle = 'Великий Педагогічний...';
             }
             
-            this.showQuestModal('Творчий квест', modalContent, [], backgroundImage);
+            this.showQuestModal(modalTitle, modalContent, [], backgroundImage);
             this.startCreativeTimer(data.gameState.timer);
         }
     }

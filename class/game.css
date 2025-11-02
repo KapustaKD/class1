@@ -1706,10 +1706,12 @@ body.glassmorphism-bg {
     z-index: 999;
     display: flex;
     flex-direction: column;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, opacity 0.3s ease;
 }
 .game-chat-panel.hidden {
     transform: translateX(100%) translateY(-50%);
+    opacity: 0;
+    pointer-events: none;
 }
 .game-chat-header {
     padding: 1rem;

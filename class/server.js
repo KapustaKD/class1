@@ -97,12 +97,11 @@ function handleImmediateEvent(room, player, eventType) {
                 const lostPoints = Math.floor(roomPlayer.points / 2);
                 roomPlayer.points -= lostPoints;
                 resultMessage = `💰 ${roomPlayer.name} (${playerClassName})! Вітаємо! Ви втратили половину (${lostPoints} ОО) вашого нажитого майна у ${eventName}! Відтепер життя стане дещо складнішим, проте не засмучуйтесь: все ще є шанси перемогти!`;
-            } else { // peasant — замість вибування робимо переродження в попередню епоху
+            } else { // peasant — замість вибування робимо переродження в поточну епоху
                 const lostPoints = roomPlayer.points;
                 roomPlayer.points = 0;
-                // Визначаємо поточну і попередню епоху
+                // Визначаємо поточну епоху
                 const currentEpoch = getEpochForPosition(roomPlayer.position);
-                const prevEpoch = Math.max(1, currentEpoch - 1);
                 // Стартові позиції епох
                 const epochStart = (epoch) => {
                     if (epoch === 1) return 0;
@@ -113,16 +112,16 @@ function handleImmediateEvent(room, player, eventType) {
                     if (epoch === 6) return 98;
                     return 0;
                 };
-                const targetPosition = epochStart(prevEpoch);
+                const targetPosition = epochStart(currentEpoch);
                 
                 // Переміщуємо
                 roomPlayer.position = targetPosition;
                 const globalPlayer = players.get(roomPlayer.id);
                 if (globalPlayer) globalPlayer.position = targetPosition;
                 
-                // Призначаємо новий клас відповідно до попередньої епохи (правила як для ранньої реінкарнації)
+                // Призначаємо новий клас відповідно до поточної епохи (правила як для ранньої реінкарнації)
                 const occupiedClassesInEpoch = room.gameData.players
-                    .filter(p => p.id !== roomPlayer.id && p.class && getEpochForPosition(p.position) === prevEpoch)
+                    .filter(p => p.id !== roomPlayer.id && p.class && getEpochForPosition(p.position) === currentEpoch)
                     .map(p => p.class.id);
                 const availableClasses = [
                     { id: 'aristocrat', name: '⚜️ Аристократ', startPoints: 50, moveModifier: 1 },
@@ -139,7 +138,7 @@ function handleImmediateEvent(room, player, eventType) {
                 roomPlayer.class = pool[Math.floor(Math.random() * pool.length)];
                 if (globalPlayer) globalPlayer.class = roomPlayer.class;
                 
-                resultMessage = `💀 ${roomPlayer.name} (${playerClassName}) витратив останні гроші (${lostPoints} ОО) у ${eventName} і переродився на початку попередньої епохи.`;
+                resultMessage = `💀 ${roomPlayer.name} (${playerClassName}) витратив останні гроші (${lostPoints} ОО) у ${eventName} і переродився на початку поточної епохи.`;
                 
                 // Показуємо модальне вікно переродження на клієнті
                 // Поточному гравцю - детальне вікно
@@ -147,7 +146,7 @@ function handleImmediateEvent(room, player, eventType) {
                     playerId: roomPlayer.id,
                     playerName: roomPlayer.name,
                     cellNumber: roomPlayer.position,
-                    eventData: { points: 0, targetEpoch: prevEpoch, cellNumber: roomPlayer.position },
+                    eventData: { points: 0, targetEpoch: currentEpoch, cellNumber: roomPlayer.position },
                     newClass: roomPlayer.class
                 });
                 

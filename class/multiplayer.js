@@ -1291,14 +1291,13 @@ class MultiplayerGame extends EducationalPathGame {
         
         leaderboardEl.innerHTML = headerHTML + sortedPlayers.map((p) => {
             const isActive = p.id === currentPlayerId;
-            const firstLetter = p.name.charAt(0).toUpperCase();
-            const rgbColor = this.hexToRgb(p.color) || { r: 126, g: 34, b: 206 };
-            const avatarUrl = `https://placehold.co/24x24/${rgbColor.r.toString(16).padStart(2, '0')}${rgbColor.g.toString(16).padStart(2, '0')}${rgbColor.b.toString(16).padStart(2, '0')}/ffffff?text=${encodeURIComponent(firstLetter)}`;
+            // Використовуємо аватар гравця, якщо він є
+            const avatarUrl = p.avatarUrl || 'image/chips/avatar1.png';
             
             return `
                 <div class="cp-leaderboard-item ${isActive ? 'active-player' : ''} bg-black bg-opacity-20">
                     <div class="flex items-center">
-                        <img src="${avatarUrl}" alt="${p.name} Avatar">
+                        <img src="${avatarUrl}" alt="${p.name} Avatar" class="w-6 h-6 rounded-full">
                         <span class="cp-leaderboard-item-name text-gray-300">${p.name}</span>
                 </div>
                     <span class="cp-leaderboard-item-points text-yellow-400">${p.points || 0} ОО</span>
@@ -1770,10 +1769,11 @@ class MultiplayerGame extends EducationalPathGame {
         // Оновлюємо позицію та очки гравця
         const player = this.players.find(p => p.id === data.playerId);
         if (player) {
-            // Плавно переміщуємо фішку на нову позицію
-            this.updatePawnPosition(player);
+            // Спочатку оновлюємо позицію та очки, потім переміщуємо фішку
             player.position = data.newPosition;
             player.points = data.newPoints;
+            // Плавно переміщуємо фішку на нову позицію
+            this.updatePawnPosition(player);
         }
         
         // Показуємо повідомлення всім
@@ -3164,17 +3164,35 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     submitCreativeTask() {
+        // Перевіряємо, чи кнопка вже неактивна
+        const submitBtn = document.getElementById('submit-creative-btn');
+        if (submitBtn && submitBtn.disabled) {
+            return; // Вже відправлено
+        }
+        
         // Зупиняємо звук таймера
         this.stopTimerSound();
         
         const creativeInput = document.getElementById('creative-input');
         const text = creativeInput.value.trim();
         
-        if (text) {
+        if (text && submitBtn) {
+            // Відправляємо відповідь
             this.socket.emit('creative_task_submission', {
                 roomId: this.roomId,
                 text: text
             });
+            
+            // Робимо кнопку неактивною та змінюємо текст
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Відповідь відправлена!';
+            submitBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            submitBtn.classList.add('bg-green-500', 'animate-pulse');
+            
+            // Робимо поле введення неактивним
+            if (creativeInput) {
+                creativeInput.disabled = true;
+            }
         }
     }
     
@@ -3236,14 +3254,32 @@ class MultiplayerGame extends EducationalPathGame {
     }
 
     submitCreativeEntry() {
+        // Перевіряємо, чи кнопка вже неактивна
+        const submitBtn = document.getElementById('submit-creative-entry-btn');
+        if (submitBtn && submitBtn.disabled) {
+            return; // Вже відправлено
+        }
+        
         const creativeInput = document.getElementById('creative-submission-input');
         const text = creativeInput.value.trim();
         
-        if (text) {
+        if (text && submitBtn) {
+            // Відправляємо відповідь
             this.socket.emit('submit_creative_entry', {
                 roomId: this.roomId,
                 text: text
             });
+            
+            // Робимо кнопку неактивною та змінюємо текст
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Відповідь відправлена!';
+            submitBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            submitBtn.classList.add('bg-green-500', 'animate-pulse');
+            
+            // Робимо поле введення неактивним
+            if (creativeInput) {
+                creativeInput.disabled = true;
+            }
         }
     }
     
@@ -4822,6 +4858,9 @@ class MultiplayerGame extends EducationalPathGame {
         const procSelect = document.getElementById('procrastination-target');
         const pushbackSelect = document.getElementById('pushback-target');
         
+        // Створюємо або оновлюємо візуальні списки гравців з аватарками
+        this.createPlayerAvatarLists();
+        
         if (hateSelect && procSelect) {
             // Очищаємо списки
             hateSelect.innerHTML = '';
@@ -4834,12 +4873,48 @@ class MultiplayerGame extends EducationalPathGame {
                     const option = document.createElement('option');
                     option.value = player.id;
                     option.textContent = player.name;
+                    option.dataset.avatarUrl = player.avatarUrl || 'image/chips/avatar1.png';
                     hateSelect.appendChild(option.cloneNode(true));
                     procSelect.appendChild(option.cloneNode(true));
                     if (pushbackSelect) pushbackSelect.appendChild(option.cloneNode(true));
                 }
             });
         }
+    }
+    
+    createPlayerAvatarLists() {
+        // Знаходимо всі player-selection блоки
+        const playerSelections = document.querySelectorAll('.player-selection');
+        
+        playerSelections.forEach(selection => {
+            // Перевіряємо, чи вже є список аватарів
+            let avatarList = selection.querySelector('.player-avatar-list');
+            
+            if (!avatarList) {
+                // Створюємо список аватарів перед select
+                avatarList = document.createElement('div');
+                avatarList.className = 'player-avatar-list mb-2';
+                const select = selection.querySelector('select');
+                if (select) {
+                    select.parentNode.insertBefore(avatarList, select);
+                }
+            }
+            
+            // Очищаємо та наповнюємо список
+            avatarList.innerHTML = '';
+            this.players.forEach(player => {
+                if (player.id !== this.playerId && !player.hasLost) {
+                    const avatarUrl = player.avatarUrl || 'image/chips/avatar1.png';
+                    const playerDiv = document.createElement('div');
+                    playerDiv.className = 'flex items-center mb-1 p-1 rounded hover:bg-gray-700';
+                    playerDiv.innerHTML = `
+                        <img src="${avatarUrl}" alt="${player.name}" class="w-8 h-8 rounded-full mr-2">
+                        <span class="text-sm">${player.name}</span>
+                    `;
+                    avatarList.appendChild(playerDiv);
+                }
+            });
+        });
     }
     
     updateBuffButtonsState() {

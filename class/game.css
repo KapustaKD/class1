@@ -1649,8 +1649,8 @@ body.glassmorphism-bg {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    filter: brightness(0.6) blur(2px);
-    -webkit-filter: brightness(0.6) blur(2px);
+    filter: brightness(0.3) blur(2px);
+    -webkit-filter: brightness(0.3) blur(2px);
     z-index: 0;
     border-radius: inherit;
 }
@@ -1688,6 +1688,31 @@ body.glassmorphism-bg {
     display: flex;
     flex-direction: column;
     position: relative;
+}
+
+/* Сильне затемнення фону реінкарнації для кращої читабельності тексту */
+.reincarnation-content-v2::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 0;
+    border-radius: inherit;
+}
+
+/* Прибираємо фон для початку гри */
+.reincarnation-content-v2.no-reincarnation-bg {
+    background-image: linear-gradient(145deg, #2d3748, #1a202c);
+}
+
+.reincarnation-content-v2.no-reincarnation-bg::before {
+    display: none;
+}
+
+/* Забезпечуємо, що контент поверх затемнення */
+.reincarnation-content-v2 > * {
+    position: relative;
+    z-index: 1;
 }
 
 .reincarnation-header-v2 {

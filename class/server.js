@@ -759,7 +759,8 @@ io.on('connection', (socket) => {
                 console.log(`Вартість відкупу від ШІ: ${uprisingCost} ОО`);
             }
             
-            // Перевіряємо перемогу (досягнення клітинки 101)
+            // Перевіряємо перемогу (досягнення клітинки 101 або більше)
+            // ВАЖЛИВО: гра закінчується тільки коли позиція >= 101, а не просто при переході в 6 епоху
             if (finalPosition >= 101) {
                 // Гравець переміг!
                 currentPlayer.hasWon = true;
@@ -2892,6 +2893,71 @@ io.on('connection', (socket) => {
                 }
             }
         }
+    });
+    
+    // Вигнання гравця хостом
+    socket.on('kick_player', (data) => {
+        const player = players.get(socket.id);
+        if (!player || !player.isHost) {
+            console.log('Тільки хост може викидати гравців');
+            return;
+        }
+        
+        const room = rooms.get(data.roomId);
+        if (!room || room.gameState !== 'playing') {
+            console.log('Кімната не знайдена або гра не активна');
+            return;
+        }
+        
+        const kickedPlayer = room.gameData.players.find(p => p.id === data.playerId);
+        if (!kickedPlayer) {
+            console.log('Гравець для вигнання не знайдений');
+            return;
+        }
+        
+        // Видаляємо гравця з кімнати
+        room.gameData.players = room.gameData.players.filter(p => p.id !== data.playerId);
+        room.players = room.players.filter(p => p.id !== data.playerId);
+        
+        // Видаляємо з глобального списку
+        players.delete(data.playerId);
+        
+        // Якщо це був поточний гравець, передаємо хід наступному
+        if (room.gameData.currentPlayerIndex >= room.gameData.players.length) {
+            room.gameData.currentPlayerIndex = 0;
+        }
+        
+        // Перевіряємо чи хід був за вигнаним гравцем
+        const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+        if (!currentPlayer) {
+            room.gameData.currentPlayerIndex = 0;
+        }
+        
+        // Відключаємо сокет вигнаного гравця
+        const kickedSocket = io.sockets.sockets.get(data.playerId);
+        if (kickedSocket) {
+            kickedSocket.leave(room.id);
+            kickedSocket.emit('player_kicked', {
+                reason: 'Вас вигнав хост гри'
+            });
+            kickedSocket.disconnect();
+        }
+        
+        // Повідомляємо всіх про вигнання
+        io.to(room.id).emit('player_left', {
+            player: { id: data.playerId, name: kickedPlayer.name },
+            players: room.gameData.players
+        });
+        
+        io.to(room.id).emit('chat_message', {
+            type: 'system',
+            message: `🚫 ${kickedPlayer.name} був(ла) вигнаний(а) з гри`
+        });
+        
+        // Відправляємо оновлений стан гри
+        io.to(room.id).emit('game_state_update', room.gameData);
+        
+        console.log(`Гравець ${kickedPlayer.name} був вигнаний з кімнати ${data.roomId}`);
     });
 });
 

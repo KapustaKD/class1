@@ -656,9 +656,15 @@ class MultiplayerGame extends EducationalPathGame {
         // Обробник для відображення класу при реінкарнації
         this.socket.on('show_reincarnation_class', (data) => {
             console.log('Показ класу після реінкарнації:', data);
-            if (data.playerId === this.playerId && data.newClass) {
-                // Використовуємо нове модальне вікно V2 і показуємо бонусні очки
-                const payload = { newClass: data.newClass, points: data.bonusPoints || 0 };
+            if (data.newClass) {
+                // Перевіряємо, чи це реінкарнація поточного гравця або іншого
+                const isMyReincarnation = data.playerId === this.playerId;
+                const payload = { 
+                    newClass: data.newClass, 
+                    points: data.bonusPoints || 0,
+                    playerName: data.playerName,
+                    isOtherPlayer: !isMyReincarnation || data.isOtherPlayer
+                };
                 this.showReincarnationModal(payload, false);
             }
         });
@@ -2052,6 +2058,10 @@ class MultiplayerGame extends EducationalPathGame {
     showReincarnationModal(earlyReincarnationData = null, isGameStart = false) {
         const myPlayer = this.players.find(p => p.id === this.playerId);
         
+        // Перевіряємо, чи це реінкарнація іншого гравця
+        const isOtherPlayer = earlyReincarnationData?.isOtherPlayer || false;
+        const otherPlayerName = earlyReincarnationData?.playerName || null;
+        
         // Якщо передано новий клас в earlyReincarnationData, використовуємо його
         const classInfo = earlyReincarnationData?.newClass || myPlayer?.class;
         
@@ -2061,25 +2071,42 @@ class MultiplayerGame extends EducationalPathGame {
         }
         let reincarnationText = '';
         let pointsText = '';
+        let buttonText = 'Зрозуміло';
+        let headerText = 'Переродження';
+        let showStats = true;
+        let showFeatures = true;
         
-        // Визначаємо текст переродження залежно від класу
-        if (classInfo.id === 'aristocrat') {
-            reincarnationText = 'Вітаю! Ви народилися із золотою ложкою в роті! Ваше життя буде легшим, ніж у решти, завдяки безмежним статкам пращурів. Проте все ж один криптоніт маєте – казино та шинки. Якщо ступите ногою у даний заклад, втратите все!';
-        } else if (classInfo.id === 'burgher') {
-            reincarnationText = 'Вітаю! Ви народилися в родині, що здатна вас забезпечити! Проте на більше не сподівайтесь. Ваше життя буде посереднім. До казино та шинків також не варто підходити, якщо не хочете втратити половину майна!';
-        } else if (classInfo.id === 'peasant') {
-            reincarnationText = 'Вітаю! Ви народились! На цьому гарні новини для вас скінчились. Життя, сповнене стражданнями та злиднями, відтепер звична реальність. До казино та шинків теж не рекомендуємо ходити, якщо не хочете передчасно померти з голоду.';
+        // Якщо це реінкарнація іншого гравця
+        if (isOtherPlayer && otherPlayerName) {
+            headerText = `${otherPlayerName} переродився(лась)!`;
+            reincarnationText = `${otherPlayerName} завершив(ла) свій шлях і переродився(лась) у новому житті! Тепер він(вона) є ${classInfo.name}.`;
+            buttonText = 'Далі';
+            showStats = true;
+            showFeatures = false; // Для інших гравців не показуємо детальні особливості класу
+            
+            if (earlyReincarnationData?.bonusPoints || earlyReincarnationData?.points) {
+                const points = earlyReincarnationData.bonusPoints || earlyReincarnationData.points || 0;
+                pointsText = `+${points} ОО`;
+            }
         } else {
-            // Запасний варіант
-            reincarnationText = 'Вітаю! Ви переродились! Вас чекає нове життя з новою родиною та новою долею. Хай щастить!';
+            // Визначаємо текст переродження залежно від класу для поточного гравця
+            if (classInfo.id === 'aristocrat') {
+                reincarnationText = 'Вітаю! Ви народилися із золотою ложкою в роті! Ваше життя буде легшим, ніж у решти, завдяки безмежним статкам пращурів. Проте все ж один криптоніт маєте – казино та шинки. Якщо ступите ногою у даний заклад, втратите все!';
+            } else if (classInfo.id === 'burgher') {
+                reincarnationText = 'Вітаю! Ви народилися в родині, що здатна вас забезпечити! Проте на більше не сподівайтесь. Ваше життя буде посереднім. До казино та шинків також не варто підходити, якщо не хочете втратити половину майна!';
+            } else if (classInfo.id === 'peasant') {
+                reincarnationText = 'Вітаю! Ви народились! На цьому гарні новини для вас скінчились. Життя, сповнене стражданнями та злиднями, відтепер звична реальність. До казино та шинків теж не рекомендуємо ходити, якщо не хочете передчасно померти з голоду.';
+            } else {
+                // Запасний варіант
+                reincarnationText = 'Вітаю! Ви переродились! Вас чекає нове життя з новою родиною та новою долею. Хай щастить!';
+            }
+            
+            if (earlyReincarnationData) {
+                // Раннє переродження - додаємо інформацію про очки
+                const points = earlyReincarnationData.eventData?.points || earlyReincarnationData.points || 10;
+                pointsText = `+${points} ОО`;
+            }
         }
-        
-        if (earlyReincarnationData) {
-            // Раннє переродження - додаємо інформацію про очки
-            const points = earlyReincarnationData.eventData?.points || earlyReincarnationData.points || 10;
-            pointsText = `+${points} ОО`;
-        }
-        // Якщо це не раннє переродження, текст вже встановлено залежно від класу вище
 
         // Створюємо нове модальне вікно V2 (поза загальним quest-modal)
         const backdrop = document.createElement('div');
@@ -2094,13 +2121,13 @@ class MultiplayerGame extends EducationalPathGame {
             content.className = 'reincarnation-content-v2';
         }
         content.innerHTML = `
-            <div class=\"reincarnation-header-v2\"><h2>Переродження</h2></div>
+            <div class=\"reincarnation-header-v2\"><h2>${headerText}</h2></div>
             <div class=\"reincarnation-body-v2\">
                 ${pointsText ? `<div class=\"bonus-points\">${pointsText}</div>` : ''}
                 <div class=\"class-icon\">${classInfo.icon || ''}</div>
                 <div class=\"class-name\">${classInfo.name || ''}</div>
 
-                <div class=\"reincarnation-stats-v2\">
+                ${showStats ? `<div class=\"reincarnation-stats-v2\">
                     <div>
                         <div class=\"stat-label\">Стартові очки</div>
                         <div class=\"stat-value\">${classInfo.startPoints ?? 0}</div>
@@ -2109,18 +2136,18 @@ class MultiplayerGame extends EducationalPathGame {
                         <div class=\"stat-label\">Модифікатор руху</div>
                         <div class=\"stat-value\">${classInfo.moveModifier > 0 ? '+' : ''}${classInfo.moveModifier ?? 0}</div>
                     </div>
-                </div>
+                </div>` : ''}
 
                 <p class=\"description\">${reincarnationText}</p>
 
-                <div class=\"reincarnation-features-v2\">
+                ${showFeatures ? `<div class=\"reincarnation-features-v2\">
                     <ul>
                     ${this.getClassDescription(classInfo.id)}
                 </ul>
-            </div>
+            </div>` : ''}
             </div>
             <div class=\"reincarnation-footer-v2\">
-                <button id=\"close-class-modal-btn\" class=\"reincarnation-button-v2\"><span>Зрозуміло</span></button>
+                <button id=\"close-class-modal-btn\" class=\"reincarnation-button-v2\"><span>${buttonText}</span></button>
             </div>
         `;
 

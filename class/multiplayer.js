@@ -79,6 +79,17 @@ class MultiplayerGame extends EducationalPathGame {
         this.chatContainer = document.getElementById('chat-container');
         this.chatMessages = document.getElementById('chat-messages');
         this.chatInput = document.getElementById('chat-input');
+        
+        // Елементи нового чату в грі
+        this.gameChatPanel = document.getElementById('game-chat-panel');
+        this.gameChatMessages = document.getElementById('game-chat-messages');
+        this.gameChatInput = document.getElementById('game-chat-input');
+        this.gameChatSendBtn = document.getElementById('game-chat-send-btn');
+        this.chatToggleBtn = document.getElementById('chat-toggle-btn');
+        this.chatCloseBtn = document.getElementById('chat-close-btn');
+        this.chatUnreadCount = document.getElementById('chat-unread-count');
+        this.chatUnreadCountNum = 0;
+        this.isChatOpen = false;
         this.sendMessageBtn = document.getElementById('send-message-btn');
         
         // Додаємо елементи для коду кімнати
@@ -150,6 +161,24 @@ class MultiplayerGame extends EducationalPathGame {
         
         if (this.sendMessageBtn) {
             this.sendMessageBtn.addEventListener('click', () => this.sendMessage());
+        }
+        
+        // Ініціалізація нового чату в грі
+        if (this.chatToggleBtn) {
+            this.chatToggleBtn.addEventListener('click', () => this.toggleGameChat());
+        }
+        if (this.chatCloseBtn) {
+            this.chatCloseBtn.addEventListener('click', () => this.closeGameChat());
+        }
+        if (this.gameChatSendBtn) {
+            this.gameChatSendBtn.addEventListener('click', () => this.sendGameChatMessage());
+        }
+        if (this.gameChatInput) {
+            this.gameChatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.sendGameChatMessage();
+                }
+            });
         } else {
             console.error('Кнопка відправки повідомлення не знайдена!');
         }
@@ -472,6 +501,26 @@ class MultiplayerGame extends EducationalPathGame {
             this.handleTurnUpdate(data);
         });
         
+        this.socket.on('tic_tac_toe_start', (data) => {
+            this.showTicTacToeModal(data);
+        });
+        
+        this.socket.on('tic_tac_toe_move_update', (data) => {
+            this.updateTicTacToeBoard(data.gameState);
+        });
+        
+        this.socket.on('rock_paper_scissors_start', (data) => {
+            this.showRockPaperScissorsModal(data);
+        });
+        
+        this.socket.on('rps_choice_update', (data) => {
+            // Оновлення стану КНП
+            if (this.rpsGameState && data.gameState) {
+                this.rpsGameState = { ...this.rpsGameState, ...data.gameState };
+                this.updateRPSInterface(data.result, data.opponentChoice);
+            }
+        });
+        
         this.socket.on('show_event_prompt', (data) => {
             console.log('Отримано подію show_event_prompt:', data);
             this.showEventPrompt(data);
@@ -688,6 +737,12 @@ class MultiplayerGame extends EducationalPathGame {
         
         this.socket.on('chat_message', (data) => {
             this.addChatMessage(data.type, data.message, data.player);
+            // Додаємо повідомлення до нового чату
+            this.addGameChatMessage(data.type, data.message, data.player);
+        });
+        
+        this.socket.on('effect_error', (data) => {
+            alert(data.message || 'Помилка застосування ефекту');
         });
         
         this.socket.on('game_ended', (data) => {
@@ -901,8 +956,87 @@ class MultiplayerGame extends EducationalPathGame {
         }
         
         messageDiv.textContent = prefix + message;
-        this.chatMessages.appendChild(messageDiv);
-        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+        if (this.chatMessages) {
+            this.chatMessages.appendChild(messageDiv);
+            this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+        }
+    }
+    
+    // Додавання повідомлення до нового чату
+    addGameChatMessage(type, message, player = null) {
+        if (!this.gameChatMessages) return;
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `game-chat-message ${type}`;
+        
+        let prefix = '';
+        if (type === 'player' && player) {
+            prefix = `${player.name}: `;
+        } else if (type === 'system') {
+            prefix = '[Система] ';
+        } else if (type === 'spectator' && player) {
+            prefix = `[Спектатор] ${player.name}: `;
+        }
+        
+        messageDiv.textContent = prefix + message;
+        this.gameChatMessages.appendChild(messageDiv);
+        this.gameChatMessages.scrollTop = this.gameChatMessages.scrollHeight;
+        
+        // Оновлюємо лічильник непрочитаних, якщо чат закритий
+        if (!this.isChatOpen && type === 'player') {
+            this.chatUnreadCountNum++;
+            this.updateChatUnreadIndicator();
+        }
+    }
+    
+    // Оновлення індикатора непрочитаних повідомлень
+    updateChatUnreadIndicator() {
+        if (!this.chatUnreadCount || !this.chatToggleBtn) return;
+        
+        if (this.chatUnreadCountNum > 0) {
+            this.chatUnreadCount.textContent = this.chatUnreadCountNum > 99 ? '99+' : this.chatUnreadCountNum;
+            this.chatUnreadCount.classList.remove('hidden');
+            this.chatToggleBtn.classList.add('has-unread');
+        } else {
+            this.chatUnreadCount.classList.add('hidden');
+            this.chatToggleBtn.classList.remove('has-unread');
+        }
+    }
+    
+    // Відкриття/закриття чату
+    toggleGameChat() {
+        if (!this.gameChatPanel) return;
+        
+        this.isChatOpen = !this.isChatOpen;
+        if (this.isChatOpen) {
+            this.gameChatPanel.classList.remove('hidden');
+            this.chatUnreadCountNum = 0;
+            this.updateChatUnreadIndicator();
+        } else {
+            this.closeGameChat();
+        }
+    }
+    
+    closeGameChat() {
+        if (!this.gameChatPanel) return;
+        this.gameChatPanel.classList.add('hidden');
+        this.isChatOpen = false;
+    }
+    
+    // Відправка повідомлення з нового чату
+    sendGameChatMessage() {
+        if (!this.gameChatInput || !this.socket) return;
+        
+        const message = this.gameChatInput.value.trim();
+        if (!message) return;
+        
+        this.socket.emit('chat_message', {
+            message,
+            playerId: this.playerId,
+            roomId: this.roomId
+        });
+        
+        this.gameChatInput.value = '';
     }
     
     // Перевизначення методів для мультиплеєру
@@ -1782,11 +1916,20 @@ class MultiplayerGame extends EducationalPathGame {
         // Закриваємо модальне вікно для всіх гравців
         this.questModal.classList.add('hidden');
         
-        // Закриваємо glassmorphism модальне вікно обхідної дороги
+        // Закриваємо glassmorphism модальне вікно обхідної дороги для ВСІХ гравців
         const bypassModal = document.getElementById('bypass-road-modal');
         if (bypassModal) {
             bypassModal.remove();
             document.body.classList.remove('glassmorphism-bg');
+        }
+        
+        // Також закриваємо якщо це подія обхідної дороги
+        if (data.eventType === 'alternative-path') {
+            const bypassModal2 = document.getElementById('bypass-road-modal');
+            if (bypassModal2) {
+                bypassModal2.remove();
+                document.body.classList.remove('glassmorphism-bg');
+            }
         }
         
         // Закриваємо glassmorphism модальне вікно педагобота
@@ -4150,6 +4293,32 @@ class MultiplayerGame extends EducationalPathGame {
             return;
         }
         
+        // Перевіряємо, чи це хід поточного гравця
+        if (this.ticTacToeState.currentPlayer !== this.playerId) {
+            console.log('Не ваш хід');
+            return;
+        }
+        
+        // Відправляємо хід на сервер
+        if (this.socket && this.roomId) {
+            this.socket.emit('tic_tac_toe_move', {
+                roomId: this.roomId,
+                cellIndex: cellIndex,
+                playerId: this.playerId
+            });
+        } else {
+            // Локальна гра (fallback)
+            this.makeTicTacToeMoveLocal(cellIndex);
+        }
+    }
+    
+    // Локальна обробка ходу (якщо немає підключення)
+    makeTicTacToeMoveLocal(cellIndex) {
+        const cell = document.querySelector(`[data-index="${cellIndex}"]`);
+        if (!cell || this.ticTacToeState.gameState[cellIndex] !== '' || !this.ticTacToeState.gameActive) {
+            return;
+        }
+        
         // Робимо хід
         this.ticTacToeState.gameState[cellIndex] = this.ticTacToeState.currentPlayer;
         cell.innerHTML = this.createPlayerSVG(this.ticTacToeState.currentPlayer);
@@ -4200,6 +4369,52 @@ class MultiplayerGame extends EducationalPathGame {
         }
         
         console.log(`Хід зроблено в клітинку ${cellIndex}`);
+    }
+    
+    // Оновлення дошки після ходу (викликається з сервера)
+    updateTicTacToeBoard(data) {
+        if (!data || !data.gameState) return;
+        
+        const gameState = data.gameState;
+        
+        // Оновлюємо локальний стан
+        if (!this.ticTacToeState) {
+            this.ticTacToeState = {};
+        }
+        this.ticTacToeState.gameState = gameState.gameState;
+        this.ticTacToeState.currentPlayer = gameState.currentPlayer;
+        this.ticTacToeState.gameActive = gameState.gameActive;
+        this.ticTacToeState.scores = gameState.scores;
+        
+        // Оновлюємо візуальну дошку
+        const board = document.getElementById('tic-tac-toe-board') || document.getElementById('tic-tac-toe-board-view');
+        if (!board) return;
+        
+        const cells = board.querySelectorAll('.tic-tac-toe-cell');
+        cells.forEach((cell, index) => {
+            const value = gameState.gameState[index];
+            if (value) {
+                // Визначаємо символ на основі гравця
+                const isPlayer1 = gameState.players[0] === value;
+                const symbol = isPlayer1 ? 'X' : 'O';
+                cell.innerHTML = this.createPlayerSVG(symbol);
+                cell.classList.add(symbol.toLowerCase());
+            }
+        });
+        
+        // Оновлюємо статус
+        if (data.winner) {
+            this.updateTicTacToeStatus(`Гравець ${data.winner} переміг!`);
+            this.disableTicTacToeBoard();
+        } else if (!gameState.gameActive) {
+            this.updateTicTacToeStatus('Нічия!');
+            this.disableTicTacToeBoard();
+        } else {
+            const isMyTurn = gameState.currentPlayer === this.playerId;
+            const currentPlayerName = gameState.players.includes(gameState.currentPlayer) ? 
+                gameState.playerNames[gameState.players.indexOf(gameState.currentPlayer)] : 'Гравець';
+            this.updateTicTacToeStatus(isMyTurn ? 'Ваш хід!' : `Хід гравця: ${currentPlayerName}`);
+        }
     }
     
     // Перехід до наступного раунду

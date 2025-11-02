@@ -1139,10 +1139,15 @@ class EducationalPathGame {
             const cellData = this.specialCells[targetCell];
             if (!cellData) continue;
             
-            // Пропускаємо вже використані типи подій (крім обхідних доріг та реінкарнації)
+            // Пропускаємо вже використані типи подій (крім обхідних доріг)
+            // Реінкарнацію теж пропускаємо, щоб не підлаштовувати ходи на неї
             if (this.usedEventTypes.has(cellData.type) && 
-                cellData.type !== 'alternative-path' && 
-                cellData.type !== 'reincarnation') {
+                cellData.type !== 'alternative-path') {
+                continue;
+            }
+            
+            // Пропускаємо реінкарнацію при підлаштуванні ходів
+            if (cellData.type === 'reincarnation') {
                 continue;
             }
             

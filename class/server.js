@@ -775,19 +775,44 @@ io.on('connection', (socket) => {
         
         console.log(`${currentPlayer.name} перемістився з позиції ${oldPosition} на позицію ${currentPlayer.position}`);
         
-        // Перевіряємо зміну епохи (реінкарнація)
-        const oldEpoch = getEpochForPosition(oldPosition);
-        const newEpoch = getEpochForPosition(finalPosition);
+        // Зберігаємо інформацію про можливі події для відправки після анімації
+        const eventInfo = {
+            hasEvent: false,
+            eventType: null,
+            eventData: null,
+            playerId: currentPlayer.id,
+            playerName: currentPlayer.name
+        };
         
-        if (stopMove) {
-            console.log(`${currentPlayer.name} зупинився на межі епохи ${newEpoch} - реінкарнація!`);
+        // Перевіряємо, чи є подія на новій позиції
+        let hasEvent = false;
+        
+        // Перевірка на інші події (скорочення шляху тощо)
+        const specialCell = specialCells[currentPlayer.position];
+        if (specialCell && !hasEvent) {
+            hasEvent = true;
+            eventInfo.hasEvent = true;
+            eventInfo.eventType = specialCell.type;
+            eventInfo.eventData = { ...specialCell, cellNumber: currentPlayer.position };
+            console.log(`Гравець ${currentPlayer.name} потрапив на спеціальну клітинку ${currentPlayer.position}: ${specialCell.type}`);
+        }
+        
+        // Відправляємо інформацію про події разом з результатом кубика
+        // Перевіряємо реінкарнацію ПІСЛЯ переміщення
+        // Перевіряємо зміну епохи (реінкарнація)
+        const oldEpochAfterMove = getEpochForPosition(oldPosition);
+        const newEpochAfterMove = getEpochForPosition(finalPosition);
+        
+        if (oldEpochAfterMove !== newEpochAfterMove && finalPosition > oldPosition) {
+            // Гравець перейшов в нову епоху - реінкарнація
+            console.log(`${currentPlayer.name} перейшов в нову епоху ${newEpochAfterMove} - реінкарнація!`);
             
             // Нараховуємо бонусні очки
             currentPlayer.points += 50;
             
             // Збираємо зайняті класи тільки з гравців, які знаходяться в новій епосі
             const occupiedClasses = room.gameData.players
-                .filter(p => p.id !== currentPlayer.id && p.class && getEpochForPosition(p.position) === newEpoch)
+                .filter(p => p.id !== currentPlayer.id && p.class && getEpochForPosition(p.position) === newEpochAfterMove)
                 .map(p => p.class.id);
             
             // Створюємо пул доступних класів
@@ -815,26 +840,24 @@ io.on('connection', (socket) => {
                 }
             ];
             
-            // ЗАМІНИТИ СТАРУ ЛОГІКУ ВИБОРУ КЛАСУ НА ЦЮ:
-            
-            // 1. Збираємо класи, які вже зайняті в новій епосі
+            // Збираємо класи, які вже зайняті в новій епосі
             const occupiedClassesInNewEpoch = room.gameData.players
-                .filter(p => p.id !== currentPlayer.id && getEpochForPosition(p.position) === newEpoch)
+                .filter(p => p.id !== currentPlayer.id && getEpochForPosition(p.position) === newEpochAfterMove)
                 .map(p => p.class.id);
 
-            // 2. Створюємо лічильник класів
+            // Створюємо лічильник класів
             const classCounts = {};
             for (const classId of occupiedClassesInNewEpoch) {
                 classCounts[classId] = (classCounts[classId] || 0) + 1;
             }
 
-            // 3. Визначаємо, які класи доступні
+            // Визначаємо, які класи доступні
             let availableClassPool = availableClasses.filter(cls => {
                 const count = classCounts[cls.id] || 0;
                 if (room.gameData.players.length <= 3) {
-                    return count < 1; // Якщо гравців мало, класи не повторюються
+                    return count < 1;
                 } else {
-                    return count < 2; // Якщо багато, можуть повторюватися до 2 разів
+                    return count < 2;
                 }
             });
 
@@ -843,59 +866,34 @@ io.on('connection', (socket) => {
                 availableClassPool = availableClasses;
             }
 
-            // 4. Присвоюємо випадковий клас з доступних
+            // Присвоюємо випадковий клас з доступних
             currentPlayer.class = availableClassPool[Math.floor(Math.random() * availableClassPool.length)];
-            
-            // Нараховуємо бонус за переродження (кінець епохи)
-            const reincarnationBonus = 10;
-            currentPlayer.points += reincarnationBonus;
             
             console.log(`${currentPlayer.name} отримав новий клас: ${currentPlayer.class.name}`);
             
-            // Повідомлення про зміну класу
-            io.to(room.id).emit('chat_message', { type: 'system', message: `${currentPlayer.name} реінкарнував і став ${currentPlayer.class.name}!` });
-            
-            // Відправляємо подію для відображення класу
-            io.to(room.id).emit('show_reincarnation_class', {
+            // Відправляємо подію реінкарнації ПОСЛЕ переміщення
+            const reincarnationBonus = 50;
+            io.to(currentPlayer.id).emit('show_reincarnation_class', {
                 playerId: currentPlayer.id,
                 playerName: currentPlayer.name,
                 newClass: currentPlayer.class,
                 bonusPoints: reincarnationBonus
             });
+            
+            // Відправляємо іншим гравцям
+            room.players.forEach(p => {
+                if (p.id !== currentPlayer.id) {
+                    io.to(p.id).emit('show_reincarnation_class', {
+                        playerId: currentPlayer.id,
+                        playerName: currentPlayer.name,
+                        newClass: currentPlayer.class,
+                        bonusPoints: reincarnationBonus,
+                        isOtherPlayer: true
+                    });
+                }
+            });
         }
         
-        // Повідомляємо всіх про кидання кубика та нову позицію
-        // (результат буде відправлений нижче з інформацією про події)
-        
-        // Зберігаємо інформацію про можливі події для відправки після анімації
-        const eventInfo = {
-            hasEvent: false,
-            eventType: null,
-            eventData: null,
-            playerId: currentPlayer.id,
-            playerName: currentPlayer.name
-        };
-        
-        // Перевіряємо, чи є подія на новій позиції
-        let hasEvent = false;
-        
-        // Перевірка на реінкарнацію (зупинка на межі епохи)
-        // Прибираємо генерацію події reincarnation, тому що клас вже показано через show_reincarnation_class
-        if (stopMove) {
-            console.log(`Гравець ${currentPlayer.name} потрапив на межу епохи ${currentPlayer.position}, реінкарнація вже оброблена`);
-        }
-        
-        // Перевірка на інші події (скорочення шляху тощо)
-        const specialCell = specialCells[currentPlayer.position];
-        if (specialCell && !hasEvent) {
-            hasEvent = true;
-            eventInfo.hasEvent = true;
-            eventInfo.eventType = specialCell.type;
-            eventInfo.eventData = { ...specialCell, cellNumber: currentPlayer.position };
-            console.log(`Гравець ${currentPlayer.name} потрапив на спеціальну клітинку ${currentPlayer.position}: ${specialCell.type}`);
-        }
-        
-        // Відправляємо інформацію про події разом з результатом кубика
         io.to(room.id).emit('dice_result', {
             playerId: currentPlayer.id,
             playerName: currentPlayer.name,

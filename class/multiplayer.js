@@ -179,6 +179,11 @@ class MultiplayerGame extends EducationalPathGame {
                     this.sendGameChatMessage();
                 }
             });
+        }
+        
+        // Додаємо drag & drop для чату
+        if (this.gameChatPanel) {
+            this.makeChatDraggable();
         } else {
             console.error('Кнопка відправки повідомлення не знайдена!');
         }
@@ -1039,6 +1044,65 @@ class MultiplayerGame extends EducationalPathGame {
         this.gameChatInput.value = '';
     }
     
+    // Робимо чат переміщуваним
+    makeChatDraggable() {
+        const chatHeader = this.gameChatPanel?.querySelector('.game-chat-header');
+        if (!chatHeader) return;
+        
+        let isDragging = false;
+        let currentX = 0;
+        let currentY = 0;
+        let initialX = 0;
+        let initialY = 0;
+        
+        chatHeader.style.cursor = 'move';
+        
+        chatHeader.addEventListener('mousedown', (e) => {
+            if (e.target.tagName === 'BUTTON') return; // Не переміщуємо при кліку на кнопку
+            
+            isDragging = true;
+            initialX = e.clientX;
+            initialY = e.clientY;
+            
+            const rect = this.gameChatPanel.getBoundingClientRect();
+            currentX = rect.left;
+            currentY = rect.top;
+            
+            document.addEventListener('mousemove', dragChat);
+            document.addEventListener('mouseup', stopDragChat);
+        });
+        
+        const dragChat = (e) => {
+            if (!isDragging) return;
+            
+            e.preventDefault();
+            
+            const dx = e.clientX - initialX;
+            const dy = e.clientY - initialY;
+            
+            let newX = currentX + dx;
+            let newY = currentY + dy;
+            
+            // Обмежуємо переміщення в межах екрана
+            const maxX = window.innerWidth - this.gameChatPanel.offsetWidth;
+            const maxY = window.innerHeight - this.gameChatPanel.offsetHeight;
+            
+            newX = Math.max(0, Math.min(newX, maxX));
+            newY = Math.max(0, Math.min(newY, maxY));
+            
+            this.gameChatPanel.style.left = newX + 'px';
+            this.gameChatPanel.style.top = newY + 'px';
+            this.gameChatPanel.style.right = 'auto';
+            this.gameChatPanel.style.transform = 'none';
+        };
+        
+        const stopDragChat = () => {
+            isDragging = false;
+            document.removeEventListener('mousemove', dragChat);
+            document.removeEventListener('mouseup', stopDragChat);
+        };
+    }
+    
     // Перевизначення методів для мультиплеєру
     initializeGame() {
         if (this.isOnlineMode) {
@@ -1673,19 +1737,9 @@ class MultiplayerGame extends EducationalPathGame {
             // Це вікно буде показано сервером через socket.on('early_reincarnation_event')
             return;
         } else if (data.eventType === 'reincarnation') {
-            modalContent = `
-                <h3 class="text-2xl font-bold mb-4">🔄 Реінкарнація!</h3>
-                <p class="mb-4">Ви завершили епоху та готові до нової зустрічі з викликами!</p>
-                <p class="mb-4">Ви отримуєте ${data.eventData.points} ОО та переходите до наступної епохи.</p>
-            `;
-            
-            // Завжди одна кнопка для реінкарнації
-                buttons = [
-                { text: 'Ай, шайтаан, знову помер. Відроджуємось та йдемо далі!', callback: () => this.makeEventChoice('yes', data.eventType, data.eventData) }
-            ];
-            
-            // Показуємо модальне вікно для реінкарнації
-            this.showQuestModal('Реінкарнація', modalContent, buttons, null);
+            // Прибираємо це вікно реінкарнації - воно більше не потрібне
+            // Реінкарнація тепер обробляється автоматично без показу цього вікна
+            this.makeEventChoice('yes', data.eventType, data.eventData);
             return;
         } else if (data.eventType === 'machine-uprising') {
             const cost = data.eventData.cost;
@@ -2681,10 +2735,14 @@ class MultiplayerGame extends EducationalPathGame {
             imagePath = 'image/modal_window/tic_tac_toe.jpg';
         } else if (gameData.gameType === 'rock_paper_scissors') {
             imagePath = 'image/modal_window/rock_paper_scissors.png';
-        } else if (gameData.name === 'Мегамозок') {
+        } else if (gameData.name === 'Мегамозок' || gameData.gameType === 'megabrain') {
             imagePath = 'image/modal_window/megabrain_2.jpg';
         } else if (gameData.gameType === 'genius') {
             imagePath = 'image/modal_window/i_am_a_genius.png';
+        } else if (data.gameState.gameType === 'great_pedagogical') {
+            imagePath = 'image/modal_window/big_pedagogik.png';
+        } else if (data.gameState.gameType === 'pedagog_mom') {
+            imagePath = 'image/modal_window/i_am_a_teacher.jpg';
         }
         
         this.showQuestModal('PvP-квест', modalContent, [], imagePath);

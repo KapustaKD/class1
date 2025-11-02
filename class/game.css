@@ -1674,7 +1674,10 @@ body.glassmorphism-bg {
 }
 
 .reincarnation-content-v2 {
-    background: linear-gradient(145deg, #2d3748, #1a202c);
+    background-image: url('image/modal_window/reincarnation.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     border: 1px solid #4a5568;
     border-radius: 1rem;
     width: 100%;
@@ -1684,6 +1687,7 @@ body.glassmorphism-bg {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 .reincarnation-header-v2 {

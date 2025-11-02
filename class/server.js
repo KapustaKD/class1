@@ -1031,6 +1031,7 @@ io.on('connection', (socket) => {
                         rounds: [{ player1Choice: null, player2Choice: null, winner: null },
                                 { player1Choice: null, player2Choice: null, winner: null },
                                 { player1Choice: null, player2Choice: null, winner: null }],
+                        choices: { [player.id]: null, [opponent.id]: null },
                         scores: { [player.id]: 0, [opponent.id]: 0 },
                         gameActive: true,
                         currentPlayer: player.id
@@ -1562,13 +1563,30 @@ io.on('connection', (socket) => {
             return;
         }
         
+        // Отримуємо поточний раунд та дошку
+        const currentRound = gameState.currentRound || 0;
+        if (!gameState.rounds) {
+            gameState.rounds = Array(3).fill(null).map(() => ({board: Array(9).fill(null), winner: null, currentPlayer: null}));
+        }
+        if (!gameState.rounds[currentRound]) {
+            gameState.rounds[currentRound] = {board: Array(9).fill(null), winner: null, currentPlayer: null};
+        }
+        
+        const roundBoard = gameState.rounds[currentRound].board;
+        
         // Перевіряємо, чи клітинка вільна
-        if (gameState.gameState[data.cellIndex] !== null && gameState.gameState[data.cellIndex] !== '') {
+        if (roundBoard[data.cellIndex] !== null && roundBoard[data.cellIndex] !== '' && roundBoard[data.cellIndex] !== undefined) {
             console.log('Клітинка вже зайнята');
             return;
         }
         
-        // Робимо хід
+        // Робимо хід в поточний раунд
+        roundBoard[data.cellIndex] = player.id;
+        
+        // Оновлюємо gameState для сумісності
+        if (!gameState.gameState) {
+            gameState.gameState = Array(9).fill(null);
+        }
         gameState.gameState[data.cellIndex] = player.id;
         
         // Перевіряємо перемогу
@@ -1581,30 +1599,57 @@ io.on('connection', (socket) => {
         let winner = null;
         for (const combo of winningCombinations) {
             const [a, b, c] = combo;
-            if (gameState.gameState[a] && 
-                gameState.gameState[a] === gameState.gameState[b] && 
-                gameState.gameState[a] === gameState.gameState[c]) {
-                winner = gameState.gameState[a];
+            if (roundBoard[a] && 
+                roundBoard[a] === roundBoard[b] && 
+                roundBoard[a] === roundBoard[c]) {
+                winner = roundBoard[a];
                 break;
             }
         }
         
-        // Змінюємо гравця або завершуємо гру
+        // Змінюємо гравця або завершуємо раунд
         if (winner) {
-            gameState.gameActive = false;
+            gameState.rounds[currentRound].winner = winner;
             gameState.scores[winner] = (gameState.scores[winner] || 0) + 1;
-        } else if (!gameState.gameState.includes(null) && !gameState.gameState.includes('')) {
-            // Нічия
-            gameState.gameActive = false;
+            
+            // Перевіряємо чи завершено всі раунди
+            if (currentRound >= 2 || gameState.scores[winner] >= 2) {
+                gameState.gameActive = false;
+            } else {
+                // Переходимо до наступного раунду
+                gameState.currentRound = currentRound + 1;
+                if (!gameState.rounds[gameState.currentRound]) {
+                    gameState.rounds[gameState.currentRound] = {board: Array(9).fill(null), winner: null, currentPlayer: null};
+                }
+                gameState.currentPlayer = gameState.players[0]; // Починаємо з першого гравця
+            }
+        } else if (!roundBoard.includes(null)) {
+            // Нічия в раунді
+            gameState.rounds[currentRound].winner = null;
+            gameState.currentRound = currentRound + 1;
+            if (gameState.currentRound >= 3) {
+                gameState.gameActive = false;
+            } else {
+                if (!gameState.rounds[gameState.currentRound]) {
+                    gameState.rounds[gameState.currentRound] = {board: Array(9).fill(null), winner: null, currentPlayer: null};
+                }
+                gameState.currentPlayer = gameState.players[0];
+            }
         } else {
             // Змінюємо гравця
             gameState.currentPlayer = gameState.players.find(p => p !== player.id);
+            gameState.rounds[currentRound].currentPlayer = gameState.currentPlayer;
         }
         
-        // Відправляємо оновлення всім гравцям
+        // Відправляємо оновлення всім гравцям з правильною структурою
         io.to(room.id).emit('tic_tac_toe_move_update', {
-            gameState: gameState,
-            winner: winner
+            gameState: {
+                ...gameState,
+                gameState: roundBoard, // Поточний стан дошки раунду для сумісності
+                rounds: gameState.rounds
+            },
+            winner: winner,
+            currentRound: currentRound
         });
     });
     
@@ -1625,7 +1670,11 @@ io.on('connection', (socket) => {
         gameState.choices[player.id] = data.choice;
         
         // Перевіряємо чи обидва зробили вибір
-        const allChose = gameState.players.every(p => gameState.choices[p] !== null);
+        // choices може бути null, undefined, або пустим, тому перевіряємо наявність значення
+        const allChose = gameState.players.every(p => {
+            const choice = gameState.choices[p];
+            return choice !== null && choice !== undefined && choice !== '';
+        });
         
         if (allChose) {
             const [player1Id, player2Id] = gameState.players;

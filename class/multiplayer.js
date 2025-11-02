@@ -2087,7 +2087,12 @@ class MultiplayerGame extends EducationalPathGame {
         backdrop.id = 'reincarnation-backdrop-v2';
 
         const content = document.createElement('div');
-        content.className = 'reincarnation-content-v2';
+        // На початок гри (isGameStart=true) не додаємо фон
+        if (isGameStart) {
+            content.className = 'reincarnation-content-v2 no-reincarnation-bg';
+        } else {
+            content.className = 'reincarnation-content-v2';
+        }
         content.innerHTML = `
             <div class=\"reincarnation-header-v2\"><h2>Переродження</h2></div>
             <div class=\"reincarnation-body-v2\">
@@ -3320,7 +3325,7 @@ class MultiplayerGame extends EducationalPathGame {
             `;
         }
         
-        this.showQuestModal('Хто, де, коли? - Творчий квест', modalContent, [], 'image/modal_window/owl.png');
+        this.showQuestModal('Творчий квест', modalContent, [], 'image/modal_window/owl.png');
         
         if (isMyTurn) {
             // Додаємо обробник кнопки
@@ -3351,7 +3356,7 @@ class MultiplayerGame extends EducationalPathGame {
             <p class=\"mb-4\">Питання: <strong>${data.question}</strong></p>
             <p class=\"text-center text-gray-400\">Черга гравця ${data.currentPlayer.name}</p>
         `;
-        this.showQuestModal('Хто, де, коли? - Творчий квест', modalContent, [], 'image/modal_window/owl.png');
+        this.showQuestModal('Творчий квест', modalContent, [], 'image/modal_window/owl.png');
     }
     
     submitMadLibsAnswer() {
@@ -3383,7 +3388,7 @@ class MultiplayerGame extends EducationalPathGame {
             <div class=\"text-center text-emerald-300 font-bold text-xl\">Вітаю, Ви здобули ${rewardText}!</div>
         `;
         
-        this.showQuestModal('Хто, де, коли? - Творчий квест', modalContent, [
+        this.showQuestModal('Творчий квест', modalContent, [
             { text: 'Закрити', callback: () => this.closeMiniGame() }
         ], 'image/modal_window/owl.png');
     }

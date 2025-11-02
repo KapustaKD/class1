@@ -7,11 +7,27 @@ const path = require('path');
 function passTurnToNextPlayer(room) {
     // Переходимо до наступного гравця
     console.log('Старий currentPlayerIndex:', room.gameData.currentPlayerIndex);
+    
+    // Визначаємо початок кола, якщо ще не визначено
+    if (room.roundStartPlayerIndex === undefined) {
+        room.roundStartPlayerIndex = room.gameData.currentPlayerIndex;
+        // Ініціалізуємо лічильник використань бафів
+        room.playersBuffUsedThisRound = {};
+    }
+    
     room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
     console.log('Новий currentPlayerIndex:', room.gameData.currentPlayerIndex);
     
     // Синхронізуємо з room.currentPlayerIndex
     room.currentPlayerIndex = room.gameData.currentPlayerIndex;
+    
+    // Перевіряємо чи завершено коло (повернулись до початку)
+    if (room.gameData.currentPlayerIndex === room.roundStartPlayerIndex) {
+        // Коло завершено - скидаємо лічильник бафів
+        room.playersBuffUsedThisRound = {};
+        room.roundStartPlayerIndex = room.gameData.currentPlayerIndex; // Новий початок кола
+        console.log('Коло завершено, скидаємо лічильник бафів');
+    }
     
     // Пропускаємо гравців, які вибули
     while (room.gameData.players[room.gameData.currentPlayerIndex].hasWon || 
@@ -1531,6 +1547,134 @@ io.on('connection', (socket) => {
         passTurnToNextPlayer(room);
     });
     
+    // Обробка ходу в хрестиках-нуликах
+    socket.on('tic_tac_toe_move', (data) => {
+        const player = players.get(socket.id);
+        if (!player) return;
+        
+        const room = rooms.get(data.roomId);
+        if (!room || !room.tictactoeState || !room.tictactoeState.gameActive) return;
+        
+        const gameState = room.tictactoeState;
+        
+        // Перевіряємо, чи це хід поточного гравця
+        if (gameState.currentPlayer !== player.id) {
+            console.log('Не хід цього гравця');
+            return;
+        }
+        
+        // Перевіряємо, чи клітинка вільна
+        if (gameState.gameState[data.cellIndex] !== null && gameState.gameState[data.cellIndex] !== '') {
+            console.log('Клітинка вже зайнята');
+            return;
+        }
+        
+        // Робимо хід
+        gameState.gameState[data.cellIndex] = player.id;
+        
+        // Перевіряємо перемогу
+        const winningCombinations = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Рядки
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Колонки
+            [0, 4, 8], [2, 4, 6] // Діагоналі
+        ];
+        
+        let winner = null;
+        for (const combo of winningCombinations) {
+            const [a, b, c] = combo;
+            if (gameState.gameState[a] && 
+                gameState.gameState[a] === gameState.gameState[b] && 
+                gameState.gameState[a] === gameState.gameState[c]) {
+                winner = gameState.gameState[a];
+                break;
+            }
+        }
+        
+        // Змінюємо гравця або завершуємо гру
+        if (winner) {
+            gameState.gameActive = false;
+            gameState.scores[winner] = (gameState.scores[winner] || 0) + 1;
+        } else if (!gameState.gameState.includes(null) && !gameState.gameState.includes('')) {
+            // Нічия
+            gameState.gameActive = false;
+        } else {
+            // Змінюємо гравця
+            gameState.currentPlayer = gameState.players.find(p => p !== player.id);
+        }
+        
+        // Відправляємо оновлення всім гравцям
+        io.to(room.id).emit('tic_tac_toe_move_update', {
+            gameState: gameState,
+            winner: winner
+        });
+    });
+    
+    // Обробка вибору в камінь-ножиці-папір
+    socket.on('rps_choice', (data) => {
+        const player = players.get(socket.id);
+        if (!player) return;
+        
+        const room = rooms.get(data.roomId);
+        if (!room || !room.rockPaperScissorsState || !room.rockPaperScissorsState.gameActive) return;
+        
+        const gameState = room.rockPaperScissorsState;
+        
+        // Перевіряємо, чи гравець є учасником
+        if (!gameState.players.includes(player.id)) return;
+        
+        // Зберігаємо вибір
+        gameState.choices[player.id] = data.choice;
+        
+        // Перевіряємо чи обидва зробили вибір
+        const allChose = gameState.players.every(p => gameState.choices[p] !== null);
+        
+        if (allChose) {
+            const [player1Id, player2Id] = gameState.players;
+            const choice1 = gameState.choices[player1Id];
+            const choice2 = gameState.choices[player2Id];
+            
+            // Визначаємо переможця
+            let winner = null;
+            if (choice1 === choice2) {
+                // Нічия
+            } else if (
+                (choice1 === 'rock' && choice2 === 'scissors') ||
+                (choice1 === 'paper' && choice2 === 'rock') ||
+                (choice1 === 'scissors' && choice2 === 'paper')
+            ) {
+                winner = player1Id;
+                gameState.scores[player1Id]++;
+            } else {
+                winner = player2Id;
+                gameState.scores[player2Id]++;
+            }
+            
+            // Відправляємо результат
+            io.to(room.id).emit('rps_choice_update', {
+                gameState: gameState,
+                result: winner ? (winner === player.id ? 'win' : 'lose') : 'tie',
+                opponentChoice: player.id === player1Id ? choice2 : choice1
+            });
+            
+            // Переходимо до наступного раунду або завершуємо
+            gameState.currentRound++;
+            if (gameState.currentRound > gameState.maxRounds || 
+                gameState.scores[player1Id] >= 2 || 
+                gameState.scores[player2Id] >= 2) {
+                gameState.gameActive = false;
+            } else {
+                // Скидаємо вибори для наступного раунду
+                gameState.choices = { [player1Id]: null, [player2Id]: null };
+            }
+        } else {
+            // Один гравець зробив вибір, чекаємо іншого
+            io.to(room.id).emit('rps_choice_update', {
+                gameState: gameState,
+                waiting: true
+            });
+        }
+    });
+    
     // Обробляємо застосування бафів/дебафів
     socket.on('apply_effect', (data) => {
         console.log('Отримано застосування бафа/дебафа:', data);
@@ -1557,6 +1701,18 @@ io.on('connection', (socket) => {
         const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
         if (currentPlayer.id !== caster.id) {
             console.log('Не хід цього гравця');
+            return;
+        }
+        
+        // Перевірка, чи гравець вже використав баф у цьому колі
+        if (!room.playersBuffUsedThisRound) {
+            room.playersBuffUsedThisRound = {};
+        }
+        if (room.playersBuffUsedThisRound[caster.id]) {
+            console.log('Гравець вже використав баф у цьому колі');
+            io.to(socket.id).emit('effect_error', {
+                message: 'Ви вже використали баф/дебаф у цьому колі. Зачекайте до наступного кола.'
+            });
             return;
         }
         
@@ -1606,6 +1762,9 @@ io.on('connection', (socket) => {
         
         // Списуємо ОО
         caster.points -= cost;
+        
+        // Відмічаємо, що гравець використав баф у цьому колі
+        room.playersBuffUsedThisRound[caster.id] = true;
         
         let moveAmount = 0;
         let targetNewPosition = targetPlayer.position;

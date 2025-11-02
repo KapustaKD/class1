@@ -109,6 +109,11 @@
                 <button id="buff-debuff-btn" class="cp-button buff">
                     <i class="fas fa-star"></i><span>Бафи/Дебафи</span>
                 </button>
+                <!-- Кнопка чату -->
+                <button id="chat-toggle-btn" class="cp-button chat">
+                    <i class="fas fa-comments"></i><span>Чат</span>
+                    <span id="chat-unread-count" class="chat-unread-badge hidden">0</span>
+                </button>
                 <!-- ID збережено -->
                 <button id="exit-game-btn" class="cp-button exit" onclick="window.exitGame()">
                     <i class="fas fa-door-open"></i><span>Вийти з гри</span>
@@ -116,6 +121,19 @@
             </div>
         </div>
         <!-- ******** КІНЕЦЬ НОВОЇ ПАНЕЛІ ******** -->
+    </div>
+    
+    <!-- Панель чату (висувається) -->
+    <div id="game-chat-panel" class="game-chat-panel hidden">
+        <div class="game-chat-header">
+            <h3>Чат</h3>
+            <button id="chat-close-btn" class="chat-close-btn">✖</button>
+        </div>
+        <div id="game-chat-messages" class="game-chat-messages"></div>
+        <div class="game-chat-input-container">
+            <input type="text" id="game-chat-input" class="game-chat-input" placeholder="Повідомлення...">
+            <button id="game-chat-send-btn" class="game-chat-send-btn">Відправити</button>
+        </div>
     </div>
 
     <!-- Онлайн панель (прихована спочатку) -->
@@ -459,4 +477,3 @@
     
 </body>
 </html>
-

@@ -470,9 +470,12 @@ class EducationalPathGame {
             if (e.key === 'Enter' && this.rollDiceBtn) {
                 // Блокуємо Enter для кидка кубика в будь-якому випадку
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 console.log('🚫 Enter заблоковано для кидка кубика');
+                return false;
             }
-        });
+        }, true); // Використовуємо capture phase для кращого блокування
         
         // ВИДАЛЕНО: Масштабування тепер встановлюється в createBoard()
         // this.setInitialScale();

@@ -520,9 +520,33 @@ class MultiplayerGame extends EducationalPathGame {
         
         this.socket.on('rps_choice_update', (data) => {
             // Оновлення стану КНП
-            if (this.rpsGameState && data.gameState) {
-                this.rpsGameState = { ...this.rpsGameState, ...data.gameState };
+            if (!data.gameState) return;
+            
+            const gameState = data.gameState;
+            if (!this.rpsGameState) {
+                this.rpsGameState = {};
+            }
+            
+            // Оновлюємо стан
+            this.rpsGameState.players = gameState.players || this.rpsGameState.players;
+            this.rpsGameState.playerNames = gameState.playerNames || this.rpsGameState.playerNames;
+            this.rpsGameState.choices = gameState.choices || this.rpsGameState.choices;
+            this.rpsGameState.scores = gameState.scores || this.rpsGameState.scores;
+            this.rpsGameState.currentRound = gameState.currentRound || this.rpsGameState.currentRound;
+            this.rpsGameState.gameFinished = !gameState.gameActive;
+            
+            // Оновлюємо рахунок
+            if (this.rpsGameState.players && this.rpsGameState.scores) {
+                this.rpsGameState.playerWins = this.rpsGameState.scores[this.playerId] || 0;
+                const opponentId = this.rpsGameState.players.find(p => p !== this.playerId);
+                this.rpsGameState.opponentWins = opponentId ? (this.rpsGameState.scores[opponentId] || 0) : 0;
+            }
+            
+            // Оновлюємо інтерфейс
+            if (data.result && data.result !== 'waiting') {
                 this.updateRPSInterface(data.result, data.opponentChoice);
+            } else {
+                this.updateRPSInterfaceFromState();
             }
         });
         
@@ -2863,16 +2887,36 @@ class MultiplayerGame extends EducationalPathGame {
         // Додаємо нове модальне вікно
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         
+        // Зберігаємо стан з сервера
+        this.ticTacToeState = {
+            gameActive: data.gameState.gameActive,
+            currentPlayer: data.gameState.currentPlayer, // ID гравця, а не 'X'/'O'
+            gameState: data.gameState.rounds && data.gameState.rounds[data.gameState.currentRound] 
+                ? data.gameState.rounds[data.gameState.currentRound].board || Array(9).fill(null)
+                : Array(9).fill(null),
+            players: data.gameState.players,
+            playerNames: data.gameState.playerNames,
+            currentRound: data.gameState.currentRound || 0,
+            rounds: data.gameState.rounds || [],
+            scores: data.gameState.scores || {},
+            playerSymbol: data.gameState.players[0] === this.playerId ? 'X' : 'O',
+            opponentSymbol: data.gameState.players[0] === this.playerId ? 'O' : 'X',
+            playerWins: 0,
+            opponentWins: 0
+        };
+        
         // Ініціалізуємо дошку для всіх гравців
         if (isParticipant) {
             setTimeout(() => {
                 this.initializeTicTacToeBoard();
-                // Не запускаємо таймер для хрестиків-нуликів
+                // Оновлюємо дошку з поточним станом
+                this.updateTicTacToeBoardFromState();
             }, 100);
         } else {
             // Показуємо дошку для спостерігачів
             setTimeout(() => {
                 this.initializeTicTacToeBoardForViewers();
+                this.updateTicTacToeBoardFromState();
             }, 100);
         }
     }
@@ -2939,11 +2983,29 @@ class MultiplayerGame extends EducationalPathGame {
         // Додаємо нове модальне вікно
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         
+        // Зберігаємо стан з сервера
+        this.rpsGameState = {
+            round: data.gameState.currentRound || 1,
+            maxRounds: data.gameState.maxRounds || 3,
+            playerWins: data.gameState.scores && data.gameState.scores[this.playerId] ? data.gameState.scores[this.playerId] : 0,
+            opponentWins: data.gameState.scores && data.gameState.players ? 
+                data.gameState.scores[data.gameState.players.find(p => p !== this.playerId)] || 0 : 0,
+            playerChoice: null,
+            opponentChoice: null,
+            gameFinished: !data.gameState.gameActive,
+            players: data.gameState.players || [],
+            playerNames: data.gameState.playerNames || [],
+            choices: data.gameState.choices || {},
+            scores: data.gameState.scores || {},
+            currentRound: data.gameState.currentRound || 0
+        };
+        
         // Додаємо обробники подій
         if (isParticipant) {
             setTimeout(() => {
                 this.initializeRockPaperScissors();
-                // Не запускаємо таймер для камінь-ножиці-папір
+                // Оновлюємо інтерфейс з поточним станом
+                this.updateRPSInterfaceFromState();
             }, 100);
         }
     }
@@ -4314,18 +4376,23 @@ class MultiplayerGame extends EducationalPathGame {
         const board = document.getElementById('tic-tac-toe-board');
         if (!board) return;
         
-        // Ініціалізуємо стан гри з підтримкою 3 раундів
-        this.ticTacToeState = {
-            gameActive: true,
-            currentPlayer: 'X',
-            gameState: ['', '', '', '', '', '', '', '', ''],
-            playerSymbol: 'X', // Гравець завжди X
-            opponentSymbol: 'O', // Опонент завжди O
-            rounds: [{winner: null}, {winner: null}, {winner: null}],
-            currentRound: 0,
-            playerWins: 0,
-            opponentWins: 0
-        };
+        // Якщо стан ще не ініціалізовано з сервера, створюємо базовий
+        if (!this.ticTacToeState) {
+            this.ticTacToeState = {
+                gameActive: true,
+                currentPlayer: this.playerId,
+                gameState: Array(9).fill(null),
+                players: [],
+                playerNames: [],
+                currentRound: 0,
+                rounds: [],
+                scores: {},
+                playerSymbol: 'X',
+                opponentSymbol: 'O',
+                playerWins: 0,
+                opponentWins: 0
+            };
+        }
         
         // Очищаємо дошку
         board.innerHTML = '';
@@ -4343,6 +4410,26 @@ class MultiplayerGame extends EducationalPathGame {
         this.updateTicTacToeStatus();
         
         console.log('Дошка хрестиків-нуликів ініціалізована');
+    }
+    
+    // Оновлення дошки з поточного стану
+    updateTicTacToeBoardFromState() {
+        if (!this.ticTacToeState || !this.ticTacToeState.gameState) return;
+        
+        const board = document.getElementById('tic-tac-toe-board') || document.getElementById('tic-tac-toe-board-view');
+        if (!board) return;
+        
+        const cells = board.querySelectorAll('.tic-tac-toe-cell');
+        cells.forEach((cell, index) => {
+            const value = this.ticTacToeState.gameState[index];
+            if (value) {
+                // Визначаємо символ на основі гравця
+                const isPlayer1 = this.ticTacToeState.players && this.ticTacToeState.players[0] === value;
+                const symbol = isPlayer1 ? 'X' : 'O';
+                cell.innerHTML = this.createPlayerSVG(symbol);
+                cell.classList.add(symbol.toLowerCase());
+            }
+        });
     }
     
     // Ініціалізація дошки для спостерігачів
@@ -4367,13 +4454,21 @@ class MultiplayerGame extends EducationalPathGame {
     // Обробка ходу в хрестиках-нуликах
     makeTicTacToeMove(cellIndex) {
         const cell = document.querySelector(`[data-index="${cellIndex}"]`);
-        if (!cell || this.ticTacToeState.gameState[cellIndex] !== '' || !this.ticTacToeState.gameActive) {
+        if (!cell || !this.ticTacToeState || !this.ticTacToeState.gameActive) {
+            return;
+        }
+        
+        // Перевіряємо, чи клітинка вільна (може бути null, '', або undefined)
+        const currentValue = this.ticTacToeState.gameState && this.ticTacToeState.gameState[cellIndex];
+        if (currentValue !== null && currentValue !== '' && currentValue !== undefined) {
+            console.log('Клітинка вже зайнята:', currentValue);
             return;
         }
         
         // Перевіряємо, чи це хід поточного гравця
-        if (this.ticTacToeState.currentPlayer !== this.playerId) {
-            console.log('Не ваш хід');
+        // currentPlayer містить ID гравця, а не символ
+        if (this.ticTacToeState.currentPlayer && this.ticTacToeState.currentPlayer !== this.playerId) {
+            console.log('Не ваш хід. Поточний гравець:', this.ticTacToeState.currentPlayer, 'Ваш ID:', this.playerId);
             return;
         }
         
@@ -4459,10 +4554,20 @@ class MultiplayerGame extends EducationalPathGame {
         if (!this.ticTacToeState) {
             this.ticTacToeState = {};
         }
-        this.ticTacToeState.gameState = gameState.gameState;
-        this.ticTacToeState.currentPlayer = gameState.currentPlayer;
         this.ticTacToeState.gameActive = gameState.gameActive;
+        this.ticTacToeState.currentPlayer = gameState.currentPlayer;
+        this.ticTacToeState.currentRound = gameState.currentRound || 0;
+        this.ticTacToeState.players = gameState.players;
+        this.ticTacToeState.playerNames = gameState.playerNames;
         this.ticTacToeState.scores = gameState.scores;
+        this.ticTacToeState.rounds = gameState.rounds;
+        
+        // Отримуємо дошку поточного раунду
+        const currentRound = gameState.currentRound || 0;
+        const roundBoard = gameState.rounds && gameState.rounds[currentRound] 
+            ? gameState.rounds[currentRound].board 
+            : (gameState.gameState || Array(9).fill(null));
+        this.ticTacToeState.gameState = roundBoard;
         
         // Оновлюємо візуальну дошку
         const board = document.getElementById('tic-tac-toe-board') || document.getElementById('tic-tac-toe-board-view');
@@ -4470,27 +4575,35 @@ class MultiplayerGame extends EducationalPathGame {
         
         const cells = board.querySelectorAll('.tic-tac-toe-cell');
         cells.forEach((cell, index) => {
-            const value = gameState.gameState[index];
+            const value = roundBoard[index];
             if (value) {
                 // Визначаємо символ на основі гравця
-                const isPlayer1 = gameState.players[0] === value;
+                const isPlayer1 = gameState.players && gameState.players[0] === value;
                 const symbol = isPlayer1 ? 'X' : 'O';
                 cell.innerHTML = this.createPlayerSVG(symbol);
                 cell.classList.add(symbol.toLowerCase());
+            } else {
+                // Очищаємо клітинку
+                cell.innerHTML = '';
+                cell.classList.remove('x', 'o');
             }
         });
         
         // Оновлюємо статус
         if (data.winner) {
-            this.updateTicTacToeStatus(`Гравець ${data.winner} переміг!`);
+            const winnerName = gameState.playerNames && gameState.players.includes(data.winner)
+                ? gameState.playerNames[gameState.players.indexOf(data.winner)]
+                : 'Гравець';
+            this.updateTicTacToeStatus(`Гравець ${winnerName} переміг!`);
             this.disableTicTacToeBoard();
         } else if (!gameState.gameActive) {
-            this.updateTicTacToeStatus('Нічия!');
+            this.updateTicTacToeStatus('Гра завершена!');
             this.disableTicTacToeBoard();
         } else {
             const isMyTurn = gameState.currentPlayer === this.playerId;
-            const currentPlayerName = gameState.players.includes(gameState.currentPlayer) ? 
-                gameState.playerNames[gameState.players.indexOf(gameState.currentPlayer)] : 'Гравець';
+            const currentPlayerName = gameState.playerNames && gameState.players.includes(gameState.currentPlayer)
+                ? gameState.playerNames[gameState.players.indexOf(gameState.currentPlayer)]
+                : 'Гравець';
             this.updateTicTacToeStatus(isMyTurn ? 'Ваш хід!' : `Хід гравця: ${currentPlayerName}`);
         }
     }
@@ -4602,14 +4715,22 @@ class MultiplayerGame extends EducationalPathGame {
     
     // Ініціалізація гри камінь-ножиці-папір
     initializeRockPaperScissors() {
-        this.rpsGameState = {
-            round: 1,
-            playerWins: 0,
-            opponentWins: 0,
-            playerChoice: null,
-            opponentChoice: null,
-            gameFinished: false
-        };
+        // Якщо стан ще не ініціалізовано з сервера, створюємо базовий
+        if (!this.rpsGameState) {
+            this.rpsGameState = {
+                round: 1,
+                playerWins: 0,
+                opponentWins: 0,
+                playerChoice: null,
+                opponentChoice: null,
+                gameFinished: false,
+                players: [],
+                playerNames: [],
+                choices: {},
+                scores: {},
+                currentRound: 0
+            };
+        }
         
         // Додаємо обробники подій для кнопок
         const rockBtn = document.getElementById('rps-rock');
@@ -4629,25 +4750,59 @@ class MultiplayerGame extends EducationalPathGame {
         console.log('Гра камінь-ножиці-папір ініціалізована');
     }
     
-    // Обробка вибору в камінь-ножиці-папір
-    makeRPSChoice(choice) {
-        if (this.rpsGameState.gameFinished) return;
+    // Оновлення інтерфейсу КНП з поточного стану
+    updateRPSInterfaceFromState() {
+        if (!this.rpsGameState) return;
         
-        this.rpsGameState.playerChoice = choice;
+        const roundEl = document.getElementById('rps-round');
+        const scoreEl = document.getElementById('rps-score');
+        const resultEl = document.getElementById('rps-result');
         
-        // Показуємо вибір гравця
-        const resultDiv = document.getElementById('rps-result');
-        if (resultDiv) {
-            resultDiv.textContent = `Ви обрали: ${this.getChoiceEmoji(choice)}`;
+        if (roundEl) {
+            roundEl.textContent = `Раунд ${(this.rpsGameState.currentRound || this.rpsGameState.round || 1)} з ${this.rpsGameState.maxRounds || 3}`;
         }
         
-        // Відправляємо вибір на сервер (поки що просто логуємо)
-        console.log(`Гравець обрав: ${choice}`);
+        if (scoreEl) {
+            const playerWins = this.rpsGameState.playerWins || 0;
+            const opponentWins = this.rpsGameState.opponentWins || 0;
+            scoreEl.textContent = `Ваші перемоги: ${playerWins} | Перемоги противника: ${opponentWins}`;
+        }
         
-        // Пока що просто симулюємо гру
-        setTimeout(() => {
-            this.simulateRPSRound();
-        }, 1000);
+        if (resultEl && this.rpsGameState.playerChoice) {
+            resultEl.textContent = `Ви обрали: ${this.getChoiceEmoji(this.rpsGameState.playerChoice)}`;
+        }
+    }
+    
+    // Обробка вибору в камінь-ножиці-папір
+    makeRPSChoice(choice) {
+        if (!this.rpsGameState || this.rpsGameState.gameFinished) return;
+        
+        // Перевіряємо, чи гравець є учасником
+        if (!this.rpsGameState.players || !this.rpsGameState.players.includes(this.playerId)) {
+            console.log('Ви не є учасником цієї гри');
+            return;
+        }
+        
+        // Відправляємо вибір на сервер
+        if (this.socket && this.roomId) {
+            this.socket.emit('rps_choice', {
+                roomId: this.roomId,
+                choice: choice,
+                playerId: this.playerId
+            });
+            
+            // Показуємо вибір гравця
+            const resultDiv = document.getElementById('rps-result');
+            if (resultDiv) {
+                resultDiv.textContent = `Ви обрали: ${this.getChoiceEmoji(choice)}`;
+            }
+        } else {
+            // Локальна гра (fallback)
+            this.rpsGameState.playerChoice = choice;
+            setTimeout(() => {
+                this.simulateRPSRound();
+            }, 1000);
+        }
     }
     
     // Симуляція раунду камінь-ножиці-папір

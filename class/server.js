@@ -142,11 +142,26 @@ function handleImmediateEvent(room, player, eventType) {
                 resultMessage = `💀 ${roomPlayer.name} (${playerClassName}) витратив останні гроші (${lostPoints} ОО) у ${eventName} і переродився на початку попередньої епохи.`;
                 
                 // Показуємо модальне вікно переродження на клієнті
+                // Поточному гравцю - детальне вікно
                 io.to(roomPlayer.id).emit('early_reincarnation_event', {
                     playerId: roomPlayer.id,
+                    playerName: roomPlayer.name,
                     cellNumber: roomPlayer.position,
                     eventData: { points: 0, targetEpoch: prevEpoch, cellNumber: roomPlayer.position },
                     newClass: roomPlayer.class
+                });
+                
+                // Іншим гравцям - інформаційне вікно
+                room.players.forEach(p => {
+                    if (p.id !== roomPlayer.id) {
+                        io.to(p.id).emit('show_reincarnation_class', {
+                            playerId: roomPlayer.id,
+                            playerName: roomPlayer.name,
+                            newClass: roomPlayer.class,
+                            bonusPoints: 0,
+                            isOtherPlayer: true
+                        });
+                    }
                 });
             }
             break;
@@ -828,6 +843,7 @@ io.on('connection', (socket) => {
             // Відправляємо подію для відображення класу
             io.to(room.id).emit('show_reincarnation_class', {
                 playerId: currentPlayer.id,
+                playerName: currentPlayer.name,
                 newClass: currentPlayer.class,
                 bonusPoints: reincarnationBonus
             });
@@ -1237,8 +1253,10 @@ io.on('connection', (socket) => {
                 });
                 
                 // Відправляємо подію для відображення вікна переродження
+                // Поточному гравцю - детальне вікно
                 io.to(player.id).emit('early_reincarnation_event', {
                     playerId: player.id,
+                    playerName: player.name,
                     cellNumber: cellNumber,
                     eventData: {
                         points: data.eventData.points,
@@ -1246,6 +1264,19 @@ io.on('connection', (socket) => {
                         cellNumber: cellNumber
                     },
                     newClass: roomPlayer.class
+                });
+                
+                // Іншим гравцям - інформаційне вікно
+                room.players.forEach(p => {
+                    if (p.id !== player.id) {
+                        io.to(p.id).emit('show_reincarnation_class', {
+                            playerId: player.id,
+                            playerName: player.name,
+                            newClass: roomPlayer.class,
+                            bonusPoints: data.eventData.points || 0,
+                            isOtherPlayer: true
+                        });
+                    }
                 });
                 
                 io.to(room.id).emit('game_state_update', room.gameData);

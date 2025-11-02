@@ -1226,21 +1226,21 @@ body.glassmorphism-bg {
     max-width: 100%;
 }
 
-/* Спеціальні стилі для Мегамозок - темніша картинка */
+/* Спеціальні стилі для Мегамозок - світліша картинка */
 #quest-modal-content.megabrain-bg,
 .modal-content.megabrain-bg {
     position: relative;
-    filter: brightness(0.6);
-    -webkit-filter: brightness(0.6);
+    filter: brightness(0.8);
+    -webkit-filter: brightness(0.8);
 }
 
-/* Додаємо затемнення для кращої читабельності тексту */
+/* Додаємо легке затемнення для кращої читабельності тексту */
 #quest-modal-content.megabrain-bg::before,
 .modal-content.megabrain-bg::before {
     content: '';
     position: absolute;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.3);
     z-index: 0;
     border-radius: inherit;
     pointer-events: none;

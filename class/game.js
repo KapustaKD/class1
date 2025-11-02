@@ -467,15 +467,8 @@ class EducationalPathGame {
         
         // Додаємо обробник клавіш для заборони Enter на кидок кубика
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && this.rollDiceBtn && !this.rollDiceBtn.disabled) {
-                // Перевіряємо, чи не знаходимося в модальному вікні з текстовим полем
-                const activeElement = document.activeElement;
-                if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
-                    // Дозволяємо Enter в текстових полях
-                    return;
-                }
-                
-                // Блокуємо Enter для кидка кубика
+            if (e.key === 'Enter' && this.rollDiceBtn) {
+                // Блокуємо Enter для кидка кубика в будь-якому випадку
                 e.preventDefault();
                 console.log('🚫 Enter заблоковано для кидка кубика');
             }

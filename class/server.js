@@ -2612,15 +2612,19 @@ io.on('connection', (socket) => {
         
         // Перевіряємо, чи всі можливі гравці проголосували
         // Гравець не може голосувати за свою роботу, тому перевіряємо це
+        // Рахуємо всіх гравців, які можуть голосувати (всі, окрім тих, хто не має роботи)
         let canVoteCount = 0;
         room.gameData.players.forEach(p => {
             const submission = room.creativeWritingState.submissions.find(s => s.playerId === p.id);
             if (submission) {
-                canVoteCount++; // Гравець може голосувати за інших
+                canVoteCount++; // Гравець може голосувати за інших (має роботу)
             }
         });
 
-        if (votesCount >= canVoteCount) {
+        // Якщо всі можливі гравці проголосували або проголосувало більше половини гравців
+        const requiredVotes = Math.max(1, Math.ceil(canVoteCount / 2)); // Мінімум 1, або половина округлена вгору
+        
+        if (votesCount >= requiredVotes) {
             // Підраховуємо голоси
             const voteCounts = {};
             Object.values(room.creativeWritingState.votes).forEach(index => {
@@ -2736,8 +2740,20 @@ io.on('connection', (socket) => {
             });
         } else {
             // Всі питання відповідені - формуємо фінальну історію та нараховуємо очки всім учасникам
-            const story = room.madLibsState.answers
-                .sort((a, b) => a.questionIndex - b.questionIndex)
+            const sortedAnswers = room.madLibsState.answers
+                .sort((a, b) => a.questionIndex - b.questionIndex);
+            
+            // Видаляємо дублікати за questionIndex (на всяк випадок)
+            const uniqueAnswers = [];
+            const seenIndexes = new Set();
+            sortedAnswers.forEach(answer => {
+                if (!seenIndexes.has(answer.questionIndex)) {
+                    seenIndexes.add(answer.questionIndex);
+                    uniqueAnswers.push(answer);
+                }
+            });
+            
+            const story = uniqueAnswers
                 .map((answer, index) => {
                     // Додаємо кому після питання "Де?" та змінюємо фразу
                     if (index === 1) { // Питання "Де?" має індекс 1
@@ -2941,6 +2957,121 @@ io.on('connection', (socket) => {
                     });
                 }
             }
+        }
+    });
+    
+    // Голосування за вигнання гравця
+    socket.on('propose_kick_player', (data) => {
+        const player = players.get(socket.id);
+        if (!player) return;
+        
+        const room = rooms.get(data.roomId);
+        if (!room) return;
+        
+        // Ініціалізуємо стан голосування, якщо його ще немає
+        if (!room.kickVotingState) {
+            room.kickVotingState = {
+                targetPlayerId: data.playerId,
+                targetPlayerName: data.playerName,
+                votes: {}, // playerId -> 'yes' | 'no'
+                proposerId: player.id
+            };
+        }
+        
+        const totalPlayers = room.gameData.players.length;
+        const requiredVotes = Math.ceil(totalPlayers / 2); // Більше половини
+        
+        // Відправляємо всім гравцям інформацію про голосування
+        io.to(room.id).emit('kick_voting_started', {
+            playerId: data.playerId,
+            playerName: data.playerName,
+            proposerName: player.name,
+            requiredVotes: requiredVotes,
+            totalPlayers: totalPlayers,
+            yesVotes: 0,
+            noVotes: 0
+        });
+        
+        io.to(room.id).emit('chat_message', {
+            type: 'system',
+            message: `🗳️ ${player.name} запропонував(ла) вигнати ${data.playerName}. Потрібно ${requiredVotes} позитивних голосів.`
+        });
+    });
+    
+    socket.on('vote_kick_player', (data) => {
+        const player = players.get(socket.id);
+        if (!player) return;
+        
+        const room = rooms.get(data.roomId);
+        if (!room || !room.kickVotingState) return;
+        
+        // Зберігаємо голос
+        room.kickVotingState.votes[player.id] = data.vote;
+        
+        // Підраховуємо голоси
+        const yesVotes = Object.values(room.kickVotingState.votes).filter(v => v === 'yes').length;
+        const noVotes = Object.values(room.kickVotingState.votes).filter(v => v === 'no').length;
+        const totalPlayers = room.gameData.players.length;
+        const requiredVotes = Math.ceil(totalPlayers / 2);
+        
+        // Оновлюємо всіх гравців про прогрес
+        io.to(room.id).emit('kick_voting_update', {
+            playerId: room.kickVotingState.targetPlayerId,
+            playerName: room.kickVotingState.targetPlayerName,
+            yesVotes: yesVotes,
+            noVotes: noVotes,
+            requiredVotes: requiredVotes,
+            totalPlayers: totalPlayers,
+            voted: Object.keys(room.kickVotingState.votes).length
+        });
+        
+        // Перевіряємо результат
+        if (yesVotes >= requiredVotes) {
+            // Вигнання схвалено - виганяємо гравця
+            const kickedPlayer = room.gameData.players.find(p => p.id === room.kickVotingState.targetPlayerId);
+            if (kickedPlayer) {
+                room.gameData.players = room.gameData.players.filter(p => p.id !== room.kickVotingState.targetPlayerId);
+                room.players = room.players.filter(p => p.id !== room.kickVotingState.targetPlayerId);
+                
+                players.delete(room.kickVotingState.targetPlayerId);
+                
+                // Виключаємо сокет вигнаного гравця
+                const kickedSocket = io.sockets.sockets.get(room.kickVotingState.targetPlayerId);
+                if (kickedSocket) {
+                    kickedSocket.leave(room.id);
+                    kickedSocket.emit('player_kicked', {
+                        reason: 'Вас вигнали через голосування'
+                    });
+                    kickedSocket.disconnect();
+                }
+                
+                // Оновлюємо індекс поточного гравця
+                if (room.gameData.currentPlayerIndex >= room.gameData.players.length) {
+                    room.gameData.currentPlayerIndex = 0;
+                }
+                
+                io.to(room.id).emit('player_left', {
+                    player: { id: room.kickVotingState.targetPlayerId, name: kickedPlayer.name },
+                    players: room.gameData.players
+                });
+                
+                io.to(room.id).emit('chat_message', {
+                    type: 'system',
+                    message: `🚫 ${kickedPlayer.name} був(ла) вигнаний(а) через голосування (${yesVotes}/${totalPlayers} голосів)`
+                });
+                
+                io.to(room.id).emit('game_state_update', room.gameData);
+            }
+            
+            room.kickVotingState = null;
+        } else if (noVotes > (totalPlayers - requiredVotes)) {
+            // Вигнання відхилено (більше ніж потрібно "ні")
+            io.to(room.id).emit('chat_message', {
+                type: 'system',
+                message: `❌ Голосування за вигнання ${room.kickVotingState.targetPlayerName} відхилено (${noVotes} проти)`
+            });
+            
+            room.kickVotingState = null;
         }
     });
     

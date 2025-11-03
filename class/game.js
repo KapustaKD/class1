@@ -447,9 +447,12 @@ class EducationalPathGame {
     
             this.rollDiceBtn.addEventListener('click', () => {
     
-                if (this.gameActive) this.rollTheDice();
+                // Перевіряємо, чи кнопка не disabled та гра активна
+                if (this.gameActive && !this.rollDiceBtn.disabled) {
+                    this.rollTheDice();
+                }
     
-            });
+             });
     
            
     

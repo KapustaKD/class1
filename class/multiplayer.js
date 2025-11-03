@@ -1584,8 +1584,11 @@ class MultiplayerGame extends EducationalPathGame {
             currentPlayer: this.players?.[this.currentPlayerIndex]
         });
         
-        // Відтворюємо звук кидка кубика
-        this.playDiceSound();
+        // Перевіряємо, чи кнопка активна (для онлайн режиму)
+        if (this.rollDiceBtn && this.rollDiceBtn.disabled) {
+            console.log('Кнопка кидка кубика неактивна - звук не програється');
+            return;
+        }
         
         if (this.isOnlineMode) {
             // В онлайн режимі тільки поточний гравець може кидати кубик
@@ -1601,6 +1604,8 @@ class MultiplayerGame extends EducationalPathGame {
             });
             
             if (isCurrentPlayer && this.gameActive) {
+                // Відтворюємо звук кидка кубика тільки якщо це хід поточного гравця
+                this.playDiceSound();
                 console.log('Відправляємо подію roll_dice');
                 this.socket.emit('roll_dice', { roomId: this.roomId });
             } else {
@@ -1615,9 +1620,11 @@ class MultiplayerGame extends EducationalPathGame {
                 } else {
                     console.log('Гравець може кинути кубик - це його хід');
                 }
+                // Звук не програється для неактивних гравців
             }
         } else {
-            // Локальний режим
+            // Локальний режим - завжди програємо звук
+            this.playDiceSound();
             super.rollTheDice();
         }
     }

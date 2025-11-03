@@ -607,16 +607,31 @@ body {
     max-height: 80vh; /* Максимальна висота, щоб вміщалося на екрані */
     overflow-y: auto; /* Додаємо скрол, якщо контент не вміщається */
     padding: 1.5rem; /* Внутрішні відступи (p-6 з Tailwind) */
+    /* Додаємо темну рамку всередину */
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8);
 }
 
 /* Відновлюємо непрозорість для вікна правил */
 #rules-modal .modal-content {
     background: rgba(30, 41, 59, 0.95) !important;
+    /* Додаємо темну рамку всередину */
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8);
 }
 
 /* Відновлюємо непрозорість для вікна бафів/дебафів */
 #buff-debuff-modal .modal-content {
     background: rgba(30, 41, 59, 0.95) !important;
+    /* Додаємо темну рамку всередину */
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8);
+}
+
+/* Додаємо темну рамку для всіх модальних вікон */
+#start-modal .modal-content,
+#avatar-selection-modal > div,
+.glassmorphism-content,
+.glassmorphism-content-with-image,
+.glassmorphism-content-bypass {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8);
 }
 
 /* Затемнення для модальних вікон з фоновим зображенням (як у реінкарнації) */

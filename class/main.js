@@ -274,67 +274,154 @@ function setupMusicController() {
         return;
     }
     
+    // Функція для отримання об'єктів музики з game.js (якщо вони існують)
+    function getMusicObjects() {
+        // Перевіряємо, чи є екземпляр гри з музикою
+        if (window.game && window.game.backgroundMusic1 && window.game.backgroundMusic2) {
+            return {
+                backgroundMusic1: window.game.backgroundMusic1,
+                backgroundMusic2: window.game.backgroundMusic2,
+                currentBackgroundMusic: window.game.currentBackgroundMusic,
+                isGameMusic: true
+            };
+        }
+        
+        // Якщо немає, створюємо власні об'єкти (fallback)
+        if (!window.fallbackMusic1) {
+            window.fallbackMusic1 = new Audio('sound/fon/main_fon.m4a');
+            window.fallbackMusic1.preload = 'auto';
+            window.fallbackMusic1.loop = true;
+            window.fallbackMusic1.volume = 0.05;
+            
+            window.fallbackMusic2 = new Audio('sound/fon/rumbling_fon_2.mp3');
+            window.fallbackMusic2.preload = 'auto';
+            window.fallbackMusic2.loop = true;
+            window.fallbackMusic2.volume = 0.05;
+        }
+        
+        return {
+            backgroundMusic1: window.fallbackMusic1,
+            backgroundMusic2: window.fallbackMusic2,
+            currentBackgroundMusic: window.fallbackMusic1,
+            isGameMusic: false
+        };
+    }
+    
+    let musicObjects = getMusicObjects();
+    let isPlaying = false;
+    
+    // Функція для перевірки стану музики
+    function updateMusicState() {
+        musicObjects = getMusicObjects();
+        if (musicObjects.isGameMusic) {
+            // Перевіряємо стан музики з game.js
+            isPlaying = !musicObjects.currentBackgroundMusic.paused;
+            musicIcon.textContent = isPlaying ? '🎵' : '🔇';
+            
+            // Оновлюємо слайдер гучності
+            const currentVolume = Math.round(musicObjects.currentBackgroundMusic.volume * 100);
+            musicVolumeSlider.value = currentVolume;
+            musicVolumeText.textContent = currentVolume + '%';
+        } else {
+            // Для fallback музики
+            isPlaying = !musicObjects.currentBackgroundMusic.paused;
+            musicIcon.textContent = isPlaying ? '🎵' : '🔇';
+            const currentVolume = Math.round(musicObjects.currentBackgroundMusic.volume * 100);
+            musicVolumeSlider.value = currentVolume;
+            musicVolumeText.textContent = currentVolume + '%';
+        }
+    }
+    
     // Кнопка відкриття/закриття панелі
     audioToggleBtn.addEventListener('click', () => {
         if (audioPanel.classList.contains('hidden')) {
             audioPanel.classList.remove('hidden');
             audioIcon.textContent = '🔇';
+            // Оновлюємо стан музики при відкритті панелі
+            updateMusicState();
         } else {
             audioPanel.classList.add('hidden');
             audioIcon.textContent = '🔊';
         }
     });
     
-    // Ініціалізуємо фонову музику
-    let backgroundMusic1 = new Audio('sound/fon/main_fon.m4a');
-    backgroundMusic1.preload = 'auto';
-    backgroundMusic1.loop = true;
-    backgroundMusic1.volume = 0.05;
-    
-    let backgroundMusic2 = new Audio('sound/fon/rumbling_fon_2.mp3');
-    backgroundMusic2.preload = 'auto';
-    backgroundMusic2.loop = true;
-    backgroundMusic2.volume = 0.05;
-    
-    let currentMusic = backgroundMusic1;
-    let isPlaying = false;
-    
     // Кнопка вмикання/вимикання музики
     musicToggleBtn.addEventListener('click', () => {
-        if (isPlaying) {
-            currentMusic.pause();
-            musicIcon.textContent = '🔇';
-            isPlaying = false;
+        musicObjects = getMusicObjects();
+        
+        if (musicObjects.isGameMusic) {
+            // Використовуємо музику з game.js
+            if (window.game) {
+                updateMusicState(); // Оновлюємо стан перед перемиканням
+                if (isPlaying) {
+                    window.game.stopBackgroundMusic();
+                } else {
+                    window.game.startBackgroundMusic();
+                }
+                updateMusicState(); // Оновлюємо стан після перемикання
+            }
         } else {
-            currentMusic.play().catch(e => {
-                console.log('Не вдалося відтворити музику:', e);
-            });
-            musicIcon.textContent = '🎵';
-            isPlaying = true;
+            // Використовуємо fallback об'єкти
+            const currentMusic = musicObjects.currentBackgroundMusic;
+            if (isPlaying) {
+                currentMusic.pause();
+                isPlaying = false;
+            } else {
+                currentMusic.play().catch(e => {
+                    console.log('Не вдалося відтворити музику:', e);
+                });
+                isPlaying = true;
+            }
+            musicIcon.textContent = isPlaying ? '🎵' : '🔇';
         }
     });
     
     // Кнопка перемикання музики
     musicSwitchBtn.addEventListener('click', () => {
-        const wasPlaying = isPlaying;
-        if (wasPlaying) {
-            currentMusic.pause();
-        }
+        musicObjects = getMusicObjects();
         
-        currentMusic = currentMusic === backgroundMusic1 ? backgroundMusic2 : backgroundMusic1;
-        
-        if (wasPlaying) {
-            currentMusic.play().catch(e => {
-                console.log('Не вдалося відтворити музику:', e);
-            });
+        if (musicObjects.isGameMusic) {
+            // Використовуємо функцію з game.js
+            if (window.game) {
+                updateMusicState(); // Оновлюємо стан перед перемиканням
+                window.game.switchBackgroundMusic();
+                updateMusicState(); // Оновлюємо стан після перемикання
+            }
+        } else {
+            // Використовуємо fallback об'єкти
+            const wasPlaying = isPlaying;
+            if (wasPlaying) {
+                musicObjects.currentBackgroundMusic.pause();
+            }
+            
+            window.fallbackMusic1 = musicObjects.backgroundMusic1;
+            window.fallbackMusic2 = musicObjects.backgroundMusic2;
+            
+            musicObjects.currentBackgroundMusic = musicObjects.currentBackgroundMusic === musicObjects.backgroundMusic1 ? 
+                musicObjects.backgroundMusic2 : musicObjects.backgroundMusic1;
+            
+            if (wasPlaying) {
+                musicObjects.currentBackgroundMusic.play().catch(e => {
+                    console.log('Не вдалося відтворити музику:', e);
+                });
+            }
         }
     });
     
     // Слайдер гучності
     musicVolumeSlider.addEventListener('input', (e) => {
         const volume = e.target.value / 100;
-        backgroundMusic1.volume = volume;
-        backgroundMusic2.volume = volume;
+        musicObjects = getMusicObjects();
+        
+        if (musicObjects.isGameMusic) {
+            // Використовуємо функцію з game.js
+            if (window.game) {
+                window.game.setBackgroundVolume(volume);
+            }
+        } else {
+            musicObjects.backgroundMusic1.volume = volume;
+            musicObjects.backgroundMusic2.volume = volume;
+        }
         musicVolumeText.textContent = e.target.value + '%';
     });
     

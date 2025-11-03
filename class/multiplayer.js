@@ -667,6 +667,29 @@ class MultiplayerGame extends EducationalPathGame {
                     this.showMadLibsResult(data);
                 });
 
+                this.socket.on('kick_voting_started', (data) => {
+                    console.log('Голосування за вигнання почалося:', data);
+                    this.voteOnKick(data);
+                });
+
+                this.socket.on('kick_voting_update', (data) => {
+                    console.log('Оновлення голосування:', data);
+                    // Оновлюємо модальне вікно з новими даними
+                    const modalContent = document.getElementById('quest-modal-content');
+                    if (modalContent) {
+                        const yesVotesEl = modalContent.querySelector('[data-yes-votes]');
+                        const noVotesEl = modalContent.querySelector('[data-no-votes]');
+                        if (yesVotesEl) yesVotesEl.textContent = data.yesVotes;
+                        if (noVotesEl) noVotesEl.textContent = data.noVotes;
+                        
+                        // Оновлюємо текст прогрес
+                        const progressEl = modalContent.querySelector('[data-progress]');
+                        if (progressEl) {
+                            progressEl.textContent = `Поточний результат: ${data.yesVotes} "Так", ${data.noVotes} "Ні" (Проголосувало: ${data.voted}/${data.totalPlayers})`;
+                        }
+                    }
+                });
+
                 this.socket.on('webnovella_event', (data) => {
                     console.log('Подія вебновели:', data);
                     this.showWebNovellaEvent(data);
@@ -904,9 +927,9 @@ class MultiplayerGame extends EducationalPathGame {
                 </div>
                 <div class="text-sm text-gray-400">${player.class?.name || 'Очікує...'}</div>
                 <div class="text-sm">${player.points || 0} ОО</div>
-                ${this.isHost && this.gameActive && player.id !== this.playerId ? `
-                    <button class="kick-player-btn mt-2 px-2 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded" data-player-id="${player.id}">
-                        Викинути
+                ${player.id !== this.playerId ? `
+                    <button class="vote-kick-btn mt-2 px-2 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded" data-player-id="${player.id}" data-player-name="${player.name}">
+                        🗳️ Вигнати
                     </button>
                 ` : ''}
             `;
@@ -915,16 +938,14 @@ class MultiplayerGame extends EducationalPathGame {
                 playerCard.classList.add('current-player');
             }
             
-            // Додаємо обробник для кнопки викинути гравця
-            const kickBtn = playerCard.querySelector('.kick-player-btn');
-            if (kickBtn) {
-                kickBtn.addEventListener('click', (e) => {
+            // Додаємо обробник для кнопки голосування за вигнання
+            const voteKickBtn = playerCard.querySelector('.vote-kick-btn');
+            if (voteKickBtn) {
+                voteKickBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const playerId = kickBtn.dataset.playerId || e.target.dataset.playerId;
-                    const playerName = player.name;
-                    if (confirm(`Ви впевнені, що хочете викинути гравця ${playerName}?`)) {
-                        this.kickPlayer(playerId);
-                    }
+                    const playerId = voteKickBtn.dataset.playerId;
+                    const playerName = voteKickBtn.dataset.playerName;
+                    this.proposeKickPlayer(playerId, playerName);
                 });
             }
             
@@ -3577,21 +3598,27 @@ class MultiplayerGame extends EducationalPathGame {
             // Перевіряємо, чи це робота поточного гравця
             const isMyWork = submission.playerId === this.playerId;
             const clickHandler = isMyWork ? '' : `onclick="window.game.voteForCreative(${index})"`;
-            const cursorStyle = isMyWork ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-200';
+            const cursorStyle = isMyWork ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-700';
             
             modalContent += `
-                <div class="p-3 border-2 border-gray-400 rounded ${cursorStyle}" ${clickHandler}>
-                    <p class="font-bold">${submission.playerName}:</p>
-                    <p>${submission.text}</p>
-                    ${isMyWork ? '<p class="text-sm text-gray-500 italic">(Ваша робота - голосувати не можна)</p>' : ''}
+                <div class="p-3 border-2 border-gray-600 rounded bg-gray-800 ${cursorStyle}" ${clickHandler}>
+                    <p class="font-bold text-white">${submission.playerName}:</p>
+                    <p class="text-gray-200">${submission.text}</p>
+                    ${isMyWork ? '<p class="text-sm text-gray-400 italic">(Ваша робота - голосувати не можна)</p>' : ''}
                 </div>
             `;
         });
         
         modalContent += `
             </div>
-            <p class="text-center text-gray-600">Оберіть варіант вище (не можна голосувати за свою роботу)</p>
+            <p class="text-center text-gray-300">Оберіть варіант вище (не можна голосувати за свою роботу)</p>
         `;
+        
+        // Зробимо фон темним
+        const backdrop = document.getElementById('quest-modal');
+        if (backdrop) {
+            backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+        }
         
         this.showQuestModal('Голосування', modalContent, [], null);
     }
@@ -3706,14 +3733,33 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     submitMadLibsAnswer() {
+        const submitBtn = document.getElementById('submit-mad-libs-btn');
         const answerInput = document.getElementById('mad-libs-answer');
+        
+        // Перевіряємо, чи кнопка вже неактивна
+        if (submitBtn && submitBtn.disabled) {
+            return; // Вже відправлено
+        }
+        
         const answer = answerInput.value.trim();
         
-        if (answer) {
+        if (answer && submitBtn) {
+            // Відправляємо відповідь
             this.socket.emit('mad_libs_answer', {
                 roomId: this.roomId,
                 answer: answer
             });
+            
+            // Робимо кнопку неактивною та змінюємо текст
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Відправлено!';
+            submitBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+            submitBtn.classList.add('bg-green-500', 'animate-pulse');
+            
+            // Робимо поле введення неактивним
+            if (answerInput) {
+                answerInput.disabled = true;
+            }
         }
     }
     
@@ -5461,6 +5507,68 @@ class MultiplayerGame extends EducationalPathGame {
             roomId: this.roomId,
             playerId: playerId
         });
+    }
+    
+    proposeKickPlayer(playerId, playerName) {
+        if (!this.socket || !this.roomId) return;
+        
+        this.socket.emit('propose_kick_player', {
+            roomId: this.roomId,
+            playerId: playerId,
+            playerName: playerName
+        });
+    }
+    
+    voteOnKick(data) {
+        const modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Голосування за вигнання</h3>
+            <p class="mb-4">Гравець <strong>${data.playerName}</strong> запропонований до вигнання ${data.proposerName ? `гравцем ${data.proposerName}` : ''}.</p>
+            <p class="mb-4 text-sm text-gray-300">Потрібно ${data.requiredVotes} позитивних голосів з ${data.totalPlayers} гравців.</p>
+            <p class="mb-4 text-sm text-gray-300" data-progress>Поточний результат: ${data.yesVotes || 0} "Так", ${data.noVotes || 0} "Ні"</p>
+            <div class="flex gap-4 justify-center">
+                <button id="vote-yes-kick" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                    ✅ Так, вигнати
+                </button>
+                <button id="vote-no-kick" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                    ❌ Ні, залишити
+                </button>
+            </div>
+        `;
+        
+        // Зробимо фон темним
+        const backdrop = document.getElementById('quest-modal');
+        if (backdrop) {
+            backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+        }
+        
+        this.showQuestModal('Голосування за вигнання', modalContent, [], null);
+        
+        setTimeout(() => {
+            const yesBtn = document.getElementById('vote-yes-kick');
+            const noBtn = document.getElementById('vote-no-kick');
+            
+            if (yesBtn) {
+                yesBtn.addEventListener('click', () => {
+                    this.socket.emit('vote_kick_player', {
+                        roomId: this.roomId,
+                        vote: 'yes',
+                        targetPlayerId: data.playerId
+                    });
+                    this.questModal.classList.add('hidden');
+                });
+            }
+            
+            if (noBtn) {
+                noBtn.addEventListener('click', () => {
+                    this.socket.emit('vote_kick_player', {
+                        roomId: this.roomId,
+                        vote: 'no',
+                        targetPlayerId: data.playerId
+                    });
+                    this.questModal.classList.add('hidden');
+                });
+            }
+        }, 100);
     }
 }
 

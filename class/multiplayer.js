@@ -1403,9 +1403,10 @@ class MultiplayerGame extends EducationalPathGame {
         // Створюємо ігрову дошку
         this.createBoard();
         
+        // ВИДАЛЕНО: setInitialScale() - конфліктує з глобальним масштабуванням
         // Встановлюємо правильний масштаб карти
         setTimeout(() => {
-            this.setInitialScale();
+            // this.setInitialScale(); // Видалено
             this.applyTransform();
             console.log('Масштаб карти встановлено');
         }, 100);
@@ -2559,9 +2560,10 @@ class MultiplayerGame extends EducationalPathGame {
                 console.log('Вибір режиму приховано');
             }
             
+            // ВИДАЛЕНО: setInitialScale() - конфліктує з глобальним масштабуванням
             // Встановлюємо правильний масштаб карти
             setTimeout(() => {
-                this.setInitialScale();
+                // this.setInitialScale(); // Видалено
                 this.applyTransform();
                 console.log('Масштаб карти встановлено (друга функція)');
                 
@@ -4167,10 +4169,14 @@ class MultiplayerGame extends EducationalPathGame {
         this.isTablet = this.detectTablet();
         this.screenSize = this.getScreenSize();
         
-        // Встановлюємо початковий масштаб
-        this.updateScaleFactor();
+        // ВАЖЛИВО: Видали звідси this.updateScaleFactor(), він нам більше не потрібен.
+        // this.updateScaleFactor(); // <--- ВИДАЛЕНО
         
-        // Додаємо обробник зміни розміру вікна
+        // ДОДАЙ ЦІ ДВА РЯДКИ:
+        window.addEventListener('resize', this.updateGameScale.bind(this));
+        setTimeout(() => this.updateGameScale(), 100); // Встановлюємо початковий масштаб
+        
+        // Додаємо обробник зміни розміру вікна (для інших потреб)
         window.addEventListener('resize', () => {
             this.handleResize();
         });
@@ -4182,11 +4188,35 @@ class MultiplayerGame extends EducationalPathGame {
             }, 100);
         });
         
-        console.log('Адаптивний дизайн ініціалізовано:', {
+        console.log('Адаптивний дизайн "Костиль" (Scaled Wrapper) ініціалізовано:', {
             isMobile: this.isMobile,
             isTablet: this.isTablet,
             screenSize: this.screenSize
         });
+    }
+    
+    // ДОДАЙ ЦЮ НОВУ ФУНКЦІЮ (або заміни стару updateGameScale, якщо вона є)
+    updateGameScale() {
+        // 1. Наші базові ("ідеальні") розміри, які ми задали в style для #app-wrapper
+        const BASE_WIDTH = 1700;
+        const BASE_HEIGHT = 900;
+
+        // 2. Поточні розміри вікна
+        const currentWidth = window.innerWidth;
+        const currentHeight = window.innerHeight;
+
+        // 3. Рахуємо, у скільки разів вікно менше за нашу "базову" гру
+        const scale = Math.min(
+            currentWidth / BASE_WIDTH,
+            currentHeight / BASE_HEIGHT
+        );
+
+        // 4. Знаходимо нашу обгортку
+        const appWrapper = document.getElementById('app-wrapper');
+        if (appWrapper) {
+            // 5. Застосовуємо магію: "стиснути" всю обгортку
+            appWrapper.style.transform = `scale(${scale})`;
+        }
     }
     
     detectMobile() {
@@ -4249,10 +4279,11 @@ class MultiplayerGame extends EducationalPathGame {
         console.log('Орієнтація змінилася');
         this.handleResize();
         
+        // ВИДАЛЕНО: setInitialScale() - конфліктує з глобальним масштабуванням
         // Додаткова логіка для зміни орієнтації
         if (this.gameBoardContainer) {
             setTimeout(() => {
-                this.setInitialScale();
+                // this.setInitialScale(); // Видалено
                 this.applyTransform();
             }, 200);
         }
@@ -4288,9 +4319,10 @@ class MultiplayerGame extends EducationalPathGame {
             }
         }
         
+        // ВИДАЛЕНО: setInitialScale() - конфліктує з глобальним масштабуванням
         // Оновлюємо масштаб карти
         setTimeout(() => {
-            this.setInitialScale();
+            // this.setInitialScale(); // Видалено
             this.applyTransform();
         }, 100);
     }
@@ -4317,44 +4349,11 @@ class MultiplayerGame extends EducationalPathGame {
         });
     }
     
-    // Перевизначення методу setInitialScale для адаптивності
-    setInitialScale() {
-        if (!this.gameBoardContainer) return;
-        
-        const container = this.gameBoardContainer.parentElement;
-        const containerRect = container.getBoundingClientRect();
-        
-        // Базові розміри карти
-        const mapWidth = 1273;
-        const mapHeight = 806;
-        
-        // Розраховуємо масштаб для різних пристроїв
-        let scaleX, scaleY, scale;
-        
-        if (this.isMobile) {
-            // На мобільних пристроях використовуємо більший масштаб для кращої видимості
-            scaleX = (containerRect.width - 20) / mapWidth;
-            scaleY = (containerRect.height - 20) / mapHeight;
-            scale = Math.min(scaleX, scaleY) * 0.9; // Трохи менше для відступів
-        } else if (this.isTablet) {
-            // На планшетах середній масштаб
-            scaleX = (containerRect.width - 40) / mapWidth;
-            scaleY = (containerRect.height - 40) / mapHeight;
-            scale = Math.min(scaleX, scaleY) * 0.95;
-        } else {
-            // На десктопі стандартний масштаб
-            scaleX = containerRect.width / mapWidth;
-            scaleY = containerRect.height / mapHeight;
-            scale = Math.min(scaleX, scaleY);
-        }
-        
-        // Обмежуємо масштаб
-        scale = Math.max(0.1, Math.min(scale, 2));
-        
-        this.scale = scale;
-        this.scaleX = scale;
-        this.scaleY = scale;
-    }
+    // ВИДАЛЕНО: Перевизначення setInitialScale() - конфліктує з глобальним масштабуванням
+    // Масштабування тепер обробляється в updateGameScale() для глобального масштабування
+    // setInitialScale() {
+    //     // Видалено для уникнення конфліктів з глобальним масштабуванням
+    // }
     
     // Додаємо підтримку touch-жестів
     setupTouchControls() {

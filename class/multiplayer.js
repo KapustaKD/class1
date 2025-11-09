@@ -118,6 +118,9 @@ class MultiplayerGame extends EducationalPathGame {
         // Додаємо кнопку бафів/дебафів
         this.buffDebuffBtn = document.getElementById('buff-debuff-btn');
         
+        // Додаємо кнопку вигнання гравця
+        this.kickPlayerBtn = document.getElementById('kick-player-btn');
+        
         console.log('Елементи мультиплеєра налаштовано');
     }
     
@@ -173,6 +176,12 @@ class MultiplayerGame extends EducationalPathGame {
         if (this.gameChatSendBtn) {
             this.gameChatSendBtn.addEventListener('click', () => this.sendGameChatMessage());
         }
+        
+        // Обробник для кнопки вигнання гравця
+        if (this.kickPlayerBtn) {
+            this.kickPlayerBtn.addEventListener('click', () => this.showKickPlayerModal());
+        }
+        
         if (this.gameChatInput) {
             this.gameChatInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
@@ -1403,18 +1412,12 @@ class MultiplayerGame extends EducationalPathGame {
         // Створюємо ігрову дошку
         this.createBoard();
         
-        // ВИДАЛЕНО: setInitialScale() - конфліктує з глобальним масштабуванням
         // Встановлюємо правильний масштаб карти
         setTimeout(() => {
-            // this.setInitialScale(); // Видалено
+            this.setInitialScale();
             this.applyTransform();
             console.log('Масштаб карти встановлено');
         }, 100);
-        
-        // Встановлюємо адаптивний масштаб гри
-        if (typeof this.updateGameScale === 'function') {
-            this.updateGameScale();
-        }
         
         console.log('Ігровий інтерфейс показано');
         this.updateDiceButtonState();
@@ -1559,19 +1562,42 @@ class MultiplayerGame extends EducationalPathGame {
         
         leaderboardEl.innerHTML = headerHTML + sortedPlayers.map((p) => {
             const isActive = p.id === currentPlayerId;
+            const isNotMe = p.id !== this.playerId;
             // Використовуємо аватар гравця, якщо він є
             const avatarUrl = p.avatarUrl || 'image/chips/avatar1.png';
             
             return `
-                <div class="cp-leaderboard-item ${isActive ? 'active-player' : ''} bg-black bg-opacity-20">
-                    <div class="flex items-center">
-                        <img src="${avatarUrl}" alt="${p.name} Avatar" class="w-6 h-6 rounded-full">
-                        <span class="cp-leaderboard-item-name text-gray-300">${p.name}</span>
-                </div>
-                    <span class="cp-leaderboard-item-points text-yellow-400">${p.points || 0} ОО</span>
+                <div class="cp-leaderboard-item ${isActive ? 'active-player' : ''} bg-black bg-opacity-20" data-player-id="${p.id}">
+                    <div class="flex items-center justify-between w-full">
+                        <div class="flex items-center gap-2">
+                            <img src="${avatarUrl}" alt="${p.name} Avatar" class="w-6 h-6 rounded-full">
+                            <span class="cp-leaderboard-item-name text-gray-300">${p.name}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="cp-leaderboard-item-points text-yellow-400">${p.points || 0} ОО</span>
+                            ${isNotMe ? `
+                                <button class="kick-player-mini-btn text-red-400 hover:text-red-500 text-xs px-2 py-1 rounded transition-colors" 
+                                        data-player-id="${p.id}" 
+                                        data-player-name="${p.name}"
+                                        title="Вигнати ${p.name}">
+                                    <i class="fas fa-user-slash"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
                 </div>
         `;
         }).join('');
+        
+        // Додаємо обробники для кнопок вигнання
+        leaderboardEl.querySelectorAll('.kick-player-mini-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const playerId = btn.dataset.playerId;
+                const playerName = btn.dataset.playerName;
+                this.proposeKickPlayer(playerId, playerName);
+            });
+        });
     }
     
     rollTheDice() {
@@ -2517,6 +2543,15 @@ class MultiplayerGame extends EducationalPathGame {
                 const hasEnoughPoints = myPlayer && myPlayer.points >= 50; // Мінімальна вартість бафу
                 this.buffDebuffBtn.disabled = !isCurrentPlayer || !hasEnoughPoints || !this.gameActive;
             }
+            
+            // Показуємо/приховуємо кнопку вигнання (тільки для хостів під час гри)
+            if (this.kickPlayerBtn) {
+                if (this.isHost && this.gameActive) {
+                    this.kickPlayerBtn.classList.remove('hidden');
+                } else {
+                    this.kickPlayerBtn.classList.add('hidden');
+                }
+            }
         } else {
             this.rollDiceBtn.disabled = !this.gameActive;
             this.rollDiceBtn.style.opacity = this.gameActive ? '1' : '0.5';
@@ -2560,10 +2595,9 @@ class MultiplayerGame extends EducationalPathGame {
                 console.log('Вибір режиму приховано');
             }
             
-            // ВИДАЛЕНО: setInitialScale() - конфліктує з глобальним масштабуванням
             // Встановлюємо правильний масштаб карти
             setTimeout(() => {
-                // this.setInitialScale(); // Видалено
+                this.setInitialScale();
                 this.applyTransform();
                 console.log('Масштаб карти встановлено (друга функція)');
                 
@@ -4169,14 +4203,10 @@ class MultiplayerGame extends EducationalPathGame {
         this.isTablet = this.detectTablet();
         this.screenSize = this.getScreenSize();
         
-        // ВАЖЛИВО: Видали звідси this.updateScaleFactor(), він нам більше не потрібен.
-        // this.updateScaleFactor(); // <--- ВИДАЛЕНО
+        // Встановлюємо початковий масштаб
+        this.updateScaleFactor();
         
-        // ДОДАЙ ЦІ ДВА РЯДКИ:
-        window.addEventListener('resize', this.updateGameScale.bind(this));
-        setTimeout(() => this.updateGameScale(), 100); // Встановлюємо початковий масштаб
-        
-        // Додаємо обробник зміни розміру вікна (для інших потреб)
+        // Додаємо обробник зміни розміру вікна
         window.addEventListener('resize', () => {
             this.handleResize();
         });
@@ -4188,35 +4218,11 @@ class MultiplayerGame extends EducationalPathGame {
             }, 100);
         });
         
-        console.log('Адаптивний дизайн "Костиль" (Scaled Wrapper) ініціалізовано:', {
+        console.log('Адаптивний дизайн ініціалізовано:', {
             isMobile: this.isMobile,
             isTablet: this.isTablet,
             screenSize: this.screenSize
         });
-    }
-    
-    // ДОДАЙ ЦЮ НОВУ ФУНКЦІЮ (або заміни стару updateGameScale, якщо вона є)
-    updateGameScale() {
-        // 1. Наші базові ("ідеальні") розміри, які ми задали в style для #app-wrapper
-        const BASE_WIDTH = 1700;
-        const BASE_HEIGHT = 900;
-
-        // 2. Поточні розміри вікна
-        const currentWidth = window.innerWidth;
-        const currentHeight = window.innerHeight;
-
-        // 3. Рахуємо, у скільки разів вікно менше за нашу "базову" гру
-        const scale = Math.min(
-            currentWidth / BASE_WIDTH,
-            currentHeight / BASE_HEIGHT
-        );
-
-        // 4. Знаходимо нашу обгортку
-        const appWrapper = document.getElementById('app-wrapper');
-        if (appWrapper) {
-            // 5. Застосовуємо магію: "стиснути" всю обгортку
-            appWrapper.style.transform = `scale(${scale})`;
-        }
     }
     
     detectMobile() {
@@ -4279,11 +4285,10 @@ class MultiplayerGame extends EducationalPathGame {
         console.log('Орієнтація змінилася');
         this.handleResize();
         
-        // ВИДАЛЕНО: setInitialScale() - конфліктує з глобальним масштабуванням
         // Додаткова логіка для зміни орієнтації
         if (this.gameBoardContainer) {
             setTimeout(() => {
-                // this.setInitialScale(); // Видалено
+                this.setInitialScale();
                 this.applyTransform();
             }, 200);
         }
@@ -4319,10 +4324,9 @@ class MultiplayerGame extends EducationalPathGame {
             }
         }
         
-        // ВИДАЛЕНО: setInitialScale() - конфліктує з глобальним масштабуванням
         // Оновлюємо масштаб карти
         setTimeout(() => {
-            // this.setInitialScale(); // Видалено
+            this.setInitialScale();
             this.applyTransform();
         }, 100);
     }
@@ -4349,11 +4353,44 @@ class MultiplayerGame extends EducationalPathGame {
         });
     }
     
-    // ВИДАЛЕНО: Перевизначення setInitialScale() - конфліктує з глобальним масштабуванням
-    // Масштабування тепер обробляється в updateGameScale() для глобального масштабування
-    // setInitialScale() {
-    //     // Видалено для уникнення конфліктів з глобальним масштабуванням
-    // }
+    // Перевизначення методу setInitialScale для адаптивності
+    setInitialScale() {
+        if (!this.gameBoardContainer) return;
+        
+        const container = this.gameBoardContainer.parentElement;
+        const containerRect = container.getBoundingClientRect();
+        
+        // Базові розміри карти
+        const mapWidth = 1273;
+        const mapHeight = 806;
+        
+        // Розраховуємо масштаб для різних пристроїв
+        let scaleX, scaleY, scale;
+        
+        if (this.isMobile) {
+            // На мобільних пристроях використовуємо більший масштаб для кращої видимості
+            scaleX = (containerRect.width - 20) / mapWidth;
+            scaleY = (containerRect.height - 20) / mapHeight;
+            scale = Math.min(scaleX, scaleY) * 0.9; // Трохи менше для відступів
+        } else if (this.isTablet) {
+            // На планшетах середній масштаб
+            scaleX = (containerRect.width - 40) / mapWidth;
+            scaleY = (containerRect.height - 40) / mapHeight;
+            scale = Math.min(scaleX, scaleY) * 0.95;
+        } else {
+            // На десктопі стандартний масштаб
+            scaleX = containerRect.width / mapWidth;
+            scaleY = containerRect.height / mapHeight;
+            scale = Math.min(scaleX, scaleY);
+        }
+        
+        // Обмежуємо масштаб
+        scale = Math.max(0.1, Math.min(scale, 2));
+        
+        this.scale = scale;
+        this.scaleX = scale;
+        this.scaleY = scale;
+    }
     
     // Додаємо підтримку touch-жестів
     setupTouchControls() {
@@ -5513,6 +5550,66 @@ class MultiplayerGame extends EducationalPathGame {
             roomId: this.roomId,
             playerId: playerId
         });
+    }
+    
+    // Показуємо модальне вікно для вибору гравця для вигнання
+    showKickPlayerModal() {
+        if (!this.players || !this.isHost) return;
+        
+        // Фільтруємо гравців (виключаємо себе)
+        const otherPlayers = this.players.filter(p => p.id !== this.playerId && !p.hasLost);
+        
+        if (otherPlayers.length === 0) {
+            if (window.gameUI) {
+                window.gameUI.showNotification('Немає інших гравців для вигнання', 'warning');
+            }
+            return;
+        }
+        
+        let modalContent = `
+            <h3 class="text-2xl font-bold mb-4">Вигнати гравця</h3>
+            <p class="mb-4 text-gray-300">Оберіть гравця, якого хочете вигнати з кімнати:</p>
+            <div class="space-y-2 max-h-64 overflow-y-auto">
+        `;
+        
+        otherPlayers.forEach(player => {
+            const avatarUrl = player.avatarUrl || 'image/chips/avatar1.png';
+            modalContent += `
+                <button class="kick-player-option-btn w-full p-3 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center gap-3 transition-colors" 
+                        data-player-id="${player.id}" 
+                        data-player-name="${player.name}">
+                    <img src="${avatarUrl}" alt="${player.name}" class="w-8 h-8 rounded-full">
+                    <div class="flex-grow text-left">
+                        <div class="font-semibold" style="color: ${player.color};">${player.name}</div>
+                        <div class="text-sm text-gray-400">${player.class?.name || 'Без класу'} • ${player.points || 0} ОО</div>
+                    </div>
+                    <i class="fas fa-user-slash text-red-400"></i>
+                </button>
+            `;
+        });
+        
+        modalContent += `
+            </div>
+            <div class="mt-4 text-center">
+                <button class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="document.getElementById('quest-modal').classList.add('hidden')">
+                    Скасувати
+                </button>
+            </div>
+        `;
+        
+        this.showQuestModal('Вигнати гравця', modalContent, [], null);
+        
+        // Додаємо обробники для кнопок вибору гравця
+        setTimeout(() => {
+            document.querySelectorAll('.kick-player-option-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const playerId = btn.dataset.playerId;
+                    const playerName = btn.dataset.playerName;
+                    this.proposeKickPlayer(playerId, playerName);
+                    this.questModal.classList.add('hidden');
+                });
+            });
+        }, 100);
     }
     
     proposeKickPlayer(playerId, playerName) {

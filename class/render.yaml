@@ -10,7 +10,7 @@ services:
         value: production
       - key: PORT
         value: 3000
-    healthCheckPath: /
+    healthCheckPath: /health
     autoDeploy: true
     branch: main
     dockerfilePath: ./Dockerfile

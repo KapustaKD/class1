@@ -379,55 +379,30 @@ class EducationalPathGame {
        
     
         // Функція для адаптивного масштабування гри
-    updateGameScale() {
-        // Базові розміри гри (той самий розмір, що вказано в HTML style)
-        const BASE_WIDTH = 1700;
-        const BASE_HEIGHT = 900;
-        
-        // Отримуємо поточні розміри вікна
-        const currentWidth = window.innerWidth;
-        const currentHeight = window.innerHeight;
-        
-        // Розраховуємо масштаб, щоб гра вписалася в екран, зберігши пропорції
-        const scale = Math.min(
-            currentWidth / BASE_WIDTH,
-            currentHeight / BASE_HEIGHT
-        );
-        
-        // Застосовуємо масштаб до game-container
-        const gameContainer = document.getElementById('game-container');
-        if (gameContainer) {
-            gameContainer.style.transform = `scale(${scale})`;
-        }
-        
-        console.log('📏 Оновлено масштаб гри:', {
-            currentWidth,
-            currentHeight,
-            BASE_WIDTH,
-            BASE_HEIGHT,
-            scale
-        });
-    }
+    // ВИДАЛЕНО: updateGameScale() - тепер використовується в multiplayer.js для глобального масштабування
+    // updateGameScale() {
+    //     // Ця функція перенесена в multiplayer.js
+    // }
     
     setupEventListeners() {
-        // Додаємо обробник зміни розміру вікна для масштабування
-        window.addEventListener('resize', () => {
-            if (typeof this.updateGameScale === 'function') {
-                this.updateGameScale();
-            }
-        });
+        // ВИДАЛЕНО: Обробник resize для updateGameScale - тепер використовується в multiplayer.js
+        // window.addEventListener('resize', () => {
+        //     if (typeof this.updateGameScale === 'function') {
+        //         this.updateGameScale();
+        //     }
+        // });
         
-        // Викликаємо updateGameScale при завантаженні
-        if (typeof this.updateGameScale === 'function') {
-            // Чекаємо, поки DOM буде готовий
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', () => {
-                    this.updateGameScale();
-                });
-            } else {
-                this.updateGameScale();
-            }
-        }
+        // ВИДАЛЕНО: Виклик updateGameScale - тепер використовується в multiplayer.js
+        // if (typeof this.updateGameScale === 'function') {
+        //     // Чекаємо, поки DOM буде готовий
+        //     if (document.readyState === 'loading') {
+        //         document.addEventListener('DOMContentLoaded', () => {
+        //             this.updateGameScale();
+        //         });
+        //     } else {
+        //         this.updateGameScale();
+        //     }
+        // }
     
             // Основні події гри
     
@@ -486,24 +461,11 @@ class EducationalPathGame {
     
     }
     
-    // Встановлення правильного початкового масштабу
-    setInitialScale() {
-        console.log('🔧 setInitialScale() викликано (перша функція)');
-        console.log('🔍 ПЕРЕД встановленням translateY:', this.translateY);
-        
-        // ВИМКНЕНО: Автоматичне масштабування - використовуємо фіксований розмір
-        this.scale = 1; // Фіксований масштаб 1:1
-        this.translateX = 0; // Без зміщення
-        this.translateY = 0; // Без зміщення по вертикалі
-        
-        console.log('🔍 ПІСЛЯ встановлення translateY:', this.translateY);
-        
-        console.log('📊 Фіксований масштаб встановлено:', {
-            scale: this.scale,
-            translateX: this.translateX,
-            translateY: this.translateY
-        });
-    }
+    // ВИДАЛЕНО: setInitialScale() - конфліктує з глобальним масштабуванням
+    // Масштабування тепер обробляється в multiplayer.js через updateGameScale()
+    // setInitialScale() {
+    //     // Видалено для уникнення конфліктів з глобальним масштабуванням
+    // }
     
     
     
@@ -2153,23 +2115,10 @@ class EducationalPathGame {
     }
     
     // Встановлення початкового масштабу
-    setInitialScale() {
-        console.log('🔧 setInitialScale() викликано (друга функція)');
-        console.log('🔍 ПЕРЕД встановленням translateY:', this.translateY);
-        
-        // ВИМКНЕНО: Автоматичне масштабування - використовуємо фіксований розмір
-        this.scale = 1; // Фіксований масштаб 1:1
-        this.translateX = 0; // Без зміщення
-        this.translateY = 0; // Без зміщення по вертикалі
-        
-        console.log('🔍 ПІСЛЯ встановлення translateY:', this.translateY);
-        
-        console.log('📊 Фіксований масштаб встановлено (друга функція):', {
-            scale: this.scale,
-            translateX: this.translateX,
-            translateY: this.translateY
-        });
-    }
+    // ВИДАЛЕНО: setInitialScale() (друга версія) - конфліктує з глобальним масштабуванням
+    // setInitialScale() {
+    //     // Видалено для уникнення конфліктів з глобальним масштабуванням
+    // }
     
     // Застосування трансформації
     applyTransform() {

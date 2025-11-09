@@ -301,6 +301,7 @@ class BotGame extends EducationalPathGame {
         console.log(`🎮 ${player.name} обробляє подію: ${cellData.type}`);
         
         switch (cellData.type) {
+            case 'quest':
             case 'simple':
                 this.handleBotSimpleQuest(player);
                 break;
@@ -324,10 +325,26 @@ class BotGame extends EducationalPathGame {
                 this.handleBotAlternativePath(player, cellData);
                 break;
             case 'reincarnation':
+            case 'early-reincarnation':
                 this.handleBotReincarnation(player, cellData);
                 break;
             case 'machine-uprising':
                 this.handleBotMachineUprising(player);
+                break;
+            case 'test-question':
+                this.handleBotTestQuestion(player, player.position);
+                break;
+            case 'portal':
+                this.handleBotPortal(player, cellData);
+                break;
+            case 'amphitheater':
+                this.handleBotAmphitheater(player);
+                break;
+            case 'tavern':
+                this.handleBotTavern(player);
+                break;
+            case 'casino':
+                this.handleBotCasino(player);
                 break;
             default:
                 // Якщо невідома подія, просто передаємо хід
@@ -451,12 +468,33 @@ class BotGame extends EducationalPathGame {
     // Обробка реінкарнації для інших гравців
     handleBotReincarnation(player, cellData) {
         // Гравець завжди погоджується на реінкарнацію
-        const newClass = this.playerClasses[cellData.nextEpoch - 1];
-        player.class = newClass;
-        player.points = cellData.points;
+        const targetEpoch = cellData.targetEpoch || cellData.nextEpoch;
+        const points = cellData.points || 50;
+        
+        if (targetEpoch && this.playerClasses && this.playerClasses.length >= targetEpoch) {
+            const newClass = this.playerClasses[targetEpoch - 1];
+            if (newClass) {
+                player.class = newClass;
+                player.points = points;
+                this.updateUI();
+                
+                this.showQuestModal(`${player.name} - Реінкарнація`, 
+                    `${player.name} погодився на реінкарнацію!\n\nНовий клас: ${newClass.name}\nНові очки: ${points} ОО`, [
+                        { text: 'Далі', callback: () => {
+                            this.questModal.classList.add('hidden');
+                            setTimeout(() => this.nextTurn(), 500);
+                        }}
+                    ]);
+                return;
+            }
+        }
+        
+        // Якщо не вдалося визначити клас, просто даємо очки
+        player.points = points;
+        this.updateUI();
         
         this.showQuestModal(`${player.name} - Реінкарнація`, 
-            `${player.name} погодився на реінкарнацію!\n\nНовий клас: ${newClass.name}\nНові очки: ${cellData.points} ОО`, [
+            `${player.name} погодився на реінкарнацію!\n\nОтримано: ${points} ОО`, [
                 { text: 'Далі', callback: () => {
                     this.questModal.classList.add('hidden');
                     setTimeout(() => this.nextTurn(), 500);
@@ -488,6 +526,148 @@ class BotGame extends EducationalPathGame {
                     }}
                 ]);
         }
+    }
+
+    // Обробка тестового завдання для ботів
+    handleBotTestQuestion(player, cellNumber) {
+        const questionData = window.TEST_QUESTIONS && window.TEST_QUESTIONS[cellNumber];
+        
+        if (!questionData) {
+            // Якщо немає питання, даємо випадкову відповідь
+            const isCorrect = Math.random() < 0.5; // 50% шанс правильної відповіді
+            const reward = isCorrect ? 5 : 0;
+            
+            if (isCorrect) {
+                this.updatePoints(player, reward, 'Правильна відповідь на тест');
+            }
+            
+            this.showQuestModal(`${player.name} - Тестове завдання`, 
+                `${player.name} ${isCorrect ? 'правильно відповів' : 'неправильно відповів'} на тестове завдання.\n\n${isCorrect ? `Отримано: +${reward} ОО` : 'Очок не отримано'}`, [
+                    { text: 'Далі', callback: () => {
+                        this.questModal.classList.add('hidden');
+                        setTimeout(() => this.nextTurn(), 500);
+                    }}
+                ]);
+            return;
+        }
+        
+        // Бот вибирає випадкову відповідь
+        const options = Object.keys(questionData.options);
+        const selectedAnswer = options[Math.floor(Math.random() * options.length)];
+        const isCorrect = selectedAnswer === questionData.correctAnswer;
+        const reward = isCorrect ? 5 : 0;
+        
+        if (isCorrect) {
+            this.updatePoints(player, reward, 'Правильна відповідь на тест');
+        }
+        
+        this.showQuestModal(`${player.name} - Тестове завдання`, 
+            `Питання: ${questionData.question}\n\n${player.name} обрав відповідь: ${selectedAnswer})\n\n${isCorrect ? `✅ Правильно! Отримано: +${reward} ОО` : `❌ Неправильно. Правильна відповідь: ${questionData.correctAnswer}`}`, [
+                { text: 'Далі', callback: () => {
+                    this.questModal.classList.add('hidden');
+                    setTimeout(() => this.nextTurn(), 500);
+                }}
+            ]);
+    }
+
+    // Обробка порталу для ботів
+    handleBotPortal(player, cellData) {
+        // Бот завжди використовує портал (ризикує)
+        const cost = cellData.cost || 10;
+        this.updatePoints(player, -cost, 'Використання порталу');
+        this.movePlayerTo(player, cellData.target);
+        
+        this.showQuestModal(`${player.name} - Таємний портал`, 
+            `${player.name} вирішив ризикнути та використати портал!\n\nСплачено: ${cost} ОО\nПереміщено на клітинку: ${cellData.target}`, [
+                { text: 'Далі', callback: () => {
+                    this.questModal.classList.add('hidden');
+                    setTimeout(() => this.nextTurn(), 500);
+                }}
+            ]);
+    }
+
+    // Обробка амфітеатру для ботів
+    handleBotAmphitheater(player) {
+        const playerClassId = player.class?.id || 'peasant';
+        
+        if (playerClassId === 'aristocrat' || playerClassId === 'burgher') {
+            // Аристократ або міщанин пропускає хід
+            player.skipTurn = true;
+            this.showQuestModal(`${player.name} - Амфітеатр`, 
+                `🎭 ${player.name} (${player.class.name}) захотів вина та видовищ в Амфітеатрі! У такому стані він не може продовжити гру та пропускає хід.`, [
+                    { text: 'Далі', callback: () => {
+                        this.questModal.classList.add('hidden');
+                        setTimeout(() => this.nextTurn(), 500);
+                    }}
+                ]);
+        } else {
+            // Селянин не може потрапити
+            this.showQuestModal(`${player.name} - Амфітеатр`, 
+                `⛔ ${player.name} (${player.class.name}) хотів потрапити до Амфітеатру, але забув про своє становище у суспільстві - його не пустили.`, [
+                    { text: 'Далі', callback: () => {
+                        this.questModal.classList.add('hidden');
+                        setTimeout(() => this.nextTurn(), 500);
+                    }}
+                ]);
+        }
+    }
+
+    // Обробка шинку для ботів
+    handleBotTavern(player) {
+        const playerClassId = player.class?.id || 'peasant';
+        let lostPoints = 0;
+        let message = '';
+        
+        if (playerClassId === 'aristocrat') {
+            lostPoints = player.points;
+            player.points = 0;
+            message = `💸 ${player.name} (${player.class.name})! Вітаємо! Ви втратили усі статки (${lostPoints} ОО), які століттями накопичувала ваша родина у Шинку! Відтепер життя стане складнішим, проте не засмучуйтесь: все ще є шанси перемогти!`;
+        } else if (playerClassId === 'burgher') {
+            lostPoints = Math.floor(player.points / 2);
+            player.points -= lostPoints;
+            message = `💰 ${player.name} (${player.class.name})! Вітаємо! Ви втратили половину (${lostPoints} ОО) вашого нажитого майна у Шинку! Відтепер життя стане дещо складнішим, проте не засмучуйтесь: все ще є шанси перемогти!`;
+        } else {
+            // Селянин не втрачає очок
+            message = `🍺 ${player.name} (${player.class.name}) зайшов до Шинку, але не мав грошей на розваги.`;
+        }
+        
+        this.updateUI();
+        
+        this.showQuestModal(`${player.name} - Шинок`, message, [
+            { text: 'Далі', callback: () => {
+                this.questModal.classList.add('hidden');
+                setTimeout(() => this.nextTurn(), 500);
+            }}
+        ]);
+    }
+
+    // Обробка казино для ботів
+    handleBotCasino(player) {
+        const playerClassId = player.class?.id || 'peasant';
+        let lostPoints = 0;
+        let message = '';
+        
+        if (playerClassId === 'aristocrat') {
+            lostPoints = player.points;
+            player.points = 0;
+            message = `💸 ${player.name} (${player.class.name})! Вітаємо! Ви втратили усі статки (${lostPoints} ОО), які століттями накопичувала ваша родина у Казино! Відтепер життя стане складнішим, проте не засмучуйтесь: все ще є шанси перемогти!`;
+        } else if (playerClassId === 'burgher') {
+            lostPoints = Math.floor(player.points / 2);
+            player.points -= lostPoints;
+            message = `💰 ${player.name} (${player.class.name})! Вітаємо! Ви втратили половину (${lostPoints} ОО) вашого нажитого майна у Казино! Відтепер життя стане дещо складнішим, проте не засмучуйтесь: все ще є шанси перемогти!`;
+        } else {
+            // Селянин не втрачає очок
+            message = `🎰 ${player.name} (${player.class.name}) зайшов до Казино, але не мав грошей на азартні ігри.`;
+        }
+        
+        this.updateUI();
+        
+        this.showQuestModal(`${player.name} - Казино`, message, [
+            { text: 'Далі', callback: () => {
+                this.questModal.classList.add('hidden');
+                setTimeout(() => this.nextTurn(), 500);
+            }}
+        ]);
     }
 
     // Перевизначений метод nextTurn для інших гравців

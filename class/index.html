@@ -10,7 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="game.css">
-    <style> body { overflow: hidden; } </style>
     <script src="/socket.io/socket.io.js"></script>
     <script>
         // Налаштування для продакшн середовища
@@ -20,7 +19,7 @@
         };
     </script>
 </head>
-<body class="bg-gray-800 text-white flex items-center justify-center min-h-screen w-screen p-0 m-0">
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen w-screen overflow-hidden">
 
     <!-- Меню вибору режиму -->
     <div id="mode-selection" class="flex items-center justify-center min-h-screen">
@@ -39,10 +38,7 @@
     </div>
 
     <!-- Основна гра (прихована спочатку) -->
-    <!-- 1. НОВА ОБГОРТКА з фіксованим розміром -->
-    <div id="app-wrapper" style="width: 1700px; height: 900px; transition: transform 0.2s ease-out; transform-origin: center center;">
-        <!-- 2. Змінений #game-container (тепер він гнучкий ВСЕРЕДИНІ обгортки) -->
-        <div id="game-container" class="hidden flex flex-row w-full h-full gap-8 p-4">
+    <div id="game-container" class="hidden flex flex-col lg:flex-row gap-4 p-4">
         <!-- Ігрове поле -->
         <div class="bg-gray-700 panel-overlay p-2 rounded-2xl shadow-2xl" style="position: relative; width: 1289px; height: 822px;">
             <button id="test-mode-btn" class="absolute top-2 right-2 bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg z-10 hidden">🧪 Режим тесту</button>
@@ -118,6 +114,10 @@
                     <i class="fas fa-comments"></i><span>Чат</span>
                     <span id="chat-unread-count" class="chat-unread-badge hidden">0</span>
                 </button>
+                <!-- Кнопка вигнання гравця (тільки для хостів) -->
+                <button id="kick-player-btn" class="cp-button kick hidden">
+                    <i class="fas fa-user-slash"></i><span>Вигнати гравця</span>
+                </button>
                 <!-- ID збережено -->
                 <button id="exit-game-btn" class="cp-button exit" onclick="window.exitGame()">
                     <i class="fas fa-door-open"></i><span>Вийти з гри</span>
@@ -125,8 +125,7 @@
             </div>
         </div>
         <!-- ******** КІНЕЦЬ НОВОЇ ПАНЕЛІ ******** -->
-        </div> <!-- Кінець #game-container -->
-    </div> <!-- Кінець НОВОЇ ОБГОРТКИ #app-wrapper -->
+    </div>
     
     <!-- Панель чату (висувається) -->
     <div id="game-chat-panel" class="game-chat-panel hidden">

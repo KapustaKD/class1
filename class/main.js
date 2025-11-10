@@ -277,11 +277,12 @@ function setupMusicController() {
     // Функція для отримання об'єктів музики з game.js (якщо вони існують)
     function getMusicObjects() {
         // Перевіряємо, чи є екземпляр гри з музикою
-        if (window.game && window.game.backgroundMusic1 && window.game.backgroundMusic2) {
+        if (window.game && window.game.backgroundMusicObjects && window.game.currentBackgroundMusic) {
             return {
-                backgroundMusic1: window.game.backgroundMusic1,
-                backgroundMusic2: window.game.backgroundMusic2,
+                backgroundMusicObjects: window.game.backgroundMusicObjects,
+                backgroundMusicTracks: window.game.backgroundMusicTracks,
                 currentBackgroundMusic: window.game.currentBackgroundMusic,
+                currentBackgroundMusicKey: window.game.currentBackgroundMusicKey,
                 isGameMusic: true
             };
         }
@@ -292,19 +293,46 @@ function setupMusicController() {
             window.fallbackMusic1.preload = 'auto';
             window.fallbackMusic1.loop = true;
             window.fallbackMusic1.volume = 0.05;
-            
-            window.fallbackMusic2 = new Audio('sound/fon/rumbling_fon_2.mp3');
-            window.fallbackMusic2.preload = 'auto';
-            window.fallbackMusic2.loop = true;
-            window.fallbackMusic2.volume = 0.05;
         }
         
         return {
-            backgroundMusic1: window.fallbackMusic1,
-            backgroundMusic2: window.fallbackMusic2,
+            backgroundMusicObjects: { 'main_fon': window.fallbackMusic1 },
+            backgroundMusicTracks: { 'main_fon': { file: 'sound/fon/main_fon.m4a', name: 'main_fon' } },
             currentBackgroundMusic: window.fallbackMusic1,
+            currentBackgroundMusicKey: 'main_fon',
             isGameMusic: false
         };
+    }
+    
+    // Заповнюємо випадаючий список треків
+    function populateTrackSelect() {
+        const trackSelect = document.getElementById('music-track-select');
+        if (!trackSelect) return;
+        
+        const musicObjects = getMusicObjects();
+        trackSelect.innerHTML = '';
+        
+        for (const [key, track] of Object.entries(musicObjects.backgroundMusicTracks)) {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = track.name;
+            if (key === musicObjects.currentBackgroundMusicKey) {
+                option.selected = true;
+            }
+            trackSelect.appendChild(option);
+        }
+    }
+    
+    // Оновлюємо вибір треку при зміні
+    const trackSelect = document.getElementById('music-track-select');
+    if (trackSelect) {
+        trackSelect.addEventListener('change', (e) => {
+            const selectedTrack = e.target.value;
+            if (window.game && window.game.setBackgroundTrack) {
+                window.game.setBackgroundTrack(selectedTrack);
+                updateMusicState();
+            }
+        });
     }
     
     let musicObjects = getMusicObjects();
@@ -322,6 +350,11 @@ function setupMusicController() {
             const currentVolume = Math.round(musicObjects.currentBackgroundMusic.volume * 100);
             musicVolumeSlider.value = currentVolume;
             musicVolumeText.textContent = currentVolume + '%';
+            
+            // Оновлюємо вибір треку
+            if (trackSelect && musicObjects.currentBackgroundMusicKey) {
+                trackSelect.value = musicObjects.currentBackgroundMusicKey;
+            }
         } else {
             // Для fallback музики
             isPlaying = !musicObjects.currentBackgroundMusic.paused;
@@ -329,6 +362,11 @@ function setupMusicController() {
             const currentVolume = Math.round(musicObjects.currentBackgroundMusic.volume * 100);
             musicVolumeSlider.value = currentVolume;
             musicVolumeText.textContent = currentVolume + '%';
+            
+            // Оновлюємо вибір треку
+            if (trackSelect && musicObjects.currentBackgroundMusicKey) {
+                trackSelect.value = musicObjects.currentBackgroundMusicKey;
+            }
         }
     }
     
@@ -339,6 +377,8 @@ function setupMusicController() {
             audioIcon.textContent = '🔇';
             // Оновлюємо стан музики при відкритті панелі
             updateMusicState();
+            // Заповнюємо випадаючий список треків
+            populateTrackSelect();
         } else {
             audioPanel.classList.add('hidden');
             audioIcon.textContent = '🔊';

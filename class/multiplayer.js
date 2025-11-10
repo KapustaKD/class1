@@ -2067,11 +2067,41 @@ class MultiplayerGame extends EducationalPathGame {
             this.updatePawnPosition(player);
         }
         
+        // Визначаємо фонове зображення залежно від типу події
+        let backgroundImage = null;
+        if (data.eventType === 'amphitheater') {
+            backgroundImage = 'image/modal_window/amfiteatr.jpg';
+        } else if (data.eventType === 'casino') {
+            backgroundImage = 'image/modal_window/casino.jpg';
+        } else if (data.eventType === 'tavern') {
+            backgroundImage = 'image/modal_window/shinok.jpg';
+        }
+        
+        // Показуємо модальне вікно з картинкою, якщо є
+        if (backgroundImage) {
+            const isMyEvent = data.playerId === this.playerId;
+            const modalContent = `
+                <h3 class="text-2xl font-bold mb-4">${data.eventType === 'amphitheater' ? 'Амфітеатр' : data.eventType === 'casino' ? 'Казино' : 'Шинок'}</h3>
+                <p class="mb-4">${data.resultMessage}</p>
+                <button class="w-full p-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded" onclick="game.closeMiniGame()">
+                    Закрити
+                </button>
+            `;
+            this.showQuestModal(
+                data.eventType === 'amphitheater' ? 'Амфітеатр' : data.eventType === 'casino' ? 'Казино' : 'Шинок',
+                data.resultMessage,
+                [{ text: 'Закрити', callback: () => this.closeMiniGame() }],
+                backgroundImage
+            );
+        }
+        
         // Показуємо повідомлення всім
         this.addChatMessage('system', data.resultMessage);
         
-        // Закриваємо модальне вікно для всіх гравців
-        this.questModal.classList.add('hidden');
+        // Закриваємо модальне вікно для всіх гравців (якщо не показуємо нове)
+        if (!backgroundImage) {
+            this.questModal.classList.add('hidden');
+        }
         
         // Закриваємо glassmorphism модальне вікно обхідної дороги для ВСІХ гравців
         const bypassModal = document.getElementById('bypass-road-modal');
@@ -2389,6 +2419,19 @@ class MultiplayerGame extends EducationalPathGame {
                 pointsText = `+${points} ОО`;
             }
         } else {
+            // Визначаємо поточну епоху за позицією гравця
+            const playerPosition = myPlayer?.position || earlyReincarnationData?.cellNumber || 0;
+            const getEpochForPosition = (pos) => {
+                if (pos <= 12) return 1;
+                if (pos <= 22) return 2; // Середньовіччя
+                if (pos <= 42) return 3;
+                if (pos <= 75) return 4;
+                if (pos <= 97) return 5;
+                if (pos <= 101) return 6;
+                return 1;
+            };
+            const currentEpoch = getEpochForPosition(playerPosition);
+            
             // Визначаємо текст переродження залежно від класу для поточного гравця
             if (classInfo.id === 'aristocrat') {
                 reincarnationText = 'Вітаю! Ви народилися із золотою ложкою в роті! Ваше життя буде легшим, ніж у решти, завдяки безмежним статкам пращурів. Проте все ж один криптоніт маєте – казино та шинки. Якщо ступите ногою у даний заклад, втратите все!';
@@ -2399,6 +2442,11 @@ class MultiplayerGame extends EducationalPathGame {
             } else {
                 // Запасний варіант
                 reincarnationText = 'Вітаю! Ви переродились! Вас чекає нове життя з новою родиною та новою долею. Хай щастить!';
+            }
+            
+            // Якщо це середньовіччя (епоха 2), змінюємо текст на про чуму
+            if (currentEpoch === 2 && earlyReincarnationData) {
+                reincarnationText = 'Вітаю! Вас вкусив енцифалітний кліщ і ви померли від бубонної чуми) Попереду чекає нове життя в новому часі з новою родиною та новою долею. Вчіться на своїх помилках і використовуйте засіб від комах!';
             }
             
             if (earlyReincarnationData) {
@@ -2414,9 +2462,30 @@ class MultiplayerGame extends EducationalPathGame {
         backdrop.id = 'reincarnation-backdrop-v2';
 
         const content = document.createElement('div');
+        // Визначаємо, чи це середньовіччя (епоха 2) для показу картинки chuma
+        const playerPosition = myPlayer?.position || earlyReincarnationData?.cellNumber || 0;
+        const getEpochForPosition = (pos) => {
+            if (pos <= 12) return 1;
+            if (pos <= 22) return 2; // Середньовіччя
+            if (pos <= 42) return 3;
+            if (pos <= 75) return 4;
+            if (pos <= 97) return 5;
+            if (pos <= 101) return 6;
+            return 1;
+        };
+        const currentEpoch = getEpochForPosition(playerPosition);
+        const isMedieval = currentEpoch === 2 && earlyReincarnationData;
+        
         // На початок гри (isGameStart=true) не додаємо фон
         if (isGameStart) {
             content.className = 'reincarnation-content-v2 no-reincarnation-bg';
+        } else if (isMedieval) {
+            // Для середньовіччя використовуємо картинку chuma
+            content.className = 'reincarnation-content-v2';
+            content.style.backgroundImage = "url('image/modal_window/chuma.png')";
+            content.style.backgroundSize = 'cover';
+            content.style.backgroundPosition = 'center';
+            content.style.backgroundRepeat = 'no-repeat';
         } else {
             content.className = 'reincarnation-content-v2';
         }
@@ -3831,6 +3900,17 @@ class MultiplayerGame extends EducationalPathGame {
     showWebNovellaEvent(data) {
         const isMyEvent = data.activePlayerId === this.playerId;
         
+        // Визначаємо номер новели за поточною подією
+        let backgroundImage = null;
+        const currentEvent = data.gameState?.currentEvent || '';
+        if (currentEvent.includes('event_1') || currentEvent.includes('start_event_1')) {
+            backgroundImage = 'image/modal_window/event_1.jpg';
+        } else if (currentEvent.includes('event_2') || currentEvent.includes('start_event_2')) {
+            backgroundImage = 'image/modal_window/event_2.jpg';
+        } else if (currentEvent.includes('event_3') || currentEvent.includes('start_event_3')) {
+            backgroundImage = 'image/modal_window/event_3.jpg';
+        }
+        
         let modalContent = `
             <h3 class="text-2xl font-bold mb-4">Халепа!</h3>
             <p class="mb-4">${data.event.text}</p>
@@ -3856,7 +3936,7 @@ class MultiplayerGame extends EducationalPathGame {
             modalContent += `<p class="text-center text-gray-600">Очікуйте вибору гравця</p>`;
         }
         
-        this.showQuestModal('Вебновела', modalContent, [], null);
+        this.showQuestModal('Вебновела', modalContent, [], backgroundImage);
     }
     
     makeWebNovellaChoice(choiceIndex) {

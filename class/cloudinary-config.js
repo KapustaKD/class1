@@ -21,7 +21,7 @@ const CLOUDINARY_AUDIO_TRACKS = {
         useLocal: true
     },
     'pl2': { 
-        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878466/pl3_gnvj0j.mp4',
+        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878482/pl2_wxobcr.mp4',
         name: 'Політ салафонової цеглини, обмотаної мраморною ганчіркою, через морквяний акваріум з дикими качками.',
         useLocal: false
     },
@@ -31,17 +31,17 @@ const CLOUDINARY_AUDIO_TRACKS = {
         useLocal: false
     },
     'pl4': { 
-        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878466/pl3_gnvj0j.mp4',
+        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878468/pl4_xodprw.mp4',
         name: 'pl4',
         useLocal: false
     },
     'pl5': { 
-        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878466/pl3_gnvj0j.mp4',
+        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878485/pl5_ao3a6e.mp4',
         name: 'Рататуй, що через каналізацію заблукав на вулиці Токіо',
         useLocal: false
     },
     'pl6': { 
-        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878466/pl3_gnvj0j.mp4',
+        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878477/pl6_wejnms.mp4',
         name: 'pl6',
         useLocal: false
     },
@@ -87,4 +87,5 @@ if (typeof window !== 'undefined') {
         getTrackUrl
     };
 }
+
 

@@ -34,14 +34,23 @@ class EducationalPathGame {
             const useCloudinary = typeof window !== 'undefined' && window.cloudinaryConfig;
             
             if (useCloudinary) {
-                // Використовуємо Cloudinary для всіх треків
+                // Використовуємо Cloudinary для треків, які мають URL
                 const cloudinaryTracks = window.cloudinaryConfig.CLOUDINARY_AUDIO_TRACKS;
                 for (const [key, track] of Object.entries(cloudinaryTracks)) {
                     const url = window.cloudinaryConfig.getTrackUrl(key);
-                    this.backgroundMusicTracks[key] = {
-                        file: url,
-                        name: track.name
-                    };
+                    if (url) {
+                        // Використовуємо Cloudinary URL
+                        this.backgroundMusicTracks[key] = {
+                            file: url,
+                            name: track.name
+                        };
+                    } else if (track.useLocal) {
+                        // Використовуємо локальний файл для треків без Cloudinary URL
+                        this.backgroundMusicTracks[key] = {
+                            file: `sound/fon/${key}.${key === 'rumbling_fon_2' ? 'mp3' : 'm4a'}`,
+                            name: track.name
+                        };
+                    }
                 }
             } else {
                 // Fallback на локальні файли, якщо Cloudinary не доступний

@@ -3484,7 +3484,12 @@ class MultiplayerGame extends EducationalPathGame {
             `;
         }
         
-        this.showQuestModal('Творчий квест', modalContent, [], null);
+        // Отримуємо URL картинки Shvalb з Cloudinary
+        const shvalbImageUrl = typeof window !== 'undefined' && window.cloudinaryConfig 
+            ? window.cloudinaryConfig.getImageUrl('shvalb') 
+            : null;
+        
+        this.showQuestModal('Творчий квест', modalContent, [], shvalbImageUrl);
         
         if (isMyTurn) {
             this.startStoryTimer(data.gameState.timer);
@@ -3503,9 +3508,14 @@ class MultiplayerGame extends EducationalPathGame {
             </div>
         `;
         
+        // Отримуємо URL картинки Shvalb з Cloudinary
+        const shvalbImageUrl = typeof window !== 'undefined' && window.cloudinaryConfig 
+            ? window.cloudinaryConfig.getImageUrl('shvalb') 
+            : null;
+        
         this.showQuestModal('Творчий квест', modalContent, [
             { text: 'Закрити', callback: () => this.closeMiniGame() }
-        ]);
+        ], shvalbImageUrl);
     }
     
     showCreativeTaskInput(data) {

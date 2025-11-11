@@ -544,6 +544,16 @@ class MultiplayerGame extends EducationalPathGame {
             this.rpsGameState.currentRound = gameState.currentRound || this.rpsGameState.currentRound;
             this.rpsGameState.gameFinished = !gameState.gameActive;
             
+            // Оновлюємо вибір гравця, якщо він зробив вибір
+            if (data.currentPlayerChoice && data.currentPlayerId) {
+                if (data.currentPlayerId === this.playerId) {
+                    this.rpsGameState.playerChoice = data.currentPlayerChoice;
+                } else {
+                    // Супротивник зробив вибір, але показуємо його тільки якщо обидва зробили вибір
+                    this.rpsGameState.opponentChoice = data.waiting ? null : data.currentPlayerChoice;
+                }
+            }
+            
             // Оновлюємо рахунок
             if (this.rpsGameState.players && this.rpsGameState.scores) {
                 this.rpsGameState.playerWins = this.rpsGameState.scores[this.playerId] || 0;
@@ -551,9 +561,20 @@ class MultiplayerGame extends EducationalPathGame {
                 this.rpsGameState.opponentWins = opponentId ? (this.rpsGameState.scores[opponentId] || 0) : 0;
             }
             
+            // Оновлюємо вибір гравця та супротивника, якщо вони є
+            if (data.playerChoice) {
+                this.rpsGameState.playerChoice = data.playerChoice;
+            }
+            if (data.opponentChoice) {
+                this.rpsGameState.opponentChoice = data.opponentChoice;
+            }
+            
             // Оновлюємо інтерфейс
             if (data.result && data.result !== 'waiting') {
                 this.updateRPSInterface(data.result, data.opponentChoice);
+            } else if (data.waiting) {
+                // Показуємо вибір гравця, якщо він зробив вибір
+                this.updateRPSInterfaceWaiting();
             } else {
                 this.updateRPSInterfaceFromState();
             }
@@ -2481,11 +2502,12 @@ class MultiplayerGame extends EducationalPathGame {
             content.className = 'reincarnation-content-v2 no-reincarnation-bg';
         } else if (isMedieval) {
             // Для середньовіччя використовуємо картинку chuma
-            content.className = 'reincarnation-content-v2';
+            content.className = 'reincarnation-content-v2 chuma-bg';
             content.style.backgroundImage = "url('image/modal_window/chuma.png')";
             content.style.backgroundSize = 'cover';
             content.style.backgroundPosition = 'center';
             content.style.backgroundRepeat = 'no-repeat';
+            content.style.filter = 'brightness(1.3)';
         } else {
             content.className = 'reincarnation-content-v2';
         }
@@ -3912,11 +3934,13 @@ class MultiplayerGame extends EducationalPathGame {
         
         // Визначаємо номер новели за поточною подією
         let backgroundImage = null;
+        let isEvent2 = false;
         const currentEvent = data.gameState?.currentEvent || '';
         if (currentEvent.includes('event_1') || currentEvent.includes('start_event_1')) {
             backgroundImage = 'image/modal_window/event_1.jpg';
         } else if (currentEvent.includes('event_2') || currentEvent.includes('start_event_2')) {
             backgroundImage = 'image/modal_window/event_2.jpg';
+            isEvent2 = true;
         } else if (currentEvent.includes('event_3') || currentEvent.includes('start_event_3')) {
             backgroundImage = 'image/modal_window/event_3.jpg';
         }
@@ -3946,7 +3970,23 @@ class MultiplayerGame extends EducationalPathGame {
             modalContent += `<p class="text-center text-gray-600">Очікуйте вибору гравця</p>`;
         }
         
+        // Додаємо клас для event_2, щоб зробити його світлішим
+        const modalElement = document.getElementById('quest-modal-content');
+        if (isEvent2 && modalElement) {
+            modalElement.classList.add('event-2-bg');
+        }
+        
         this.showQuestModal('Вебновела', modalContent, [], backgroundImage);
+        
+        // Застосовуємо filter для event_2 після створення модального вікна
+        if (isEvent2) {
+            setTimeout(() => {
+                const questModal = document.getElementById('quest-modal-content');
+                if (questModal) {
+                    questModal.style.filter = 'brightness(1.3)';
+                }
+            }, 100);
+        }
     }
     
     makeWebNovellaChoice(choiceIndex) {
@@ -4947,8 +4987,39 @@ class MultiplayerGame extends EducationalPathGame {
             scoreEl.textContent = `Ваші перемоги: ${playerWins} | Перемоги противника: ${opponentWins}`;
         }
         
-        if (resultEl && this.rpsGameState.playerChoice) {
-            resultEl.textContent = `Ви обрали: ${this.getChoiceEmoji(this.rpsGameState.playerChoice)}`;
+        if (resultEl) {
+            if (this.rpsGameState.playerChoice) {
+                resultEl.textContent = `Ви обрали: ${this.getChoiceEmoji(this.rpsGameState.playerChoice)}`;
+            } else {
+                resultEl.textContent = 'Оберіть свій хід';
+            }
+        }
+    }
+    
+    // Оновлення інтерфейсу КНП під час очікування вибору супротивника
+    updateRPSInterfaceWaiting() {
+        if (!this.rpsGameState) return;
+        
+        const roundEl = document.getElementById('rps-round');
+        const scoreEl = document.getElementById('rps-score');
+        const resultEl = document.getElementById('rps-result');
+        
+        if (roundEl) {
+            roundEl.textContent = `Раунд ${(this.rpsGameState.currentRound || this.rpsGameState.round || 1)} з ${this.rpsGameState.maxRounds || 3}`;
+        }
+        
+        if (scoreEl) {
+            const playerWins = this.rpsGameState.playerWins || 0;
+            const opponentWins = this.rpsGameState.opponentWins || 0;
+            scoreEl.textContent = `Ваші перемоги: ${playerWins} | Перемоги противника: ${opponentWins}`;
+        }
+        
+        if (resultEl) {
+            if (this.rpsGameState.playerChoice) {
+                resultEl.textContent = `Ви обрали: ${this.getChoiceEmoji(this.rpsGameState.playerChoice)}. Очікуємо вибору супротивника...`;
+            } else {
+                resultEl.textContent = 'Очікуємо вибору супротивника...';
+            }
         }
     }
     
@@ -4962,6 +5033,9 @@ class MultiplayerGame extends EducationalPathGame {
             return;
         }
         
+        // Зберігаємо вибір локально
+        this.rpsGameState.playerChoice = choice;
+        
         // Відправляємо вибір на сервер
         if (this.socket && this.roomId) {
             this.socket.emit('rps_choice', {
@@ -4971,10 +5045,7 @@ class MultiplayerGame extends EducationalPathGame {
             });
             
             // Показуємо вибір гравця
-            const resultDiv = document.getElementById('rps-result');
-            if (resultDiv) {
-                resultDiv.textContent = `Ви обрали: ${this.getChoiceEmoji(choice)}`;
-            }
+            this.updateRPSInterfaceWaiting();
         } else {
             // Локальна гра (fallback)
             this.rpsGameState.playerChoice = choice;

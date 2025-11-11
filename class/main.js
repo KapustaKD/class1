@@ -288,16 +288,28 @@ function setupMusicController() {
         }
         
         // Якщо немає, створюємо власні об'єкти (fallback)
+        // Перевіряємо, чи доступна конфігурація Cloudinary
+        const useCloudinary = typeof window !== 'undefined' && window.cloudinaryConfig;
+        let fallbackUrl = 'sound/fon/main_fon.m4a';
+        
+        if (useCloudinary) {
+            fallbackUrl = window.cloudinaryConfig.getTrackUrl('main_fon') || fallbackUrl;
+        }
+        
         if (!window.fallbackMusic1) {
-            window.fallbackMusic1 = new Audio('sound/fon/main_fon.m4a');
+            window.fallbackMusic1 = new Audio(fallbackUrl);
             window.fallbackMusic1.preload = 'auto';
             window.fallbackMusic1.loop = true;
             window.fallbackMusic1.volume = 0.05;
         }
         
+        const fallbackTracks = useCloudinary && window.cloudinaryConfig 
+            ? window.cloudinaryConfig.CLOUDINARY_AUDIO_TRACKS 
+            : { 'main_fon': { file: 'sound/fon/main_fon.m4a', name: 'main_fon' } };
+        
         return {
             backgroundMusicObjects: { 'main_fon': window.fallbackMusic1 },
-            backgroundMusicTracks: { 'main_fon': { file: 'sound/fon/main_fon.m4a', name: 'main_fon' } },
+            backgroundMusicTracks: fallbackTracks,
             currentBackgroundMusic: window.fallbackMusic1,
             currentBackgroundMusicKey: 'main_fon',
             isGameMusic: false

@@ -1726,11 +1726,16 @@ io.on('connection', (socket) => {
                 gameState.scores[player2Id]++;
             }
             
-            // Відправляємо результат
-            io.to(room.id).emit('rps_choice_update', {
-                gameState: gameState,
-                result: winner ? (winner === player.id ? 'win' : 'lose') : 'tie',
-                opponentChoice: player.id === player1Id ? choice2 : choice1
+            // Відправляємо результат обом гравцям з їх виборами
+            gameState.players.forEach(p => {
+                const isPlayer1 = p === player1Id;
+                io.to(p).emit('rps_choice_update', {
+                    gameState: gameState,
+                    result: winner ? (winner === p ? 'win' : 'lose') : 'tie',
+                    opponentChoice: isPlayer1 ? choice2 : choice1,
+                    playerChoice: isPlayer1 ? choice1 : choice2,
+                    opponentId: isPlayer1 ? player2Id : player1Id
+                });
             });
             
             // Переходимо до наступного раунду або завершуємо
@@ -1745,9 +1750,12 @@ io.on('connection', (socket) => {
             }
         } else {
             // Один гравець зробив вибір, чекаємо іншого
+            // Відправляємо оновлення з вибором поточного гравця, але без вибору супротивника
             io.to(room.id).emit('rps_choice_update', {
                 gameState: gameState,
-                waiting: true
+                waiting: true,
+                currentPlayerChoice: data.choice,
+                currentPlayerId: player.id
             });
         }
     });

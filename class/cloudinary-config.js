@@ -1,63 +1,55 @@
 // Конфігурація Cloudinary для аудіофайлів
-// Замініть CLOUD_NAME на ваш cloud name з Cloudinary
 const CLOUDINARY_CONFIG = {
-    cloudName: 'c-3567b94634d50598886be75248fe3a', // Замініть на ваш cloud name з Cloudinary Dashboard
+    cloudName: 'dwv7kufbc', // Cloud name з ваших посилань
     baseUrl: 'https://res.cloudinary.com',
-    audioFolder: 'video/upload' // Cloudinary використовує video/upload для аудіо та відео
+    audioFolder: 'video/upload'
 };
 
-// Функція для генерації URL аудіофайлу з Cloudinary
-// Cloudinary автоматично визначає формат, тому можна не вказувати розширення
-function getCloudinaryAudioUrl(publicId, format = 'm4a') {
-    // Якщо publicId вже містить розширення, використовуємо його
-    // Якщо ні, додаємо формат
-    const hasExtension = publicId.includes('.');
-    const finalPublicId = hasExtension ? publicId : `${publicId}.${format}`;
-    return `${CLOUDINARY_CONFIG.baseUrl}/${CLOUDINARY_CONFIG.cloudName}/${CLOUDINARY_CONFIG.audioFolder}/${finalPublicId}`;
-}
-
-// Мапінг публічних ID файлів в Cloudinary
-// Замініть public IDs на реальні ID ваших файлів з Cloudinary
+// Прямі посилання на файли з Cloudinary Collections
+// Використовуємо прямі URL для надійності
 const CLOUDINARY_AUDIO_TRACKS = {
     'main_fon': { 
-        publicId: 'main_fon', // Замініть на реальний public ID
-        format: 'm4a',
-        name: 'main_fon'
+        // Якщо main_fon також в Cloudinary, додайте його URL тут
+        url: null, // Поки використовуємо локальний файл
+        name: 'main_fon',
+        useLocal: true // Використовувати локальний файл
     },
     'pl1': { 
-        publicId: 'pl1', // Замініть на реальний public ID
-        format: 'm4a',
-        name: 'pl1'
+        // Якщо pl1 є в Cloudinary, додайте його URL тут
+        url: null,
+        name: 'pl1',
+        useLocal: true
     },
     'pl2': { 
-        publicId: 'pl2', // Замініть на реальний public ID
-        format: 'm4a',
-        name: 'Політ салафонової цеглини, обмотаної мраморною ганчіркою, через морквяний акваріум з дикими качками.'
+        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1/bbef9fe3d6fd979bcf090a01619274b3',
+        name: 'Політ салафонової цеглини, обмотаної мраморною ганчіркою, через морквяний акваріум з дикими качками.',
+        useLocal: false
     },
     'pl3': { 
-        publicId: 'pl3', // Замініть на реальний public ID
-        format: 'm4a',
-        name: 'Приємний лоскіт ніжок кукурудзи'
+        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1/4362384bd55660a3c7ce6a83d829c4b5',
+        name: 'Приємний лоскіт ніжок кукурудзи',
+        useLocal: false
     },
     'pl4': { 
-        publicId: 'pl4', // Замініть на реальний public ID
-        format: 'm4a',
-        name: 'pl4'
+        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1/ece0e0c3200c328a499cf7d35e0f06c5',
+        name: 'pl4',
+        useLocal: false
     },
     'pl5': { 
-        publicId: 'pl5', // Замініть на реальний public ID
-        format: 'm4a',
-        name: 'Рататуй, що через каналізацію щаблукав на вулиці Токіо'
+        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1/67576b9294e539da0fc3bdcbe00c0622',
+        name: 'Рататуй, що через каналізацію заблукав на вулиці Токіо',
+        useLocal: false
     },
     'pl6': { 
-        publicId: 'pl6', // Замініть на реальний public ID
-        format: 'm4a',
-        name: 'pl6'
+        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1/b7fb57eade246ec3853a33224afb6379',
+        name: 'pl6',
+        useLocal: false
     },
     'rumbling_fon_2': { 
-        publicId: 'rumbling_fon_2', // Замініть на реальний public ID
-        format: 'mp3',
-        name: 'rumbling_fon_2'
+        // Якщо rumbling_fon_2 також в Cloudinary, додайте його URL тут
+        url: null,
+        name: 'rumbling_fon_2',
+        useLocal: true // Використовувати локальний файл
     }
 };
 
@@ -68,7 +60,14 @@ function getTrackUrl(trackKey) {
         console.warn(`Трек ${trackKey} не знайдено в конфігурації Cloudinary`);
         return null;
     }
-    return getCloudinaryAudioUrl(track.publicId, track.format);
+    
+    // Якщо є прямий URL і не використовуємо локальний файл
+    if (track.url && !track.useLocal) {
+        return track.url;
+    }
+    
+    // Fallback на локальний файл
+    return null;
 }
 
 // Експорт для використання в інших файлах

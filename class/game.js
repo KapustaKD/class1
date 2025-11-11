@@ -27,15 +27,34 @@ class EducationalPathGame {
             this.startGameSound.preload = 'auto';
             
             // Фонова музика - список всіх доступних звуків
-            this.backgroundMusicTracks = {
-                'main_fon': { file: 'sound/fon/main_fon.m4a', name: 'main_fon' },
-                'pl2': { file: 'sound/fon/pl2.m4a', name: 'Політ салафонової цеглини, обмотаної мраморною ганчіркою, через морквяний акваріум з дикими качками.' },
-                'pl3': { file: 'sound/fon/pl3.m4a', name: 'Приємний лоскіт ніжок кукурудзи' },
-                'pl4': { file: 'sound/fon/pl4.m4a', name: 'pl4' },
-                'pl5': { file: 'sound/fon/pl5.m4a', name: 'Рататуй, що через каналізацію заблукав на вулиці Токіо' },
-                'pl6': { file: 'sound/fon/pl6.m4a', name: 'pl6' },
-                'rumbling_fon_2': { file: 'sound/fon/rumbling_fon_2.mp3', name: 'rumbling_fon_2' }
-            };
+            // Використовуємо Cloudinary для великих файлів, локальні для малих
+            this.backgroundMusicTracks = {};
+            
+            // Перевіряємо, чи доступна конфігурація Cloudinary
+            const useCloudinary = typeof window !== 'undefined' && window.cloudinaryConfig;
+            
+            if (useCloudinary) {
+                // Використовуємо Cloudinary для всіх треків
+                const cloudinaryTracks = window.cloudinaryConfig.CLOUDINARY_AUDIO_TRACKS;
+                for (const [key, track] of Object.entries(cloudinaryTracks)) {
+                    const url = window.cloudinaryConfig.getTrackUrl(key);
+                    this.backgroundMusicTracks[key] = {
+                        file: url,
+                        name: track.name
+                    };
+                }
+            } else {
+                // Fallback на локальні файли, якщо Cloudinary не доступний
+                this.backgroundMusicTracks = {
+                    'main_fon': { file: 'sound/fon/main_fon.m4a', name: 'main_fon' },
+                    'pl2': { file: 'sound/fon/pl2.m4a', name: 'Політ салафонової цеглини, обмотаної мраморною ганчіркою, через морквяний акваріум з дикими качками.' },
+                    'pl3': { file: 'sound/fon/pl3.m4a', name: 'Приємний лоскіт ніжок кукурудзи' },
+                    'pl4': { file: 'sound/fon/pl4.m4a', name: 'pl4' },
+                    'pl5': { file: 'sound/fon/pl5.m4a', name: 'Рататуй, що через каналізацію заблукав на вулиці Токіо' },
+                    'pl6': { file: 'sound/fon/pl6.m4a', name: 'pl6' },
+                    'rumbling_fon_2': { file: 'sound/fon/rumbling_fon_2.mp3', name: 'rumbling_fon_2' }
+                };
+            }
             
             // Створюємо об'єкти Audio для всіх треків
             this.backgroundMusicObjects = {};
@@ -44,6 +63,11 @@ class EducationalPathGame {
                 audio.preload = 'auto';
                 audio.loop = true;
                 audio.volume = 0.05; // 5% гучності
+                // Додаємо обробники помилок для Cloudinary
+                audio.addEventListener('error', (e) => {
+                    console.warn(`Помилка завантаження треку ${key} з ${track.file}:`, e);
+                    // Можна додати fallback на локальний файл
+                });
                 this.backgroundMusicObjects[key] = audio;
             }
             

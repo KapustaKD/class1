@@ -14,14 +14,8 @@ const CLOUDINARY_AUDIO_TRACKS = {
         name: 'main_fon',
         useLocal: true // Використовувати локальний файл
     },
-    'pl1': { 
-        // Якщо pl1 є в Cloudinary, додайте його URL тут
-        url: null,
-        name: 'pl1',
-        useLocal: true
-    },
     'pl2': { 
-        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878482/pl2_wxobcr.mp4',
+        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878466/pl3_gnvj0j.mp4',
         name: 'Політ салафонової цеглини, обмотаної мраморною ганчіркою, через морквяний акваріум з дикими качками.',
         useLocal: false
     },
@@ -31,17 +25,17 @@ const CLOUDINARY_AUDIO_TRACKS = {
         useLocal: false
     },
     'pl4': { 
-        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878468/pl4_xodprw.mp4',
+        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878466/pl3_gnvj0j.mp4',
         name: 'pl4',
         useLocal: false
     },
     'pl5': { 
-        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878485/pl5_ao3a6e.mp4',
+        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878466/pl3_gnvj0j.mp4',
         name: 'Рататуй, що через каналізацію заблукав на вулиці Токіо',
         useLocal: false
     },
     'pl6': { 
-        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878477/pl6_wejnms.mp4',
+        url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878466/pl3_gnvj0j.mp4',
         name: 'pl6',
         useLocal: false
     },
@@ -70,12 +64,32 @@ function getTrackUrl(trackKey) {
     return null;
 }
 
+// Конфігурація для зображень з Cloudinary
+const CLOUDINARY_IMAGES = {
+    'shvalb': {
+        url: 'https://res.cloudinary.com/dwv7kufbc/image/upload/v1762878466/Shvalb.jpg', // Замініть на реальний URL зображення Shvalb
+        name: 'Shvalb'
+    }
+};
+
+// Функція для отримання URL зображення
+function getImageUrl(imageKey) {
+    const image = CLOUDINARY_IMAGES[imageKey];
+    if (!image) {
+        console.warn(`Зображення ${imageKey} не знайдено в конфігурації Cloudinary`);
+        return null;
+    }
+    return image.url;
+}
+
 // Експорт для використання в інших файлах
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         CLOUDINARY_CONFIG,
         CLOUDINARY_AUDIO_TRACKS,
-        getTrackUrl
+        CLOUDINARY_IMAGES,
+        getTrackUrl,
+        getImageUrl
     };
 }
 
@@ -84,8 +98,9 @@ if (typeof window !== 'undefined') {
     window.cloudinaryConfig = {
         CLOUDINARY_CONFIG,
         CLOUDINARY_AUDIO_TRACKS,
-        getTrackUrl
+        CLOUDINARY_IMAGES,
+        getTrackUrl,
+        getImageUrl
     };
 }
-
 

@@ -75,7 +75,6 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         CLOUDINARY_CONFIG,
         CLOUDINARY_AUDIO_TRACKS,
-        getCloudinaryAudioUrl,
         getTrackUrl
     };
 }
@@ -85,7 +84,6 @@ if (typeof window !== 'undefined') {
     window.cloudinaryConfig = {
         CLOUDINARY_CONFIG,
         CLOUDINARY_AUDIO_TRACKS,
-        getCloudinaryAudioUrl,
         getTrackUrl
     };
 }

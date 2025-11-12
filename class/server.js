@@ -79,7 +79,7 @@ function passTurnToNextPlayer(room) {
 function handleImmediateEvent(room, player, eventType) {
     let resultMessage = '';
     const roomPlayer = room.gameData.players.find(p => p.id === player.id);
-    if (!roomPlayer) return;
+    if (!roomPlayer) return resultMessage;
 
     // Переконайся, що клас гравця доступний
     if (!roomPlayer.class || !roomPlayer.class.id) {
@@ -192,6 +192,9 @@ function handleImmediateEvent(room, player, eventType) {
     
     // Оновлюємо стан гри (очки, пропуск ходу, статус вибування)
     io.to(room.id).emit('game_state_update', room.gameData);
+    
+    // Повертаємо повідомлення для відправки в event_result
+    return resultMessage;
 }
 
 // Імпортуємо дані міні-ігор
@@ -1215,7 +1218,16 @@ io.on('connection', (socket) => {
 
             } else if (data.eventType === 'amphitheater' || data.eventType === 'tavern' || data.eventType === 'casino') {
                 // Всі ці події обробляються негайно, без вибору гравця
-                handleImmediateEvent(room, player, data.eventType);
+                const resultMessage = handleImmediateEvent(room, player, data.eventType);
+                // Відправляємо подію для показу модального вікна на клієнті
+                io.to(room.id).emit('event_result', {
+                    playerId: player.id,
+                    playerName: player.name,
+                    eventType: data.eventType,
+                    resultMessage: resultMessage,
+                    newPosition: player.position,
+                    newPoints: room.gameData.players.find(p => p.id === player.id)?.points || player.points
+                });
                 // Оскільки подія оброблена, одразу передаємо хід
                 passTurnToNextPlayer(room);
             } else if (data.eventType === 'early-reincarnation') {

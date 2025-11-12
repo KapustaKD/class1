@@ -735,35 +735,54 @@ class MultiplayerGame extends EducationalPathGame {
         this.socket.on('effect_applied', (data) => {
             console.log('Баф/Дебаф застосовано:', data);
             let message = '';
+            let modalTitle = '';
+            let modalContent = '';
+            let showModal = false;
             
             if (data.effectType === 'hateClone') {
                 message = `🎭 ${data.casterName} застосував "Кльон хейту" на ${data.targetName}! Його рух сповільнено.`;
                 if (data.targetId === this.playerId) {
-                    alert(`Співчуваємо, ${data.casterName} застосував на вас "Кльон хейту". Тепер Вас ненавидить кожен видатний педагог даної епохи! Ваше просування йде вдвічі повільніше.`);
+                    modalTitle = 'Дебаф застосовано';
+                    modalContent = `<p>Співчуваємо, ${data.casterName} застосував на вас "Кльон хейту". Тепер Вас ненавидить кожен видатний педагог даної епохи! Ваше просування йде вдвічі повільніше.</p>`;
+                    showModal = true;
                 }
             } else if (data.effectType === 'happinessCharm') {
                 message = `🍀 ${data.casterName} застосував на себе "Замовляння на щастє"! Його рух подвоєно.`;
                 if (data.casterId === this.playerId) {
-                    alert(`Вітаємо! Ви застосували "Замовляння на щастє". Тепер ваш шлях вдвічі швидший!`);
+                    modalTitle = 'Баф застосовано';
+                    modalContent = `<p>Вітаємо! Ви застосували "Замовляння на щастє". Тепер ваш шлях вдвічі швидший!</p>`;
+                    showModal = true;
                 }
             } else if (data.effectType === 'procrastination') {
                 message = `⏳ ${data.casterName} застосував "Кльон прокрастинації" на ${data.targetName}! Він пропустить хід.`;
                 if (data.targetId === this.playerId) {
-                    alert(`Співчуваємо, ${data.casterName} застосував на вас "Кльон прокрастинації". Кидання кубику здається непосильним завданням, тому Ви пропускаєте наступний хід.`);
+                    modalTitle = 'Дебаф застосовано';
+                    modalContent = `<p>Співчуваємо, ${data.casterName} застосував на вас "Кльон прокрастинації". Кидання кубику здається непосильним завданням, тому Ви пропускаєте наступний хід.</p>`;
+                    showModal = true;
                 }
             } else if (data.effectType === 'pushBack') {
                 message = `💨 ${data.casterName} відкинув ${data.targetName} на ${data.moveAmount || 0} клітинок назад!`;
                 if (data.targetId === this.playerId) {
-                    alert(`Співчуваємо, ${data.casterName} використав проти вас "Порив вітру". Ви відкинуті на ${data.moveAmount || 0} клітинок назад!`);
+                    modalTitle = 'Дебаф застосовано';
+                    modalContent = `<p>Співчуваємо, ${data.casterName} використав проти вас "Порив вітру". Ви відкинуті на ${data.moveAmount || 0} клітинок назад!</p>`;
+                    showModal = true;
                 }
             } else if (data.effectType === 'boostForward') {
                 message = `🚀 ${data.casterName} стрибнув у майбутнє на ${data.moveAmount || 0} клітинок вперед!`;
                 if (data.casterId === this.playerId) {
-                    alert(`Вітаємо! Ви використали "Стрибок у майбутнє" та перемістилися на ${data.moveAmount || 0} клітинок вперед!`);
+                    modalTitle = 'Баф застосовано';
+                    modalContent = `<p>Вітаємо! Ви використали "Стрибок у майбутнє" та перемістилися на ${data.moveAmount || 0} клітинок вперед!</p>`;
+                    showModal = true;
                 }
             }
             
             this.addChatMessage('system', message);
+            
+            if (showModal) {
+                this.showQuestModal(modalTitle, modalContent, [
+                    { text: 'Зрозуміло', callback: () => this.closeMiniGame() }
+                ], null);
+            }
         });
         
         this.socket.on('player_reincarnated', (data) => {
@@ -2857,21 +2876,22 @@ class MultiplayerGame extends EducationalPathGame {
         const isParticipant = data.gameState.players.includes(this.playerId);
         const isMyEvent = data.activePlayerId === this.playerId;
         const gameData = data.gameState.gameData;
+        const gameType = data.gameState.gameType;
         
         // Спеціальна обробка для педагобота - використовуємо glassmorphism стиль
-        if (gameData.gameType === 'pedagogobot') {
+        if (gameType === 'pedagogobot') {
             this.showPedagogobotModal(data);
             return;
         }
         
         // Спеціальна обробка для хрестиків-нуликів
-        if (gameData.gameType === 'tic_tac_toe' || gameData.gameType === 'cross_early') {
+        if (gameType === 'tic_tac_toe' || gameType === 'cross_early') {
             this.showTicTacToeModal(data);
             return;
         }
         
         // Спеціальна обробка для камінь-ножиці-папір
-        if (gameData.gameType === 'rock_paper_scissors') {
+        if (gameType === 'rock_paper_scissors') {
             this.showRockPaperScissorsModal(data);
             return;
         }
@@ -2886,7 +2906,7 @@ class MultiplayerGame extends EducationalPathGame {
         `;
         
         if (isParticipant) {
-            if (gameData.gameType === 'rock_paper_scissors') {
+            if (gameType === 'rock_paper_scissors') {
                 // Спеціальний інтерфейс для камінь-ножиці-папір
                 modalContent += `
                     <div class="mb-4">
@@ -2927,24 +2947,24 @@ class MultiplayerGame extends EducationalPathGame {
         }
         
         // Спеціальна обробка для педагобота - використовуємо glassmorphism стиль
-        if (gameData.gameType === 'pedagogobot') {
+        if (gameType === 'pedagogobot') {
             this.showPedagogobotModal(data, modalContent);
             return;
         }
         
         // Визначаємо картинку залежно від типу гри
         let imagePath = null;
-        if (gameData.gameType === 'tic_tac_toe' || gameData.gameType === 'cross_early') {
+        if (gameType === 'tic_tac_toe' || gameType === 'cross_early') {
             imagePath = 'image/modal_window/tic_tac_toe.jpg';
-        } else if (gameData.gameType === 'rock_paper_scissors') {
+        } else if (gameType === 'rock_paper_scissors') {
             imagePath = 'image/modal_window/rock_paper_scissors.png';
-        } else if (gameData.name === 'Мегамозок' || gameData.gameType === 'megabrain') {
+        } else if (gameData.name === 'Мегамозок' || gameType === 'megabrain') {
             imagePath = 'image/modal_window/megabrain_2.jpg';
-        } else if (gameData.gameType === 'genius') {
+        } else if (gameType === 'genius') {
             imagePath = 'image/modal_window/i_am_a_genius.png';
-        } else if (data.gameState.gameType === 'great_pedagogical') {
+        } else if (gameType === 'great_pedagogical') {
             imagePath = 'image/modal_window/big_pedagogik.png';
-        } else if (data.gameState.gameType === 'pedagog_mom') {
+        } else if (gameType === 'pedagog_mom') {
             imagePath = 'image/modal_window/i_am_a_teacher.jpg';
         }
         
@@ -2966,12 +2986,12 @@ class MultiplayerGame extends EducationalPathGame {
         }
         
         if (isParticipant) {
-            if (gameData.gameType === 'tic_tac_toe' || gameData.gameType === 'cross_early') {
+            if (gameType === 'tic_tac_toe' || gameType === 'cross_early') {
                 // Ініціалізуємо дошку хрестиків-нуликів
                 setTimeout(() => {
                     this.initializeTicTacToeBoard();
                 }, 100);
-            } else if (gameData.gameType === 'rock_paper_scissors') {
+            } else if (gameType === 'rock_paper_scissors') {
                 // Ініціалізуємо гру камінь-ножиці-папір
                 setTimeout(() => {
                     this.initializeRockPaperScissors();
@@ -3370,7 +3390,7 @@ class MultiplayerGame extends EducationalPathGame {
         if (isMyTurn) {
             modalContent += `
                 <div class="mb-4">
-                    <textarea id="sentence-input" class="w-full h-20 p-3 border-2 border-gray-400 rounded" placeholder="Додайте речення до історії..."></textarea>
+                    <textarea id="sentence-input" class="w-full h-20 p-3 border-2 border-gray-400 rounded text-gray-900 bg-white" placeholder="Додайте речення до історії..."></textarea>
                 </div>
                 <div class="mb-4">
                     <div id="story-timer" class="text-xl font-bold text-red-500">${data.gameState.timer}</div>
@@ -3390,7 +3410,10 @@ class MultiplayerGame extends EducationalPathGame {
             `;
         }
         
-        this.showQuestModal('Творчий квест', modalContent, [], null);
+        // Використовуємо локальну картинку Shvalb
+        const shvalbImageUrl = 'image/modal_window/shvalb.jpg';
+        
+        this.showQuestModal('Творчий квест', modalContent, [], shvalbImageUrl);
         
         if (isMyTurn) {
             this.startStoryTimer(data.gameState.timer);
@@ -3486,7 +3509,7 @@ class MultiplayerGame extends EducationalPathGame {
         if (isMyTurn) {
             modalContent += `
                 <div class="mb-4">
-                    <textarea id="sentence-input" class="w-full h-20 p-3 border-2 border-gray-400 rounded" placeholder="Додайте речення до історії..."></textarea>
+                    <textarea id="sentence-input" class="w-full h-20 p-3 border-2 border-gray-400 rounded text-gray-900 bg-white" placeholder="Додайте речення до історії..."></textarea>
                 </div>
                 <div class="mb-4">
                     <div id="story-timer" class="text-xl font-bold text-red-500">${data.gameState.timer}</div>
@@ -3506,10 +3529,8 @@ class MultiplayerGame extends EducationalPathGame {
             `;
         }
         
-        // Отримуємо URL картинки Shvalb з Cloudinary
-        const shvalbImageUrl = typeof window !== 'undefined' && window.cloudinaryConfig 
-            ? window.cloudinaryConfig.getImageUrl('shvalb') 
-            : null;
+        // Використовуємо локальну картинку Shvalb
+        const shvalbImageUrl = 'image/modal_window/shvalb.jpg';
         
         this.showQuestModal('Творчий квест', modalContent, [], shvalbImageUrl);
         
@@ -3819,10 +3840,9 @@ class MultiplayerGame extends EducationalPathGame {
         const isMyTurn = effectiveActivePlayerId === this.playerId;
         
         let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">🦉 Хто, де, коли? - Творчий квест</h3>
+            <h3 class="text-2xl font-bold mb-4">🦉 Хто, де, коли?</h3>
             <div class="text-sm text-gray-300 bg-black bg-opacity-30 p-3 rounded mb-3">
                 Вам необхідно по черзі одним словом відповісти на питання “Хто?”, “Де?”, “Коли?”, “З ким?”, “Як”, “Що робив?”. Таким чином у кінці вийде цікавенька міністорія.<br>
-                Обмеження у часі відсутнє. Переможця немає, кожен гравець-учасник здобуває по ${rewardText} у кінці гри.
             </div>
             <p class="mb-4">Питання: <strong>${data.question}</strong></p>
         `;

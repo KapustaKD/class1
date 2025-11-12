@@ -1809,9 +1809,11 @@ class MultiplayerGame extends EducationalPathGame {
             if (data.eventInfo && data.eventInfo.hasEvent) {
                 console.log('Подія виявлена після завершення анімації:', data.eventInfo);
                 
-                // Для спеціальних типів подій (pvp, creative, webnovella, mad-libs) відправляємо на сервер
+                // Для спеціальних типів подій (pvp, creative, webnovella, mad-libs, tavern, amphitheater, casino) відправляємо на сервер
                 if (data.eventInfo.eventType === 'pvp-quest' || data.eventInfo.eventType === 'creative-quest' || 
-                    data.eventInfo.eventType === 'webnovella-quest' || data.eventInfo.eventType === 'mad-libs-quest') {
+                    data.eventInfo.eventType === 'webnovella-quest' || data.eventInfo.eventType === 'mad-libs-quest' ||
+                    data.eventInfo.eventType === 'tavern' || data.eventInfo.eventType === 'amphitheater' || 
+                    data.eventInfo.eventType === 'casino') {
                     // Відправляємо подію на сервер для обробки
                     this.socket.emit('player_on_event', {
                         roomId: this.roomId,

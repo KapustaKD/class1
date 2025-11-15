@@ -15,58 +15,67 @@ function passTurnToNextPlayer(room) {
         room.playersBuffUsedThisRound = {};
     }
     
-    room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
-    console.log('Новий currentPlayerIndex:', room.gameData.currentPlayerIndex);
+    let nextPlayerFound = false;
     
-    // Синхронізуємо з room.currentPlayerIndex
-    room.currentPlayerIndex = room.gameData.currentPlayerIndex;
-    
-    // Перевіряємо чи завершено коло (повернулись до початку)
-    if (room.gameData.currentPlayerIndex === room.roundStartPlayerIndex) {
-        // Коло завершено - скидаємо лічильник бафів
-        room.playersBuffUsedThisRound = {};
-        room.roundStartPlayerIndex = room.gameData.currentPlayerIndex; // Новий початок кола
-        console.log('Коло завершено, скидаємо лічильник бафів');
-    }
-    
-    // Пропускаємо гравців, які вибули
-    while (room.gameData.players[room.gameData.currentPlayerIndex].hasWon || 
-           room.gameData.players[room.gameData.currentPlayerIndex].hasLost) {
+    // Використовуємо цикл while замість рекурсії для безпеки
+    // Об'єднуємо перевірки вибулих гравців та пропуску ходу в один цикл
+    while (!nextPlayerFound) {
+        // Переходимо до наступного гравця
         room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
-        room.currentPlayerIndex = room.gameData.currentPlayerIndex; // Синхронізуємо
-        console.log('Пропущено вибулого гравця, новий індекс:', room.gameData.currentPlayerIndex);
-    }
-    
-    // Перевірка на пропуск ходу через "Прокрастинацію"
-    const nextPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
-    
-    if (nextPlayer.effects && nextPlayer.effects.skipTurn && nextPlayer.effects.skipTurn > 0) {
-        console.log(`Гравець ${nextPlayer.name} пропускає хід через Прокрастинацію.`);
-        nextPlayer.effects.skipTurn--;
-        if (nextPlayer.effects.skipTurn <= 0) delete nextPlayer.effects.skipTurn;
+        console.log('Новий currentPlayerIndex:', room.gameData.currentPlayerIndex);
         
-        // Відправляємо повідомлення в чат
-        io.to(room.id).emit('chat_message', {
-            type: 'system',
-            message: `⏳ ${nextPlayer.name} піддався Прокрастинації та пропускає хід!`
+        // Синхронізуємо з room.currentPlayerIndex
+        room.currentPlayerIndex = room.gameData.currentPlayerIndex;
+        
+        // Перевіряємо чи завершено коло (повернулись до початку)
+        if (room.gameData.currentPlayerIndex === room.roundStartPlayerIndex) {
+            // Коло завершено - скидаємо лічильник бафів
+            room.playersBuffUsedThisRound = {};
+            room.roundStartPlayerIndex = room.gameData.currentPlayerIndex; // Новий початок кола
+            console.log('Коло завершено, скидаємо лічильник бафів');
+        }
+        
+        const nextPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+        
+        // 1. Пропускаємо вибулих гравців
+        if (nextPlayer.hasWon || nextPlayer.hasLost) {
+            console.log('Пропущено вибулого гравця:', nextPlayer.name);
+            room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+            room.currentPlayerIndex = room.gameData.currentPlayerIndex; // Синхронізуємо
+            continue; // Шукаємо далі
+        }
+        
+        // 2. Перевірка на пропуск ходу через "Прокрастинацію"
+        if (nextPlayer.effects && nextPlayer.effects.skipTurn && nextPlayer.effects.skipTurn > 0) {
+            console.log(`Гравець ${nextPlayer.name} пропускає хід через Прокрастинацію.`);
+            nextPlayer.effects.skipTurn--;
+            if (nextPlayer.effects.skipTurn <= 0) delete nextPlayer.effects.skipTurn;
+            
+            // Відправляємо повідомлення в чат
+            io.to(room.id).emit('chat_message', {
+                type: 'system',
+                message: `⏳ ${nextPlayer.name} піддався Прокрастинації та пропускає хід!`
+            });
+            
+            // Відправляємо оновлення стану
+            io.to(room.id).emit('game_state_update', room.gameData);
+            
+            // Переходимо до наступного гравця
+            room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+            room.currentPlayerIndex = room.gameData.currentPlayerIndex; // Синхронізуємо
+            continue; // Шукаємо далі
+        }
+        
+        // 3. Знайшли активного гравця без пропуску ходу
+        nextPlayerFound = true;
+        console.log('Наступний гравець:', nextPlayer.name, 'ID:', nextPlayer.id);
+        
+        io.to(room.id).emit('turn_update', {
+            currentPlayerIndex: room.gameData.currentPlayerIndex,
+            currentPlayerId: nextPlayer.id,
+            currentPlayerName: nextPlayer.name
         });
-        
-        // Відправляємо оновлення стану
-        io.to(room.id).emit('game_state_update', room.gameData);
-        
-        // Рекурсивно викликаємо функцію для передачі ходу наступному гравцю
-        passTurnToNextPlayer(room);
-        return;
     }
-    
-    // Якщо пропуску немає, продовжуємо як зазвичай
-    console.log('Наступний гравець:', nextPlayer.name, 'ID:', nextPlayer.id);
-    
-    io.to(room.id).emit('turn_update', {
-        currentPlayerIndex: room.gameData.currentPlayerIndex,
-        currentPlayerId: nextPlayer.id,
-        currentPlayerName: nextPlayer.name
-    });
     
     console.log('Відправлено подію turn_update всім гравцям:', {
         currentPlayerIndex: room.gameData.currentPlayerIndex,
@@ -1662,6 +1671,8 @@ io.on('connection', (socket) => {
                 if (!gameState.rounds[gameState.currentRound]) {
                     gameState.rounds[gameState.currentRound] = {board: Array(9).fill(null), winner: null, currentPlayer: null};
                 }
+                // Очищаємо gameState для нового раунду
+                gameState.gameState = Array(9).fill(null);
                 gameState.currentPlayer = gameState.players[0]; // Починаємо з першого гравця
             }
         } else if (!roundBoard.includes(null)) {
@@ -1674,6 +1685,8 @@ io.on('connection', (socket) => {
                 if (!gameState.rounds[gameState.currentRound]) {
                     gameState.rounds[gameState.currentRound] = {board: Array(9).fill(null), winner: null, currentPlayer: null};
                 }
+                // Очищаємо gameState для нового раунду
+                gameState.gameState = Array(9).fill(null);
                 gameState.currentPlayer = gameState.players[0];
             }
         } else {
@@ -1682,15 +1695,11 @@ io.on('connection', (socket) => {
             gameState.rounds[currentRound].currentPlayer = gameState.currentPlayer;
         }
         
-        // Відправляємо оновлення всім гравцям з правильною структурою
+        // Відправляємо оновлення всім гравцям зі спрощеною структурою
         io.to(room.id).emit('tic_tac_toe_move_update', {
-            gameState: {
-                ...gameState,
-                gameState: roundBoard, // Поточний стан дошки раунду для сумісності
-                rounds: gameState.rounds
-            },
+            gameState: room.tictactoeState,
             winner: winner,
-            currentRound: currentRound
+            currentRound: gameState.currentRound
         });
     });
     
@@ -2435,9 +2444,15 @@ io.on('connection', (socket) => {
         const room = rooms.get(data.roomId);
         if (!room || !room.timedTextQuestState) return;
 
+        // Отримуємо сирий текст від клієнта
+        const text = data.text || "";
+        
+        // Сервер сам рахує кількість слів для безпеки (клієнт не може підробити результат)
+        const wordsCount = text.split(',').filter(word => word.trim().length > 0).length;
+
         // Зберігаємо результат гравця
         room.timedTextQuestState.results[player.id] = {
-            wordsCount: data.wordsCount,
+            wordsCount: wordsCount,
             playerName: player.name
         };
 
@@ -2654,26 +2669,14 @@ io.on('connection', (socket) => {
         // Зберігаємо голос
         room.creativeWritingState.votes[player.id] = data.submissionIndex;
 
-        // Перевіряємо, чи всі проголосували
-        // В творчих іграх голосують ВСІ гравці (крім тих, хто не може голосувати за свою роботу)
-        const totalVoters = room.gameData.players.length;
-        const votesCount = Object.keys(room.creativeWritingState.votes).length;
-        
-        // Перевіряємо, чи всі можливі гравці проголосували
-        // Гравець не може голосувати за свою роботу, тому перевіряємо це
-        // Рахуємо всіх гравців, які можуть голосувати (всі, окрім тих, хто не має роботи)
-        let canVoteCount = 0;
-        room.gameData.players.forEach(p => {
-            const submission = room.creativeWritingState.submissions.find(s => s.playerId === p.id);
-            if (submission) {
-                canVoteCount++; // Гравець може голосувати за інших (має роботу)
-            }
-        });
+        // Рахуємо, скільки гравців взагалі беруть участь у грі (активні)
+        const totalPlayers = room.gameData.players.filter(p => !p.hasLost).length;
 
-        // Якщо всі можливі гравці проголосували або проголосувало більше половини гравців
-        const requiredVotes = Math.max(1, Math.ceil(canVoteCount / 2)); // Мінімум 1, або половина округлена вгору
-        
-        if (votesCount >= requiredVotes) {
+        // Рахуємо, скільки вже проголосувало
+        const votesCount = Object.keys(room.creativeWritingState.votes).length;
+
+        // Перевіряємо, чи проголосували ВСІ активні гравці
+        if (votesCount === totalPlayers) {
             // Підраховуємо голоси
             const voteCounts = {};
             Object.values(room.creativeWritingState.votes).forEach(index => {

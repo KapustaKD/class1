@@ -520,7 +520,9 @@ class MultiplayerGame extends EducationalPathGame {
         });
         
         this.socket.on('tic_tac_toe_move_update', (data) => {
-            this.updateTicTacToeBoard(data.gameState);
+            // Отримуємо повний стан від сервера і просто перемальовуємо UI
+            // Сервер є єдиним джерелом правди - не синхронізуємо локальний стан
+            this.renderTicTacToeFromServerState(data);
         });
         
         this.socket.on('rock_paper_scissors_start', (data) => {
@@ -528,56 +530,9 @@ class MultiplayerGame extends EducationalPathGame {
         });
         
         this.socket.on('rps_choice_update', (data) => {
-            // Оновлення стану КНП
-            if (!data.gameState) return;
-            
-            const gameState = data.gameState;
-            if (!this.rpsGameState) {
-                this.rpsGameState = {};
-            }
-            
-            // Оновлюємо стан
-            this.rpsGameState.players = gameState.players || this.rpsGameState.players;
-            this.rpsGameState.playerNames = gameState.playerNames || this.rpsGameState.playerNames;
-            this.rpsGameState.choices = gameState.choices || this.rpsGameState.choices;
-            this.rpsGameState.scores = gameState.scores || this.rpsGameState.scores;
-            this.rpsGameState.currentRound = gameState.currentRound || this.rpsGameState.currentRound;
-            this.rpsGameState.gameFinished = !gameState.gameActive;
-            
-            // Оновлюємо вибір гравця, якщо він зробив вибір
-            if (data.currentPlayerChoice && data.currentPlayerId) {
-                if (data.currentPlayerId === this.playerId) {
-                    this.rpsGameState.playerChoice = data.currentPlayerChoice;
-                } else {
-                    // Супротивник зробив вибір, але показуємо його тільки якщо обидва зробили вибір
-                    this.rpsGameState.opponentChoice = data.waiting ? null : data.currentPlayerChoice;
-                }
-            }
-            
-            // Оновлюємо рахунок
-            if (this.rpsGameState.players && this.rpsGameState.scores) {
-                this.rpsGameState.playerWins = this.rpsGameState.scores[this.playerId] || 0;
-                const opponentId = this.rpsGameState.players.find(p => p !== this.playerId);
-                this.rpsGameState.opponentWins = opponentId ? (this.rpsGameState.scores[opponentId] || 0) : 0;
-            }
-            
-            // Оновлюємо вибір гравця та супротивника, якщо вони є
-            if (data.playerChoice) {
-                this.rpsGameState.playerChoice = data.playerChoice;
-            }
-            if (data.opponentChoice) {
-                this.rpsGameState.opponentChoice = data.opponentChoice;
-            }
-            
-            // Оновлюємо інтерфейс
-            if (data.result && data.result !== 'waiting') {
-                this.updateRPSInterface(data.result, data.opponentChoice);
-            } else if (data.waiting) {
-                // Показуємо вибір гравця, якщо він зробив вибір
-                this.updateRPSInterfaceWaiting();
-            } else {
-                this.updateRPSInterfaceFromState();
-            }
+            // Dumb Client: просто отримуємо стан від сервера і рендеримо UI
+            // Сервер є єдиним джерелом правди - не синхронізуємо локальний стан
+            this.renderRPSFromServerState(data);
         });
         
         this.socket.on('show_event_prompt', (data) => {
@@ -3312,11 +3267,11 @@ class MultiplayerGame extends EducationalPathGame {
         this.stopTimerSound();
         
         const text = textInput.value.trim();
-        const wordsCount = text.split(',').filter(word => word.trim().length > 0).length;
         
+        // Відправляємо тільки текст - сервер сам рахує кількість слів для безпеки
         this.socket.emit('timed_text_quest_result', {
             roomId: this.roomId,
-            wordsCount: wordsCount
+            text: text
         });
     }
     
@@ -4695,25 +4650,18 @@ class MultiplayerGame extends EducationalPathGame {
     // Обробка ходу в хрестиках-нуликах
     makeTicTacToeMove(cellIndex) {
         const cell = document.querySelector(`[data-index="${cellIndex}"]`);
-        if (!cell || !this.ticTacToeState || !this.ticTacToeState.gameActive) {
+        if (!cell) {
             return;
         }
         
-        // Перевіряємо, чи клітинка вільна (може бути null, '', або undefined)
-        const currentValue = this.ticTacToeState.gameState && this.ticTacToeState.gameState[cellIndex];
-        if (currentValue !== null && currentValue !== '' && currentValue !== undefined) {
-            console.log('Клітинка вже зайнята:', currentValue);
+        // Перевіряємо базові умови (клітинка заблокована або неактивна)
+        if (cell.classList.contains('disabled')) {
+            console.log('Клітинка вже зайнята або заблокована');
             return;
         }
         
-        // Перевіряємо, чи це хід поточного гравця
-        // currentPlayer містить ID гравця, а не символ
-        if (this.ticTacToeState.currentPlayer && this.ticTacToeState.currentPlayer !== this.playerId) {
-            console.log('Не ваш хід. Поточний гравець:', this.ticTacToeState.currentPlayer, 'Ваш ID:', this.playerId);
-            return;
-        }
-        
-        // Відправляємо хід на сервер
+        // Dumb Client: просто відправляємо дію на сервер
+        // Сервер перевірить валідність і оновить стан
         if (this.socket && this.roomId) {
             this.socket.emit('tic_tac_toe_move', {
                 roomId: this.roomId,
@@ -4721,7 +4669,7 @@ class MultiplayerGame extends EducationalPathGame {
                 playerId: this.playerId
             });
         } else {
-            // Локальна гра (fallback)
+            // Локальна гра (fallback) - тільки для тестування без сервера
             this.makeTicTacToeMoveLocal(cellIndex);
         }
     }
@@ -4786,29 +4734,17 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     // Оновлення дошки після ходу (викликається з сервера)
-    updateTicTacToeBoard(data) {
+    // Нова функція: просто рендерить стан від сервера (Dumb Client)
+    renderTicTacToeFromServerState(data) {
         if (!data || !data.gameState) return;
         
         const gameState = data.gameState;
-        
-        // Оновлюємо локальний стан
-        if (!this.ticTacToeState) {
-            this.ticTacToeState = {};
-        }
-        this.ticTacToeState.gameActive = gameState.gameActive;
-        this.ticTacToeState.currentPlayer = gameState.currentPlayer;
-        this.ticTacToeState.currentRound = gameState.currentRound || 0;
-        this.ticTacToeState.players = gameState.players;
-        this.ticTacToeState.playerNames = gameState.playerNames;
-        this.ticTacToeState.scores = gameState.scores;
-        this.ticTacToeState.rounds = gameState.rounds;
         
         // Отримуємо дошку поточного раунду
         const currentRound = gameState.currentRound || 0;
         const roundBoard = gameState.rounds && gameState.rounds[currentRound] 
             ? gameState.rounds[currentRound].board 
             : (gameState.gameState || Array(9).fill(null));
-        this.ticTacToeState.gameState = roundBoard;
         
         // Оновлюємо візуальну дошку
         const board = document.getElementById('tic-tac-toe-board') || document.getElementById('tic-tac-toe-board-view');
@@ -4823,14 +4759,16 @@ class MultiplayerGame extends EducationalPathGame {
                 const symbol = isPlayer1 ? 'X' : 'O';
                 cell.innerHTML = this.createPlayerSVG(symbol);
                 cell.classList.add(symbol.toLowerCase());
+                // Блокуємо клітинку якщо вона зайнята
+                cell.classList.add('disabled');
             } else {
                 // Очищаємо клітинку
                 cell.innerHTML = '';
-                cell.classList.remove('x', 'o');
+                cell.classList.remove('x', 'o', 'disabled');
             }
         });
         
-        // Оновлюємо статус
+        // Оновлюємо статус та доступність клітинок
         if (data.winner) {
             const winnerName = gameState.playerNames && gameState.players.includes(data.winner)
                 ? gameState.playerNames[gameState.players.indexOf(data.winner)]
@@ -4846,7 +4784,22 @@ class MultiplayerGame extends EducationalPathGame {
                 ? gameState.playerNames[gameState.players.indexOf(gameState.currentPlayer)]
                 : 'Гравець';
             this.updateTicTacToeStatus(isMyTurn ? 'Ваш хід!' : `Хід гравця: ${currentPlayerName}`);
+            
+            // Блокуємо/розблоковуємо клітинки залежно від черги
+            cells.forEach(cell => {
+                if (isMyTurn && !cell.classList.contains('disabled')) {
+                    cell.style.cursor = 'pointer';
+                } else {
+                    cell.style.cursor = 'not-allowed';
+                }
+            });
         }
+    }
+    
+    // Стара функція залишається для сумісності (якщо використовується десь ще)
+    updateTicTacToeBoard(data) {
+        // Просто викликаємо нову функцію
+        this.renderTicTacToeFromServerState(data);
     }
     
     // Перехід до наступного раунду
@@ -4992,6 +4945,93 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     // Оновлення інтерфейсу КНП з поточного стану
+    // Нова функція: просто рендерить стан від сервера (Dumb Client)
+    renderRPSFromServerState(data) {
+        if (!data || !data.gameState) return;
+        
+        const gameState = data.gameState;
+        
+        // Отримуємо інформацію про поточного гравця та опонента
+        const player1Id = gameState.players[0];
+        const player2Id = gameState.players[1];
+        const opponentId = this.playerId === player1Id ? player2Id : player1Id;
+        
+        // Отримуємо вибори зі стану сервера
+        const playerChoice = gameState.choices[this.playerId] || null;
+        const opponentChoice = gameState.choices[opponentId] || null;
+        
+        // Отримуємо рахунок зі стану сервера
+        const playerWins = gameState.scores[this.playerId] || 0;
+        const opponentWins = gameState.scores[opponentId] || 0;
+        
+        // Оновлюємо UI на основі стану сервера
+        const roundDiv = document.getElementById('rps-round');
+        const scoreDiv = document.getElementById('rps-score');
+        const resultDiv = document.getElementById('rps-result');
+        
+        if (roundDiv) {
+            roundDiv.textContent = `Раунд ${gameState.currentRound || 1} з ${gameState.maxRounds || 3}`;
+        }
+        
+        if (scoreDiv) {
+            scoreDiv.textContent = `Ваші перемоги: ${playerWins} | Перемоги суперника: ${opponentWins}`;
+        }
+        
+        // Якщо гра завершена
+        if (!gameState.gameActive) {
+            if (resultDiv) {
+                if (playerWins > opponentWins) {
+                    resultDiv.textContent = '🎉 Ви перемогли!';
+                } else if (opponentWins > playerWins) {
+                    resultDiv.textContent = '😔 Ви програли';
+                } else {
+                    resultDiv.textContent = '🤝 Нічия!';
+                }
+            }
+            // Блокуємо кнопки
+            const buttons = document.querySelectorAll('.rps-choice-btn');
+            buttons.forEach(btn => btn.disabled = true);
+            return;
+        }
+        
+        // Якщо очікуємо вибору (один з гравців ще не зробив вибір)
+        if (data.waiting) {
+            if (resultDiv) {
+                if (playerChoice) {
+                    resultDiv.textContent = `Ви обрали: ${this.getChoiceEmoji(playerChoice)}. Очікуємо вибору супротивника...`;
+                } else {
+                    resultDiv.textContent = 'Очікуємо вибору супротивника...';
+                }
+            }
+            // Блокуємо кнопки якщо гравець вже зробив вибір
+            if (playerChoice) {
+                const buttons = document.querySelectorAll('.rps-choice-btn');
+                buttons.forEach(btn => btn.disabled = true);
+            }
+            return;
+        }
+        
+        // Якщо обидва зробили вибір - показуємо результат
+        if (playerChoice && opponentChoice && data.result) {
+            if (resultDiv) {
+                const resultText = data.result === 'win' ? '🎉 Ви перемогли!' :
+                                  data.result === 'lose' ? '😔 Ви програли' :
+                                  '🤝 Нічия!';
+                resultDiv.textContent = `${resultText} Ви: ${this.getChoiceEmoji(playerChoice)} vs Супротивник: ${this.getChoiceEmoji(opponentChoice)}`;
+            }
+            // Блокуємо кнопки після результату
+            const buttons = document.querySelectorAll('.rps-choice-btn');
+            buttons.forEach(btn => btn.disabled = true);
+        } else {
+            // Новий раунд - розблоковуємо кнопки
+            const buttons = document.querySelectorAll('.rps-choice-btn');
+            buttons.forEach(btn => btn.disabled = false);
+            if (resultDiv) {
+                resultDiv.textContent = 'Оберіть ваш вибір';
+            }
+        }
+    }
+    
     updateRPSInterfaceFromState() {
         if (!this.rpsGameState) return;
         
@@ -5047,29 +5087,19 @@ class MultiplayerGame extends EducationalPathGame {
     
     // Обробка вибору в камінь-ножиці-папір
     makeRPSChoice(choice) {
-        if (!this.rpsGameState || this.rpsGameState.gameFinished) return;
-        
-        // Перевіряємо, чи гравець є учасником
-        if (!this.rpsGameState.players || !this.rpsGameState.players.includes(this.playerId)) {
-            console.log('Ви не є учасником цієї гри');
-            return;
-        }
-        
-        // Зберігаємо вибір локально
-        this.rpsGameState.playerChoice = choice;
-        
-        // Відправляємо вибір на сервер
+        // Dumb Client: просто відправляємо дію на сервер
+        // Сервер перевірить валідність і оновить стан
         if (this.socket && this.roomId) {
             this.socket.emit('rps_choice', {
                 roomId: this.roomId,
                 choice: choice,
                 playerId: this.playerId
             });
-            
-            // Показуємо вибір гравця
-            this.updateRPSInterfaceWaiting();
         } else {
-            // Локальна гра (fallback)
+            // Локальна гра (fallback) - тільки для тестування без сервера
+            if (!this.rpsGameState) {
+                this.rpsGameState = { playerChoice: null, gameFinished: false };
+            }
             this.rpsGameState.playerChoice = choice;
             setTimeout(() => {
                 this.simulateRPSRound();

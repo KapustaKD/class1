@@ -11,7 +11,7 @@ const CLOUDINARY_AUDIO_TRACKS = {
     'main_fon': { 
         // Якщо main_fon також в Cloudinary, додайте його URL тут
         url: null, // Поки використовуємо локальний файл
-        name: 'main_fon',
+        name: 'Головна тема',
         useLocal: true // Використовувати локальний файл
     },
     'pl2': { 
@@ -26,7 +26,7 @@ const CLOUDINARY_AUDIO_TRACKS = {
     },
     'pl4': { 
         url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878466/pl3_gnvj0j.mp4',
-        name: 'pl4',
+        name: 'без назви',
         useLocal: false
     },
     'pl5': { 
@@ -36,13 +36,13 @@ const CLOUDINARY_AUDIO_TRACKS = {
     },
     'pl6': { 
         url: 'https://res.cloudinary.com/dwv7kufbc/video/upload/v1762878466/pl3_gnvj0j.mp4',
-        name: 'pl6',
+        name: 'Японський їжак агресивно біжить 300км/год',
         useLocal: false
     },
     'rumbling_fon_2': { 
         // Якщо rumbling_fon_2 також в Cloudinary, додайте його URL тут
         url: null,
-        name: 'rumbling_fon_2',
+        name: 'Рвань',
         useLocal: true // Використовувати локальний файл
     }
 };

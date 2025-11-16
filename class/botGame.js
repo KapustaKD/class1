@@ -217,6 +217,12 @@ class BotGame extends EducationalPathGame {
     startBotGame() {
         console.log('🎮 Починаємо гру');
         
+        // Приховуємо start-modal (вікно налаштування гри), якщо воно відкрите
+        const startModal = document.getElementById('start-modal');
+        if (startModal) {
+            startModal.classList.add('hidden');
+        }
+        
         // Встановлюємо початкові очки
         this.players.forEach(player => {
             player.points = player.class.startPoints;
@@ -224,6 +230,20 @@ class BotGame extends EducationalPathGame {
 
         // Показуємо ігрове поле
         this.showGameContainer();
+        
+        // Створюємо ігрову дошку (як в онлайн грі)
+        this.createBoard();
+        
+        // Встановлюємо правильний масштаб карти
+        setTimeout(() => {
+            if (typeof this.setInitialScale === 'function') {
+                this.setInitialScale();
+            }
+            if (typeof this.applyTransform === 'function') {
+                this.applyTransform();
+            }
+            console.log('Масштаб карти встановлено');
+        }, 100);
         
         // Оновлюємо UI
         this.updateUI();

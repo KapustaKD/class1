@@ -6,6 +6,29 @@ class BotGame extends EducationalPathGame {
         this.botResponses = this.initializeBotResponses();
         this.isBotTurn = false;
         this.botDelay = 1500; // Затримка між ходами ботів (1.5 секунди)
+        
+        // Завантажуємо specialCells.js як єдине джерело координат для клітинок
+        // У браузері використовуємо глобальний об'єкт, якщо він доступний
+        if (typeof window !== 'undefined' && window.specialCells) {
+            this.specialCells = window.specialCells;
+        } else if (typeof require !== 'undefined') {
+            try {
+                const specialCellsModule = require('./specialCells.js');
+                this.specialCells = specialCellsModule;
+            } catch (e) {
+                console.warn('Не вдалося завантажити specialCells.js, використовується локальна версія:', e);
+                // Fallback на локальну версію з game.js (успадковану від EducationalPathGame)
+            }
+        }
+        
+        // Стан для PvP ігор
+        this.ticTacToeState = null;
+        this.rpsGameState = null;
+        
+        // Стан для творчих квестів
+        this.creativeSubmissions = [];
+        this.playersExpectedToSubmit = [];
+        this.creativeVotes = {};
     }
 
     // Ініціалізація відповідей ботів для різних завдань
@@ -307,11 +330,11 @@ class BotGame extends EducationalPathGame {
                 break;
             case 'pvp':
             case 'pvp-quest':
-                this.handleBotPvpQuest(player);
+                this.handleBotPvpQuest(player, cellData);
                 break;
             case 'creative':
             case 'creative-quest':
-                this.handleBotCreativeQuest(player);
+                this.handleBotCreativeQuest(player, cellData);
                 break;
             case 'mad-libs':
             case 'mad-libs-quest':
@@ -379,47 +402,176 @@ class BotGame extends EducationalPathGame {
     }
 
     // Обробка творчих квестів для інших гравців
-    handleBotCreativeQuest(player) {
+    handleBotCreativeQuest(player, cellData) {
         const creativeTypes = Object.keys(this.botResponses.creative);
-        const selectedType = creativeTypes[Math.floor(Math.random() * creativeTypes.length)];
-        const responses = this.botResponses.creative[selectedType];
+        const selectedType = cellData.gameType || creativeTypes[Math.floor(Math.random() * creativeTypes.length)];
+        const responses = this.botResponses.creative[selectedType] || this.botResponses.creative[creativeTypes[0]];
         const botResponse = responses[Math.floor(Math.random() * responses.length)];
 
         console.log(`🎮 ${player.name} відповів на творче завдання: ${botResponse}`);
 
-        // Показуємо відповідь гравця
-        this.showQuestModal(`${player.name} - Творче завдання`, 
-            `Гравець відповів:\n\n"${botResponse}"`, [
-                { text: 'Далі', callback: () => {
-                    this.questModal.classList.add('hidden');
-                    setTimeout(() => this.nextTurn(), 500);
-                }}
-            ]);
-    }
-
-    // Обробка PvP квестів для інших гравців
-    handleBotPvpQuest(player) {
-        // Вибираємо випадкового опонента (не іншого гравця)
-        const opponents = this.players.filter(p => !p.isBot && p.id !== player.id);
+        // Додаємо роботу бота до списку
+        this.creativeSubmissions.push({
+            playerId: player.id,
+            playerName: player.name,
+            submission: botResponse,
+            submissionIndex: this.creativeSubmissions.length
+        });
         
-        if (opponents.length === 0) {
-            // Якщо немає опонентів, пропускаємо подію
-            setTimeout(() => this.nextTurn(), this.botDelay);
+        // Додаємо бота до списку очікуваних, якщо ще не додано
+        if (!this.playersExpectedToSubmit.includes(player.id)) {
+            this.playersExpectedToSubmit.push(player.id);
+        }
+        
+        // Перевіряємо, чи всі гравці здали роботи
+        const humanPlayer = this.players.find(p => !p.isBot);
+        const allSubmitted = humanPlayer && 
+            this.creativeSubmissions.some(s => s.playerId === humanPlayer.id) &&
+            this.creativeSubmissions.some(s => s.playerId === player.id);
+        
+        if (allSubmitted) {
+            // Всі здали - запускаємо голосування
+            this.startCreativeVoting();
+        } else {
+            // Якщо людина ще не здала, чекаємо (бот вже здав)
+            // Якщо це бот і людина вже здала, запускаємо голосування
+            if (humanPlayer && this.creativeSubmissions.some(s => s.playerId === humanPlayer.id)) {
+                this.startCreativeVoting();
+            }
+            // Інакше просто чекаємо на людину (не викликаємо nextTurn)
+        }
+    }
+    
+    // Запуск голосування в творчих квестах
+    startCreativeVoting() {
+        // Показуємо інтерфейс голосування для людини
+        const humanPlayer = this.players.find(p => !p.isBot);
+        if (!humanPlayer) return;
+        
+        // Створюємо HTML для голосування
+        let votingHTML = '<h3 class="text-xl font-bold mb-4">Оберіть найкращу роботу:</h3>';
+        this.creativeSubmissions.forEach((submission, index) => {
+            if (submission.playerId !== humanPlayer.id) { // Не можна голосувати за себе
+                votingHTML += `
+                    <div class="mb-4 p-4 bg-gray-700 rounded-lg">
+                        <p class="font-bold mb-2">${submission.playerName}:</p>
+                        <p class="mb-3">"${submission.submission}"</p>
+                        <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" 
+                                onclick="window.botGame?.makeCreativeVote(${index})">
+                            Голосувати
+                        </button>
+                    </div>
+                `;
+            }
+        });
+        
+        this.showQuestModal('Голосування', votingHTML, []);
+        
+        // Бот автоматично голосує через 2 секунди
+        setTimeout(() => {
+            this.makeBotCreativeVote();
+        }, 2000);
+    }
+    
+    // Голос бота в творчих квестах
+    makeBotCreativeVote() {
+        const botPlayer = this.players.find(p => p.isBot);
+        if (!botPlayer) return;
+        
+        // Бот не може голосувати за себе
+        const availableSubmissions = this.creativeSubmissions.filter(s => s.playerId !== botPlayer.id);
+        if (availableSubmissions.length === 0) return;
+        
+        // Вибираємо випадкову роботу
+        const selectedSubmission = availableSubmissions[Math.floor(Math.random() * availableSubmissions.length)];
+        this.creativeVotes[botPlayer.id] = selectedSubmission.submissionIndex;
+        
+        console.log(`🎮 ${botPlayer.name} проголосував за роботу ${selectedSubmission.playerName}`);
+        
+        // Перевіряємо, чи всі проголосували
+        const humanPlayer = this.players.find(p => !p.isBot);
+        if (humanPlayer && this.creativeVotes[humanPlayer.id]) {
+            // Всі проголосували - підраховуємо результати
+            this.finishCreativeVoting();
+        }
+    }
+    
+    // Голос людини в творчих квестах
+    makeCreativeVote(submissionIndex) {
+        const humanPlayer = this.players.find(p => !p.isBot);
+        if (!humanPlayer) return;
+        
+        // Перевіряємо, чи не голосує за себе
+        const submission = this.creativeSubmissions[submissionIndex];
+        if (submission && submission.playerId === humanPlayer.id) {
+            alert('Ви не можете голосувати за свою роботу!');
             return;
         }
-
-        const opponent = opponents[Math.floor(Math.random() * opponents.length)];
         
-        // Гравець завжди виграє в PvP (для простоти)
-        this.updatePoints(player, 30, `Переміг ${opponent.name} в дуелі`);
+        this.creativeVotes[humanPlayer.id] = submissionIndex;
+        console.log(`🎮 ${humanPlayer.name} проголосував за роботу ${submission?.playerName}`);
         
-        this.showQuestModal(`${player.name} - PvP Дуель`, 
-            `${player.name} викликав на дуель ${opponent.name} і переміг!\n\nОтримано: +30 ОО`, [
-                { text: 'Далі', callback: () => {
-                    this.questModal.classList.add('hidden');
-                    setTimeout(() => this.nextTurn(), 500);
-                }}
-            ]);
+        // Перевіряємо, чи всі проголосували
+        const botPlayer = this.players.find(p => p.isBot);
+        if (botPlayer && this.creativeVotes[botPlayer.id]) {
+            // Всі проголосували - підраховуємо результати
+            this.finishCreativeVoting();
+        }
+    }
+    
+    // Завершення голосування та підрахунок результатів
+    finishCreativeVoting() {
+        // Підраховуємо голоси
+        const voteCounts = {};
+        Object.values(this.creativeVotes).forEach(index => {
+            voteCounts[index] = (voteCounts[index] || 0) + 1;
+        });
+        
+        // Знаходимо переможця
+        let winnerIndex = 0;
+        let maxVotes = 0;
+        let isTie = false;
+        
+        Object.entries(voteCounts).forEach(([index, votes]) => {
+            if (votes > maxVotes) {
+                maxVotes = votes;
+                winnerIndex = parseInt(index);
+                isTie = false;
+            } else if (votes === maxVotes && votes > 0) {
+                isTie = true;
+            }
+        });
+        
+        const winner = this.creativeSubmissions[winnerIndex];
+        
+        // Нараховуємо очки
+        if (isTie) {
+            // Нічия - всі отримують очки
+            this.players.forEach(p => {
+                this.updatePoints(p, 20, 'Нічия в творчому конкурсі');
+            });
+        } else if (winner) {
+            const winnerPlayer = this.players.find(p => p.id === winner.playerId);
+            if (winnerPlayer) {
+                this.updatePoints(winnerPlayer, 20, 'Перемога в творчому конкурсі');
+            }
+        }
+        
+        // Показуємо результат
+        const resultMessage = isTie 
+            ? 'Перемогла дружба! Кожному по 20 очок!'
+            : `Переможець: ${winner?.playerName}!`;
+        
+        this.showQuestModal('Результати голосування', resultMessage, [
+            { text: 'Далі', callback: () => {
+                this.questModal.classList.add('hidden');
+                // Очищаємо стан
+                this.creativeSubmissions = [];
+                this.playersExpectedToSubmit = [];
+                this.creativeVotes = {};
+                setTimeout(() => this.nextTurn(), 500);
+            }}
+        ]);
     }
 
     // Обробка "Хто, де, коли?" для інших гравців
@@ -731,6 +883,467 @@ class BotGame extends EducationalPathGame {
         document.getElementById('game-container').classList.remove('hidden');
         document.getElementById('mode-selection').classList.add('hidden');
         document.getElementById('online-panel').classList.add('hidden');
+    }
+    
+    // ========== ФУНКЦІЇ МОДАЛЬНИХ ВІКОН (скопійовано з multiplayer.js) ==========
+    
+    // Показ модального вікна для хрестиків-нуликів
+    showTicTacToeModal(data) {
+        const humanPlayer = this.players.find(p => !p.isBot);
+        const botPlayer = this.players.find(p => p.isBot && p.id === data.gameState?.players?.[0] || p.id === data.gameState?.players?.[1]);
+        
+        // Додаємо клас для фонового зображення
+        document.body.classList.add('glassmorphism-bg');
+        
+        const modalHTML = `
+            <div class="glassmorphism-modal glassmorphism-modal-small" id="tictactoe-modal">
+                <div class="glassmorphism-content-tictactoe-small">
+                    <div class="glassmorphism-header">
+                        <h2>🎯 Хреститися рано!</h2>
+                        <button class="close-test-modal-btn" onclick="document.getElementById('tictactoe-modal').remove(); document.body.classList.remove('glassmorphism-bg');">✖</button>
+                    </div>
+                    
+                    <div class="glassmorphism-info-box">
+                        <p class="text-sm">${data.gameState?.gameData?.description || 'Грайте в хрестики-нулики!'}</p>
+                        <p class="text-sm font-bold">${humanPlayer?.name || 'Ви'} проти ${botPlayer?.name || 'Бот'}</p>
+                    </div>
+                    
+                    <div class="glassmorphism-spacer"></div>
+                    
+                    <div class="glassmorphism-actions">
+                        <div class="mb-4">
+                            <div id="tic-tac-toe-board" class="tic-tac-toe-grid mx-auto mb-4"></div>
+                            <div id="game-status" class="text-center text-lg font-bold mb-2">Хід гравця: <span class="x">X</span></div>
+                        </div>
+                        <button id="submit-result-btn" class="glassmorphism-btn-primary w-full" disabled>
+                            Завершити гру
+                        </button>
+                        <button class="glassmorphism-btn-secondary w-full mt-2" onclick="document.getElementById('tictactoe-modal').remove(); document.body.classList.remove('glassmorphism-bg');">
+                            Закрити
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Видаляємо існуюче модальне вікно, якщо є
+        const existingModal = document.getElementById('tictactoe-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Додаємо нове модальне вікно
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Ініціалізуємо стан гри
+        if (!this.ticTacToeState) {
+            this.ticTacToeState = {
+                gameActive: true,
+                currentPlayer: 'X', // Починає людина
+                gameState: Array(9).fill(null),
+                players: [humanPlayer?.id || 'human', botPlayer?.id || 'bot'],
+                playerNames: { [humanPlayer?.id || 'human']: humanPlayer?.name || 'Ви', [botPlayer?.id || 'bot']: botPlayer?.name || 'Бот' },
+                currentRound: 0,
+                rounds: [{ board: Array(9).fill(null), winner: null }],
+                scores: {},
+                playerSymbol: 'X',
+                opponentSymbol: 'O',
+                playerWins: 0,
+                opponentWins: 0
+            };
+        }
+        
+        // Ініціалізуємо дошку
+        setTimeout(() => {
+            this.initializeTicTacToeBoard();
+        }, 100);
+    }
+    
+    // Показ модального вікна для камінь-ножиці-папір
+    showRockPaperScissorsModal(data) {
+        const humanPlayer = this.players.find(p => !p.isBot);
+        const botPlayer = this.players.find(p => p.isBot && p.id === data.gameState?.players?.[0] || p.id === data.gameState?.players?.[1]);
+        
+        // Додаємо клас для фонового зображення
+        document.body.classList.add('glassmorphism-bg');
+        
+        const modalHTML = `
+            <div class="glassmorphism-modal glassmorphism-modal-small" id="rps-modal">
+                <div class="glassmorphism-content-rps-small">
+                    <div class="glassmorphism-header">
+                        <h2>🪨📄✂️ Камінь, Ножиці, Папір</h2>
+                        <button class="close-test-modal-btn" onclick="document.getElementById('rps-modal').remove(); document.body.classList.remove('glassmorphism-bg');">✖</button>
+                    </div>
+                    
+                    <div class="glassmorphism-info-box">
+                        <p class="text-sm">${data.gameState?.gameData?.description || 'Грайте в камінь-ножиці-папір!'}</p>
+                        <p class="text-sm font-bold">${humanPlayer?.name || 'Ви'} проти ${botPlayer?.name || 'Бот'}</p>
+                    </div>
+                    
+                    <div class="glassmorphism-spacer"></div>
+                    
+                    <div class="glassmorphism-actions">
+                        <div id="rps-game" class="text-center mb-4">
+                            <div id="rps-round" class="text-xl font-bold mb-3">Раунд 1 з 3</div>
+                            <div id="rps-score" class="text-lg mb-4">Ваші перемоги: 0 | Перемоги противника: 0</div>
+                            
+                            <div class="flex justify-center gap-4 mb-4">
+                                <button id="rps-rock" class="rps-choice-btn">✊</button>
+                                <button id="rps-paper" class="rps-choice-btn">✋</button>
+                                <button id="rps-scissors" class="rps-choice-btn">✌️</button>
+                            </div>
+                            
+                            <div id="rps-result" class="text-lg font-bold mb-2"></div>
+                        </div>
+                        <button id="submit-result-btn" class="glassmorphism-btn-primary w-full" disabled>
+                            Завершити гру
+                        </button>
+                        <button class="glassmorphism-btn-secondary w-full mt-2" onclick="document.getElementById('rps-modal').remove(); document.body.classList.remove('glassmorphism-bg');">
+                            Закрити
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Видаляємо існуюче модальне вікно, якщо є
+        const existingModal = document.getElementById('rps-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Додаємо нове модальне вікно
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Ініціалізуємо стан гри
+        if (!this.rpsGameState) {
+            this.rpsGameState = {
+                round: 1,
+                maxRounds: 3,
+                playerWins: 0,
+                opponentWins: 0,
+                playerChoice: null,
+                opponentChoice: null,
+                gameFinished: false,
+                players: [humanPlayer?.id || 'human', botPlayer?.id || 'bot'],
+                playerNames: { [humanPlayer?.id || 'human']: humanPlayer?.name || 'Ви', [botPlayer?.id || 'bot']: botPlayer?.name || 'Бот' },
+                choices: {},
+                scores: {},
+                currentRound: 1
+            };
+        }
+        
+        // Додаємо обробники подій
+        setTimeout(() => {
+            this.initializeRockPaperScissors();
+        }, 100);
+    }
+    
+    // Ініціалізація дошки хрестиків-нуликів (адаптовано для локальної гри)
+    initializeTicTacToeBoard() {
+        const board = document.getElementById('tic-tac-toe-board');
+        if (!board) return;
+        
+        board.innerHTML = '';
+        
+        for (let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'tic-tac-toe-cell';
+            cell.dataset.index = i;
+            cell.addEventListener('click', () => this.makeTicTacToeMove(i));
+            board.appendChild(cell);
+        }
+        
+        this.updateTicTacToeStatus();
+    }
+    
+    // Ініціалізація камінь-ножиці-папір (адаптовано для локальної гри)
+    initializeRockPaperScissors() {
+        const rockBtn = document.getElementById('rps-rock');
+        const paperBtn = document.getElementById('rps-paper');
+        const scissorsBtn = document.getElementById('rps-scissors');
+        
+        if (rockBtn) {
+            rockBtn.addEventListener('click', () => this.makeRPSChoice('rock'));
+        }
+        if (paperBtn) {
+            paperBtn.addEventListener('click', () => this.makeRPSChoice('paper'));
+        }
+        if (scissorsBtn) {
+            scissorsBtn.addEventListener('click', () => this.makeRPSChoice('scissors'));
+        }
+    }
+    
+    // Оновлення статусу хрестиків-нуликів
+    updateTicTacToeStatus(message) {
+        const statusEl = document.getElementById('game-status');
+        if (statusEl) {
+            statusEl.textContent = message || `Хід: ${this.ticTacToeState?.currentPlayer === 'X' ? 'Ви (X)' : 'Бот (O)'}`;
+        }
+    }
+    
+    // Створення SVG для гравця
+    createPlayerSVG(player) {
+        if (player === 'X') {
+            return `<svg class="svg-x" viewBox="0 0 100 100">
+                        <line x1="15" y1="15" x2="85" y2="85" />
+                        <line x1="85" y1="15" x2="15" y2="85" />
+                    </svg>`;
+        } else {
+            return `<svg class="svg-o" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="35" />
+                    </svg>`;
+        }
+    }
+    
+    // Обробка ходу в хрестиках-нуликах (для людини)
+    makeTicTacToeMove(cellIndex) {
+        if (!this.ticTacToeState || !this.ticTacToeState.gameActive) return;
+        if (this.ticTacToeState.currentPlayer !== 'X') return; // Тільки людина може ходити
+        
+        const cell = document.querySelector(`[data-index="${cellIndex}"]`);
+        if (!cell || this.ticTacToeState.gameState[cellIndex]) return;
+        
+        // Хід людини
+        this.ticTacToeState.gameState[cellIndex] = 'X';
+        cell.innerHTML = this.createPlayerSVG('X');
+        cell.classList.add('x', 'disabled');
+        
+        // Перевіряємо результат
+        const result = this.checkTicTacToeResult();
+        if (result.gameOver) {
+            this.handleTicTacToeGameOver(result);
+            return;
+        }
+        
+        // Передаємо хід боту
+        this.ticTacToeState.currentPlayer = 'O';
+        this.updateTicTacToeStatus('Хід бота...');
+        
+        setTimeout(() => {
+            this.makeBotTicTacToeMove();
+        }, 1000);
+    }
+    
+    // Хід бота в хрестиках-нуликах
+    makeBotTicTacToeMove() {
+        if (!this.ticTacToeState || !this.ticTacToeState.gameActive) return;
+        
+        // Знаходимо вільні клітинки
+        const freeCells = [];
+        for (let i = 0; i < 9; i++) {
+            if (!this.ticTacToeState.gameState[i]) {
+                freeCells.push(i);
+            }
+        }
+        
+        if (freeCells.length === 0) return;
+        
+        // Вибираємо випадкову вільну клітинку
+        const cellIndex = freeCells[Math.floor(Math.random() * freeCells.length)];
+        
+        // Хід бота
+        this.ticTacToeState.gameState[cellIndex] = 'O';
+        const cell = document.querySelector(`[data-index="${cellIndex}"]`);
+        if (cell) {
+            cell.innerHTML = this.createPlayerSVG('O');
+            cell.classList.add('o', 'disabled');
+        }
+        
+        // Перевіряємо результат
+        const result = this.checkTicTacToeResult();
+        if (result.gameOver) {
+            this.handleTicTacToeGameOver(result);
+            return;
+        }
+        
+        // Повертаємо хід людині
+        this.ticTacToeState.currentPlayer = 'X';
+        this.updateTicTacToeStatus('Ваш хід!');
+    }
+    
+    // Перевірка результату хрестиків-нуликів
+    checkTicTacToeResult() {
+        const board = this.ticTacToeState.gameState;
+        const winningCombinations = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Рядки
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Колонки
+            [0, 4, 8], [2, 4, 6] // Діагоналі
+        ];
+        
+        for (const combo of winningCombinations) {
+            const [a, b, c] = combo;
+            if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                return { gameOver: true, winner: board[a], message: `Переміг ${board[a] === 'X' ? 'Ви' : 'Бот'}!` };
+            }
+        }
+        
+        if (!board.includes(null)) {
+            return { gameOver: true, winner: null, message: 'Нічия!' };
+        }
+        
+        return { gameOver: false };
+    }
+    
+    // Обробка завершення гри хрестиків-нуликів
+    handleTicTacToeGameOver(result) {
+        this.ticTacToeState.gameActive = false;
+        this.updateTicTacToeStatus(result.message);
+        
+        // Блокуємо всі клітинки
+        const cells = document.querySelectorAll('.tic-tac-toe-cell');
+        cells.forEach(cell => cell.classList.add('disabled'));
+        
+        // Нараховуємо очки
+        if (result.winner === 'X') {
+            const humanPlayer = this.players.find(p => !p.isBot);
+            if (humanPlayer) {
+                this.updatePoints(humanPlayer, 30, 'Перемога в хрестиках-нуликах');
+            }
+        } else if (result.winner === 'O') {
+            const botPlayer = this.players.find(p => p.isBot);
+            if (botPlayer) {
+                this.updatePoints(botPlayer, 30, 'Перемога в хрестиках-нуликах');
+            }
+        }
+        
+        // Закриваємо модальне вікно через 3 секунди
+        setTimeout(() => {
+            const modal = document.getElementById('tictactoe-modal');
+            if (modal) {
+                modal.remove();
+                document.body.classList.remove('glassmorphism-bg');
+            }
+            this.nextTurn();
+        }, 3000);
+    }
+    
+    // Обробка вибору в камінь-ножиці-папір (для людини)
+    makeRPSChoice(choice) {
+        if (!this.rpsGameState || this.rpsGameState.gameFinished) return;
+        
+        this.rpsGameState.playerChoice = choice;
+        this.rpsGameState.choices['human'] = choice;
+        
+        // Оновлюємо інтерфейс
+        this.updateRPSInterface('waiting', null);
+        
+        // Блокуємо кнопки
+        const buttons = document.querySelectorAll('.rps-choice-btn');
+        buttons.forEach(btn => btn.disabled = true);
+        
+        // Хід бота через 1 секунду
+        setTimeout(() => {
+            this.makeBotRPSChoice();
+        }, 1000);
+    }
+    
+    // Хід бота в камінь-ножиці-папір
+    makeBotRPSChoice() {
+        const choices = ['rock', 'paper', 'scissors'];
+        const botChoice = choices[Math.floor(Math.random() * choices.length)];
+        
+        this.rpsGameState.opponentChoice = botChoice;
+        this.rpsGameState.choices['bot'] = botChoice;
+        
+        // Визначаємо результат
+        const result = this.getRPSResult(this.rpsGameState.playerChoice, botChoice);
+        
+        // Оновлюємо рахунок
+        if (result === 'win') {
+            this.rpsGameState.playerWins++;
+        } else if (result === 'lose') {
+            this.rpsGameState.opponentWins++;
+        }
+        
+        // Оновлюємо інтерфейс
+        this.updateRPSInterface(result, botChoice);
+        
+        // Перевіряємо чи хтось виграв
+        if (this.rpsGameState.playerWins >= 2 || this.rpsGameState.opponentWins >= 2) {
+            this.rpsGameState.gameFinished = true;
+            this.finishRPSGame();
+        } else {
+            // Наступний раунд
+            this.rpsGameState.currentRound++;
+            this.rpsGameState.playerChoice = null;
+            this.rpsGameState.opponentChoice = null;
+            
+            setTimeout(() => {
+                this.updateRPSInterface('next', null);
+                // Розблоковуємо кнопки
+                const buttons = document.querySelectorAll('.rps-choice-btn');
+                buttons.forEach(btn => btn.disabled = false);
+            }, 2000);
+        }
+    }
+    
+    // Визначення результату камінь-ножиці-папір
+    getRPSResult(playerChoice, opponentChoice) {
+        if (playerChoice === opponentChoice) return 'tie';
+        if (
+            (playerChoice === 'rock' && opponentChoice === 'scissors') ||
+            (playerChoice === 'paper' && opponentChoice === 'rock') ||
+            (playerChoice === 'scissors' && opponentChoice === 'paper')
+        ) {
+            return 'win';
+        }
+        return 'lose';
+    }
+    
+    // Оновлення інтерфейсу камінь-ножиці-папір
+    updateRPSInterface(result, opponentChoice) {
+        const roundDiv = document.getElementById('rps-round');
+        const scoreDiv = document.getElementById('rps-score');
+        const resultDiv = document.getElementById('rps-result');
+        
+        if (roundDiv) {
+            roundDiv.textContent = `Раунд ${this.rpsGameState.currentRound} з ${this.rpsGameState.maxRounds}`;
+        }
+        
+        if (scoreDiv) {
+            scoreDiv.textContent = `Ваші перемоги: ${this.rpsGameState.playerWins} | Перемоги суперника: ${this.rpsGameState.opponentWins}`;
+        }
+        
+        if (resultDiv) {
+            if (result === 'waiting') {
+                resultDiv.textContent = 'Очікуємо вибору супротивника...';
+            } else if (result === 'next') {
+                resultDiv.textContent = 'Оберіть ваш вибір';
+            } else {
+                const emojiMap = { rock: '✊', paper: '✋', scissors: '✌️' };
+                const resultText = result === 'win' ? '🎉 Ви перемогли!' :
+                                  result === 'lose' ? '😔 Ви програли' :
+                                  '🤝 Нічия!';
+                resultDiv.textContent = `${resultText} Ви: ${emojiMap[this.rpsGameState.playerChoice]} vs Супротивник: ${emojiMap[opponentChoice]}`;
+            }
+        }
+    }
+    
+    // Завершення гри камінь-ножиці-папір
+    finishRPSGame() {
+        const humanPlayer = this.players.find(p => !p.isBot);
+        const botPlayer = this.players.find(p => p.isBot);
+        
+        if (this.rpsGameState.playerWins > this.rpsGameState.opponentWins && humanPlayer) {
+            this.updatePoints(humanPlayer, 30, 'Перемога в камінь-ножиці-папір');
+        } else if (this.rpsGameState.opponentWins > this.rpsGameState.playerWins && botPlayer) {
+            this.updatePoints(botPlayer, 30, 'Перемога в камінь-ножиці-папір');
+        }
+        
+        setTimeout(() => {
+            const modal = document.getElementById('rps-modal');
+            if (modal) {
+                modal.remove();
+                document.body.classList.remove('glassmorphism-bg');
+            }
+            this.nextTurn();
+        }, 3000);
+    }
+    
+    getChoiceEmoji(choice) {
+        const emojiMap = { rock: '✊', paper: '✋', scissors: '✌️' };
+        return emojiMap[choice] || choice;
     }
 }
 

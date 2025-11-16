@@ -163,21 +163,34 @@
     function patchGameJS() {
         // Перехоплюємо створення дошки
         if (typeof window.EducationalPathGame !== 'undefined') {
-            const OriginalGame = window.EducationalPathGame;
-            
-            // Зберігаємо оригінальний метод createBoard
-            const originalCreateBoard = OriginalGame.prototype.createBoard;
-            
-            // Замінюємо метод createBoard
-            OriginalGame.prototype.createBoard = function() {
-                // Викликаємо оригінальний метод
-                originalCreateBoard.call(this);
+            try {
+                const OriginalGame = window.EducationalPathGame;
                 
-                // Після створення дошки перетворюємо позиції клітинок на відсотки
-                setTimeout(() => {
-                    this.convertCellsToPercentages();
-                }, 100);
-            };
+                // Зберігаємо оригінальний метод createBoard
+                const originalCreateBoard = OriginalGame.prototype.createBoard;
+                
+                // Замінюємо метод createBoard
+                OriginalGame.prototype.createBoard = function() {
+                    try {
+                        // Викликаємо оригінальний метод
+                        originalCreateBoard.call(this);
+                        
+                        // Після створення дошки перетворюємо позиції клітинок на відсотки
+                        setTimeout(() => {
+                            try {
+                                this.convertCellsToPercentages();
+                            } catch (e) {
+                                console.error('Mobile version: Error in convertCellsToPercentages:', e);
+                            }
+                        }, 100);
+                    } catch (e) {
+                        console.error('Mobile version: Error in createBoard patch:', e);
+                        // Викликаємо оригінальний метод навіть якщо патч не спрацював
+                        if (originalCreateBoard) {
+                            originalCreateBoard.call(this);
+                        }
+                    }
+                };
             
             // Додаємо новий метод для конвертації позицій у відсотки
             OriginalGame.prototype.convertCellsToPercentages = function() {
@@ -225,8 +238,9 @@
             // Перевизначаємо updatePawnPosition для роботи з відсотками
             const originalUpdatePawnPosition = OriginalGame.prototype.updatePawnPosition;
             OriginalGame.prototype.updatePawnPosition = function(player) {
-                const pawn = document.getElementById(`pawn-${player.id}`);
-                const cell = document.getElementById(`cell-${player.position}`);
+                try {
+                    const pawn = document.getElementById(`pawn-${player.id}`);
+                    const cell = document.getElementById(`cell-${player.position}`);
                 
                 if (cell && pawn) {
                     // Позиціонуємо фішку абсолютно відносно дошки
@@ -261,13 +275,21 @@
                     pawn.style.transform = 'translate(-50%, -50%)';
                     pawn.style.zIndex = '10';
                 }
+                } catch (e) {
+                    console.error('Mobile version: Error in updatePawnPosition:', e);
+                    // Викликаємо оригінальний метод якщо наш патч не спрацював
+                    if (originalUpdatePawnPosition) {
+                        originalUpdatePawnPosition.call(this, player);
+                    }
+                }
             };
             
             // Перевизначаємо movePawnToCell для роботи з відсотками
             const originalMovePawnToCell = OriginalGame.prototype.movePawnToCell;
             OriginalGame.prototype.movePawnToCell = async function(pawn, cellPosition) {
-                return new Promise((resolve) => {
-                    const targetCell = document.getElementById(`cell-${cellPosition}`);
+                try {
+                    return new Promise((resolve) => {
+                        const targetCell = document.getElementById(`cell-${cellPosition}`);
                     
                     if (!targetCell) {
                         resolve();
@@ -318,8 +340,19 @@
                     
                     // Чекаємо завершення CSS transition
                     setTimeout(resolve, 250);
-                });
+                    });
+                } catch (e) {
+                    console.error('Mobile version: Error in movePawnToCell:', e);
+                    // Викликаємо оригінальний метод якщо наш патч не спрацював
+                    if (originalMovePawnToCell) {
+                        return originalMovePawnToCell.call(this, pawn, cellPosition);
+                    }
+                    return Promise.resolve();
+                }
             };
+            } catch (e) {
+                console.error('Mobile version: Error patching game JS:', e);
+            }
         }
     }
     
@@ -328,13 +361,14 @@
     // ============================================
     
     function initMobileVersion() {
-        // Застосовуємо CSS зміни
-        applyContainerCSS();
-        
-        // Чекаємо, поки завантажиться EducationalPathGame
-        if (typeof window.EducationalPathGame !== 'undefined') {
-            patchGameJS();
-        } else {
+        try {
+            // Застосовуємо CSS зміни
+            applyContainerCSS();
+            
+            // Чекаємо, поки завантажиться EducationalPathGame
+            if (typeof window.EducationalPathGame !== 'undefined') {
+                patchGameJS();
+            } else {
             // Якщо клас ще не завантажений, чекаємо
             const checkInterval = setInterval(() => {
                 if (typeof window.EducationalPathGame !== 'undefined') {
@@ -399,16 +433,25 @@
                 observer.observe(gameBoard, { childList: true, subtree: true });
             }
         });
+        } catch (e) {
+            console.error('Mobile version: Critical error during initialization:', e);
+            // Не зупиняємо виконання інших скриптів
+        }
     }
     
     // Запускаємо ініціалізацію
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initMobileVersion);
-    } else {
-        initMobileVersion();
+    try {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initMobileVersion);
+        } else {
+            initMobileVersion();
+        }
+        
+        console.log('📱 Мобільна версія гри активована!');
+    } catch (e) {
+        console.error('Mobile version: Error starting initialization:', e);
+        // Не зупиняємо виконання інших скриптів
     }
-    
-    console.log('📱 Мобільна версія гри активована!');
     
 })();
 

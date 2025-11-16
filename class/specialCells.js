@@ -1,5 +1,5 @@
 // Єдине джерело правди про події на клітинках
-module.exports = {
+const specialCells = {
     // Гра "Хто, де, коли?"
     3: { type: 'mad-libs-quest', questName: 'Хто? Де? Коли?' },
 
@@ -34,8 +34,9 @@ module.exports = {
     85: { type: 'early-reincarnation', targetEpoch: 6, points: 90 },
 
     // Обхідні шляхи
-    5: { type: 'alternative-path', target: 11, cost: 10, description: 'Обхідний шлях до клітинки 11 за 10 ОО' },
-    46: { type: 'alternative-path', target: 57, cost: 25, description: 'Обхідний шлях до клітинки 57 за 25 ОО' },
+    // Ціни за епохами: 1 - 20 ОО, 2 - 12 ОО, 3 - 24 ОО, 4 - 40 ОО, 5 - 40 ОО
+    5: { type: 'alternative-path', target: 11, cost: 20, description: 'Обхідний шлях до клітинки 11 за 20 ОО' }, // Епоха 1
+    46: { type: 'alternative-path', target: 57, cost: 40, description: 'Обхідний шлях до клітинки 57 за 40 ОО' }, // Епоха 4
 
     // Реінкарнація
     12: { type: 'reincarnation', nextEpoch: 2, points: 30 },
@@ -79,4 +80,14 @@ module.exports = {
     // Кінець гри
     100: { type: 'machine-uprising' }
 };
+
+// Експорт для Node.js
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = specialCells;
+}
+
+// Експорт для браузера
+if (typeof window !== 'undefined') {
+    window.specialCells = specialCells;
+}
 

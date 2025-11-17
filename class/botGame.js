@@ -401,11 +401,32 @@ class BotGame extends EducationalPathGame {
         this.currentPlayerIndex = 0;
         this.gameActive = true;
         
-        // Якщо перший хід іншого гравця, автоматично кидаємо кубик
-        if (this.players[this.currentPlayerIndex].isBot) {
-            setTimeout(() => {
-                this.handleBotTurn();
-            }, 1000);
+        // Ініціалізуємо лічильник кидків кубика (якщо не ініціалізовано)
+        if (typeof this.diceRollCount === 'undefined') {
+            this.diceRollCount = 0;
+        }
+        
+        // Переконаємося, що кнопка ініціалізована
+        if (!this.rollDiceBtn) {
+            this.rollDiceBtn = document.getElementById('roll-dice-btn');
+        }
+        
+        // Встановлюємо стан кнопки кидання кубика
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        if (this.rollDiceBtn) {
+            if (currentPlayer.isBot) {
+                // Якщо перший хід іншого гравця, автоматично кидаємо кубик
+                this.rollDiceBtn.disabled = true;
+                setTimeout(() => {
+                    this.handleBotTurn();
+                }, 1000);
+            } else {
+                // Якщо перший хід людини-гравця, дозволяємо кинути кубик
+                this.rollDiceBtn.disabled = false;
+                console.log('✅ Кнопка кидання кубика активна для гравця');
+            }
+        } else {
+            console.error('❌ Кнопка roll-dice-btn не знайдена!');
         }
     }
 

@@ -1583,11 +1583,18 @@ class EducationalPathGame {
     
             this.currentPlayerClassEl.textContent = player.class ? player.class.name : '—';
     
+            // Оновлюємо аватар поточного гравця
+            const currentPlayerAvatarEl = document.getElementById('current-player-avatar');
+            if (currentPlayerAvatarEl && player.avatarUrl) {
+                currentPlayerAvatarEl.src = player.avatarUrl;
+                currentPlayerAvatarEl.alt = `${player.name} аватар`;
+            }
+    
             // В новій структурі ОО вже є в HTML, просто число
             const pointsSpan = this.currentPlayerPointsEl.querySelector('span');
             if (pointsSpan) {
                 pointsSpan.textContent = player.points;
-            } else {
+             } else {
                 this.currentPlayerPointsEl.textContent = player.points;
             }
     

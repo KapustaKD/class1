@@ -1,7 +1,7 @@
 // Система локальної гри з ботами
 class BotGame extends EducationalPathGame {
     constructor() {
-        super();
+        super(true); // Передаємо true, щоб батьківський клас не прикріплював обробники подій
         this.bots = [];
         this.botResponses = this.initializeBotResponses();
         this.isBotTurn = false;

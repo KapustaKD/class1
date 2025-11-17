@@ -1122,8 +1122,22 @@ class EducationalPathGame {
     }
 
     async rollTheDice() {
+        // Переконаємося, що кнопка ініціалізована
+        if (!this.rollDiceBtn) {
+            this.rollDiceBtn = document.getElementById('roll-dice-btn');
+        }
+        
+        if (!this.rollDiceBtn) {
+            console.error('❌ Кнопка roll-dice-btn не знайдена!');
+            return;
+        }
 
         this.rollDiceBtn.disabled = true;
+        
+        // Ініціалізуємо лічильник, якщо не ініціалізовано
+        if (typeof this.diceRollCount === 'undefined') {
+            this.diceRollCount = 0;
+        }
         
         // Збільшуємо лічильник кидків
         this.diceRollCount++;

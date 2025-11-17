@@ -84,6 +84,9 @@ class EducationalPathGame {
             this.metalSoundChance = 1; // Початковий шанс 1%
             this.metalSoundTriggered = false; // Чи спрацював металевий звук
             
+            // Лічильник кидків кубика
+            this.diceRollCount = 0;
+            
             // Доступні фони для гравців
             this.availableBackgrounds = [
                 'image/fon/fon1.png',

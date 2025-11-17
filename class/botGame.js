@@ -372,6 +372,11 @@ class BotGame extends EducationalPathGame {
             startModal.classList.add('hidden');
         }
         
+        // Ініціалізуємо лічильник кидків кубика
+        if (typeof this.diceRollCount === 'undefined') {
+            this.diceRollCount = 0;
+        }
+        
         // Встановлюємо початкові очки
         this.players.forEach(player => {
             player.points = player.class.startPoints;
@@ -401,33 +406,39 @@ class BotGame extends EducationalPathGame {
         this.currentPlayerIndex = 0;
         this.gameActive = true;
         
-        // Ініціалізуємо лічильник кидків кубика (якщо не ініціалізовано)
-        if (typeof this.diceRollCount === 'undefined') {
-            this.diceRollCount = 0;
-        }
-        
-        // Переконаємося, що кнопка ініціалізована
-        if (!this.rollDiceBtn) {
+        // Налаштовуємо обробник події для кнопки кидання кубика
+        // Використовуємо setTimeout, щоб переконатися, що DOM готовий
+        setTimeout(() => {
             this.rollDiceBtn = document.getElementById('roll-dice-btn');
+            if (this.rollDiceBtn) {
+                // Додаємо обробник події
+                this.rollDiceBtn.addEventListener('click', () => {
+                    const currentPlayer = this.players[this.currentPlayerIndex];
+                    // Перевіряємо, чи кнопка не disabled та гра активна, і чи це не бот
+                    if (this.gameActive && !this.rollDiceBtn.disabled && !currentPlayer.isBot) {
+                        console.log('🎲 Гравець натиснув кнопку кидання кубика');
+                        this.rollTheDice();
+                    }
+                });
+                console.log('✅ Обробник події для кнопки кидання кубика налаштовано');
+                
+                // Встановлюємо стан кнопки кидання кубика
+                const currentPlayer = this.players[this.currentPlayerIndex];
+                if (currentPlayer.isBot) {
+                    // Якщо перший хід бота, блокуємо кнопку та автоматично кидаємо кубик
+                    this.rollDiceBtn.disabled = true;
+            setTimeout(() => {
+                this.handleBotTurn();
+            }, 1000);
+                } else {
+                    // Якщо перший хід людини-гравця, дозволяємо кинути кубик
+                    this.rollDiceBtn.disabled = false;
+                    console.log('✅ Кнопка кидання кубика активна для гравця');
         }
-        
-        // Встановлюємо стан кнопки кидання кубика
-        const currentPlayer = this.players[this.currentPlayerIndex];
-        if (this.rollDiceBtn) {
-            if (currentPlayer.isBot) {
-                // Якщо перший хід іншого гравця, автоматично кидаємо кубик
-                this.rollDiceBtn.disabled = true;
-                setTimeout(() => {
-                    this.handleBotTurn();
-                }, 1000);
             } else {
-                // Якщо перший хід людини-гравця, дозволяємо кинути кубик
-                this.rollDiceBtn.disabled = false;
-                console.log('✅ Кнопка кидання кубика активна для гравця');
+                console.error('❌ Кнопка roll-dice-btn не знайдена після затримки!');
             }
-        } else {
-            console.error('❌ Кнопка roll-dice-btn не знайдена!');
-        }
+        }, 200);
     }
 
     // Обробка ходу іншого гравця
@@ -1016,11 +1027,18 @@ class BotGame extends EducationalPathGame {
     nextTurn() {
         if (!this.gameActive) return;
 
+        // Переконаємося, що кнопка ініціалізована
+        if (!this.rollDiceBtn) {
+            this.rollDiceBtn = document.getElementById('roll-dice-btn');
+        }
+
         const player = this.players[this.currentPlayerIndex];
 
         if (player.extraTurn) {
             player.extraTurn = false;
+            if (this.rollDiceBtn) {
             this.rollDiceBtn.disabled = false;
+            }
             return;
         }
 
@@ -1045,13 +1063,18 @@ class BotGame extends EducationalPathGame {
         
         if (nextPlayer.isBot) {
             // Якщо наступний гравець - інший гравець, автоматично кидаємо кубик
+            if (this.rollDiceBtn) {
             this.rollDiceBtn.disabled = true;
+            }
             setTimeout(() => {
                 this.handleBotTurn();
             }, this.botDelay);
         } else {
             // Якщо наступний гравець - основний гравець, дозволяємо кинути кубик
+            if (this.rollDiceBtn) {
             this.rollDiceBtn.disabled = false;
+                console.log('✅ Кнопка кидання кубика активна для гравця');
+            }
         }
     }
 

@@ -66,7 +66,8 @@ function setupGlobalEventListeners() {
     // Обробка необроблених відхилень промісів
     window.addEventListener('unhandledrejection', (event) => {
         console.error('Необроблене відхилення промісу:', event.reason);
-        if (window.gameUI) {
+        // Показуємо помилку тільки в онлайн режимі
+        if (window.gameUI && window.game && window.game.isOnlineMode) {
             window.gameUI.showNotification('Проблема з підключенням. Перевірте інтернет.', 'warning');
         }
     });

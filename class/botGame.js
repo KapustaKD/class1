@@ -178,8 +178,8 @@ class BotGame extends EducationalPathGame {
         // Роздаємо класи випадково
         this.assignRandomClasses();
         
-        // Показуємо роздачу класів
-        this.showClassAssignment();
+        // Показуємо вибір аватара перед роздачею класів
+        this.showAvatarSelection();
     }
 
     // Роздача випадкових класів
@@ -192,13 +192,162 @@ class BotGame extends EducationalPathGame {
         });
     }
 
+    // Показ вибору аватара для гравця
+    showAvatarSelection() {
+        const modal = document.getElementById('avatar-selection-modal');
+        if (!modal) {
+            console.error('Модальне вікно вибору аватара не знайдено');
+            // Якщо модальне вікно не знайдено, призначаємо аватари автоматично
+            this.assignAvatars();
+            this.showClassAssignment();
+            return;
+        }
+
+        // Оновлюємо заголовок та текст для локального режиму
+        const title = modal.querySelector('h2');
+        if (title) {
+            title.textContent = 'Оберіть свій аватар';
+        }
+        
+        const readyCounter = document.getElementById('ready-counter');
+        if (readyCounter) {
+            readyCounter.textContent = 'Боти отримають аватари автоматично';
+        }
+
+        // Показуємо модальне вікно
+        modal.classList.remove('hidden');
+        
+        // Заповнюємо сітку аватарів
+        this.populateLocalAvatarGrid();
+        
+        // Налаштовуємо обробники подій
+        this.setupLocalAvatarEventListeners();
+    }
+
+    // Заповнення сітки аватарів для локального режиму
+    populateLocalAvatarGrid() {
+        const avatarGrid = document.getElementById('avatar-grid');
+        if (!avatarGrid) return;
+        
+        avatarGrid.innerHTML = '';
+        
+        // Створюємо 8 аватарів
+        for (let i = 1; i <= 8; i++) {
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'avatar-item cursor-pointer p-2 rounded-lg border-2 border-gray-600 hover:border-yellow-400 transition-colors';
+            avatarDiv.dataset.avatarUrl = `image/chips/avatar${i}.png`;
+            
+            const img = document.createElement('img');
+            img.src = `image/chips/avatar${i}.png`;
+            img.alt = `Аватар ${i}`;
+            img.className = 'w-16 h-16 rounded-full mx-auto';
+            
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'text-center text-sm text-gray-300 mt-2';
+            nameDiv.textContent = 'Вільний';
+            
+            avatarDiv.appendChild(img);
+            avatarDiv.appendChild(nameDiv);
+            avatarGrid.appendChild(avatarDiv);
+        }
+    }
+
+    // Налаштування обробників подій для аватарів в локальному режимі
+    setupLocalAvatarEventListeners() {
+        const avatarItems = document.querySelectorAll('.avatar-item');
+        let selectedAvatar = null;
+        
+        avatarItems.forEach((item) => {
+            item.addEventListener('click', () => {
+                const avatarUrl = item.dataset.avatarUrl;
+                if (avatarUrl) {
+                    // Знімаємо виділення з попереднього аватара
+                    avatarItems.forEach(ai => {
+                        ai.classList.remove('border-yellow-400', 'bg-yellow-400', 'bg-opacity-20');
+                        ai.classList.add('border-gray-600');
+                    });
+                    
+                    // Виділяємо вибраний аватар
+                    item.classList.remove('border-gray-600');
+                    item.classList.add('border-yellow-400', 'bg-yellow-400', 'bg-opacity-20');
+                    
+                    selectedAvatar = avatarUrl;
+                }
+            });
+        });
+        
+        const readyBtn = document.getElementById('player-ready-btn');
+        if (readyBtn) {
+            // Видаляємо старі обробники
+            readyBtn.replaceWith(readyBtn.cloneNode(true));
+            const newReadyBtn = document.getElementById('player-ready-btn');
+            newReadyBtn.addEventListener('click', () => {
+                if (selectedAvatar) {
+                    // Призначаємо аватар гравцю
+                    const humanPlayer = this.players.find(p => !p.isBot);
+                    if (humanPlayer) {
+                        humanPlayer.avatarUrl = selectedAvatar;
+                    }
+                    
+                    // Приховуємо модальне вікно
+                    const modal = document.getElementById('avatar-selection-modal');
+                    if (modal) {
+                        modal.classList.add('hidden');
+                    }
+                    
+                    // Призначаємо аватари ботам та показуємо роздачу класів
+                    this.assignAvatars();
+                    this.showClassAssignment();
+                } else {
+                    alert('Будь ласка, оберіть аватар!');
+                }
+            });
+        }
+    }
+
+    // Призначення аватарів ботам (рандомно)
+    assignAvatars() {
+        // Отримуємо список доступних аватарів
+        const availableAvatars = [];
+        for (let i = 1; i <= 8; i++) {
+            availableAvatars.push(`image/chips/avatar${i}.png`);
+        }
+        
+        // Видаляємо аватар, який обрав гравець
+        const humanPlayer = this.players.find(p => !p.isBot);
+        if (humanPlayer && humanPlayer.avatarUrl) {
+            const index = availableAvatars.indexOf(humanPlayer.avatarUrl);
+            if (index > -1) {
+                availableAvatars.splice(index, 1);
+            }
+        }
+        
+        // Перемішуємо доступні аватари
+        const shuffledAvatars = [...availableAvatars].sort(() => Math.random() - 0.5);
+        
+        // Призначаємо аватари ботам
+        this.bots.forEach((bot, index) => {
+            if (index < shuffledAvatars.length) {
+                bot.avatarUrl = shuffledAvatars[index];
+                console.log(`🎮 Бот ${bot.name} отримав аватар: ${bot.avatarUrl}`);
+            } else {
+                // Якщо аватарів не вистачає, використовуємо перший доступний
+                bot.avatarUrl = availableAvatars[0] || 'image/chips/avatar1.png';
+            }
+        });
+    }
+
     // Показ роздачі класів
     showClassAssignment() {
         let classInfo = '<h3 class="text-2xl font-bold mb-4">Роздача класів:</h3>';
         
         this.players.forEach(player => {
+            const avatarHtml = player.avatarUrl 
+                ? `<img src="${player.avatarUrl}" alt="${player.name}" class="w-8 h-8 rounded-full inline-block mr-2">`
+                : '';
             classInfo += `
                 <div class="mb-2 p-2 bg-gray-100 rounded">
+                    ${avatarHtml}
                     <strong>${player.name}:</strong> ${player.class.name} 
                     (Старт: ${player.class.startPoints} ОО, Модифікатор руху: ${player.class.moveModifier > 0 ? '+' : ''}${player.class.moveModifier})
                 </div>

@@ -509,14 +509,142 @@ class BotGame extends EducationalPathGame {
                 // Для інших гравців обробляємо події автоматично
                 this.handleBotEvent(player, cellData);
             } else {
-                // Для основного гравця показуємо звичайне модальне вікно
-                this.handleSpecialCell(player, cellData);
+                // Для основного гравця - спеціальна обробка для творчих та PvP квестів
+                if (cellData.type === 'creative-quest') {
+                    this.handleHumanCreativeQuest(player, cellData);
+                } else if (cellData.type === 'pvp-quest') {
+                    this.handleHumanPvpQuest(player, cellData);
+                } else {
+                    // Для інших подій показуємо звичайне модальне вікно
+                    this.handleSpecialCell(player, cellData);
+                }
             }
         } else {
             // Якщо події немає, передаємо хід
             setTimeout(() => {
                 this.nextTurn();
             }, this.botDelay);
+        }
+    }
+
+    // Обробка творчого квесту для людини-гравця
+    handleHumanCreativeQuest(player, cellData) {
+        const creativeTypes = Object.keys(this.botResponses.creative);
+        const selectedType = cellData.gameType || creativeTypes[Math.floor(Math.random() * creativeTypes.length)];
+        
+        // Показуємо інтерфейс для здачі роботи
+        const questDescription = this.getCreativeQuestDescription(selectedType);
+        
+        const modalContent = `
+            <h3 class="text-2xl font-bold mb-4">${cellData.questName || 'Творчий конкурс'}</h3>
+            <p class="mb-4 text-lg">${questDescription}</p>
+            <textarea id="creative-submission-input" class="w-full p-3 border border-gray-300 rounded-lg text-black mb-4" rows="5" placeholder="Введіть вашу відповідь тут..."></textarea>
+            <div class="text-center">
+                <button id="submit-creative-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg">
+                    Здати роботу
+                </button>
+            </div>
+        `;
+        
+        this.showQuestModal(cellData.questName || 'Творчий конкурс', modalContent, []);
+        
+        // Налаштовуємо обробник події для кнопки здачі
+        setTimeout(() => {
+            const submitBtn = document.getElementById('submit-creative-btn');
+            const input = document.getElementById('creative-submission-input');
+            
+            if (submitBtn) {
+                submitBtn.addEventListener('click', () => {
+                    const submission = input?.value.trim();
+                    if (!submission) {
+                        alert('Будь ласка, введіть вашу відповідь!');
+                        return;
+                    }
+                    
+                    // Додаємо роботу людини до списку
+                    this.creativeSubmissions.push({
+                        playerId: player.id,
+                        playerName: player.name,
+                        submission: submission,
+                        submissionIndex: this.creativeSubmissions.length
+                    });
+                    
+                    console.log(`✅ ${player.name} здав роботу: ${submission}`);
+                    
+                    // Перевіряємо, чи всі здали роботи
+                    const botPlayer = this.players.find(p => p.isBot);
+                    const botSubmitted = botPlayer && this.creativeSubmissions.some(s => s.playerId === botPlayer.id);
+                    
+                    if (botSubmitted) {
+                        // Всі здали - запускаємо голосування
+                        this.questModal.classList.add('hidden');
+                        this.startCreativeVoting();
+                    } else {
+                        // Бот ще не здав - показуємо повідомлення про очікування
+                        this.showQuestModal('Роботу здано!', 
+                            'Ваша робота здана. Очікуємо роботу від інших гравців...', [
+                                { text: 'Зрозуміло', callback: () => {
+                                    this.questModal.classList.add('hidden');
+                                    // НЕ викликаємо nextTurn - чекаємо на бота
+                                }}
+                            ]);
+                    }
+                });
+            }
+        }, 100);
+    }
+
+    // Отримання опису творчого квесту
+    getCreativeQuestDescription(gameType) {
+        const descriptions = {
+            'great_pedagogical': 'Вам необхідно за 1 хвилину згадати або вигадати найкращий, найсмішніший, найсечогінніший анекдот в історії людства.',
+            'chronicles': 'Вам необхідно вигадати цікаву історію. Кожному гравцеві буде надано 5 спроб написати речення, яке стане логічним продовженням речення попереднього гравця.',
+            'pedagog_mom': 'Вам необхідно за одну хвилину вигадати та коротко описати найкращий спосіб навчити чомусь іншого.'
+        };
+        
+        return descriptions[gameType] || 'Опишіть вашу ідею тут.';
+    }
+
+    // Обробка PvP квесту для людини-гравця
+    handleHumanPvpQuest(player, cellData) {
+        console.log(`🎮 ${player.name} потрапив на PvP квест: ${cellData.gameType}`);
+        
+        const botPlayer = this.players.find(p => p.isBot);
+        if (!botPlayer) {
+            console.error('Бот не знайдений для PvP квесту');
+            setTimeout(() => this.nextTurn(), 500);
+            return;
+        }
+        
+        // Створюємо дані для модального вікна
+        const gameData = {
+            gameState: {
+                players: [player.id, botPlayer.id],
+                gameData: {
+                    description: cellData.questName || 'PvP гра',
+                    gameType: cellData.gameType
+                }
+            }
+        };
+        
+        // Запускаємо відповідну гру залежно від типу
+        switch (cellData.gameType) {
+            case 'tic_tac_toe':
+                this.showTicTacToeModal(gameData);
+                break;
+            case 'rock_paper_scissors':
+                this.showRockPaperScissorsModal(gameData);
+                break;
+            default:
+                // Для інших типів PvP ігор (megabrain, genius, pedagogobot) 
+                // поки що показуємо просте повідомлення
+                this.showQuestModal(`${player.name} - ${cellData.questName}`, 
+                    `Гра ${cellData.gameType} ще не реалізована для локального режиму.`, [
+                        { text: 'Далі', callback: () => {
+                            this.questModal.classList.add('hidden');
+                            setTimeout(() => this.nextTurn(), 500);
+                        }}
+                    ]);
         }
     }
 
@@ -602,6 +730,49 @@ class BotGame extends EducationalPathGame {
             ]);
     }
 
+    // Обробка PvP квестів для ботів
+    handleBotPvpQuest(player, cellData) {
+        console.log(`🎮 ${player.name} потрапив на PvP квест: ${cellData.gameType}`);
+        
+        const humanPlayer = this.players.find(p => !p.isBot);
+        if (!humanPlayer) {
+            console.error('Людина-гравець не знайдена для PvP квесту');
+            setTimeout(() => this.nextTurn(), 500);
+            return;
+        }
+        
+        // Створюємо дані для модального вікна
+        const gameData = {
+            gameState: {
+                players: [humanPlayer.id, player.id],
+                gameData: {
+                    description: cellData.questName || 'PvP гра',
+                    gameType: cellData.gameType
+                }
+            }
+        };
+        
+        // Запускаємо відповідну гру залежно від типу
+        switch (cellData.gameType) {
+            case 'tic_tac_toe':
+                this.showTicTacToeModal(gameData);
+                break;
+            case 'rock_paper_scissors':
+                this.showRockPaperScissorsModal(gameData);
+                break;
+            default:
+                // Для інших типів PvP ігор (megabrain, genius, pedagogobot) 
+                // поки що показуємо просте повідомлення
+                this.showQuestModal(`${player.name} - ${cellData.questName}`, 
+                    `Гра ${cellData.gameType} ще не реалізована для ботів.`, [
+                        { text: 'Далі', callback: () => {
+                            this.questModal.classList.add('hidden');
+                            setTimeout(() => this.nextTurn(), 500);
+                        }}
+                    ]);
+        }
+    }
+
     // Обробка творчих квестів для інших гравців
     handleBotCreativeQuest(player, cellData) {
         const creativeTypes = Object.keys(this.botResponses.creative);
@@ -626,20 +797,24 @@ class BotGame extends EducationalPathGame {
         
         // Перевіряємо, чи всі гравці здали роботи
         const humanPlayer = this.players.find(p => !p.isBot);
-        const allSubmitted = humanPlayer && 
-            this.creativeSubmissions.some(s => s.playerId === humanPlayer.id) &&
-            this.creativeSubmissions.some(s => s.playerId === player.id);
         
-        if (allSubmitted) {
+        // Якщо людина вже здала роботу, запускаємо голосування
+        const humanSubmitted = humanPlayer && this.creativeSubmissions.some(s => s.playerId === humanPlayer.id);
+        
+        if (humanSubmitted) {
             // Всі здали - запускаємо голосування
+            console.log('✅ Всі гравці здали роботи, запускаємо голосування');
             this.startCreativeVoting();
         } else {
-            // Якщо людина ще не здала, чекаємо (бот вже здав)
-            // Якщо це бот і людина вже здала, запускаємо голосування
-            if (humanPlayer && this.creativeSubmissions.some(s => s.playerId === humanPlayer.id)) {
-                this.startCreativeVoting();
-            }
-            // Інакше просто чекаємо на людину (не викликаємо nextTurn)
+            // Людина ще не здала - показуємо повідомлення, що бот здав роботу
+            // і чекаємо на людину (НЕ викликаємо nextTurn)
+            this.showQuestModal(`${player.name} - Творчий конкурс`, 
+                `${player.name} здав свою роботу:\n\n"${botResponse}"\n\nОчікуємо вашої роботи...`, [
+                    { text: 'Зрозуміло', callback: () => {
+                        this.questModal.classList.add('hidden');
+                        // НЕ викликаємо nextTurn - чекаємо на людину
+                    }}
+                ]);
         }
     }
     

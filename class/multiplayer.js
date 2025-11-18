@@ -233,8 +233,9 @@ class MultiplayerGame extends EducationalPathGame {
             this.leaveRoomBtn.addEventListener('click', () => this.leaveRoom());
         }
         
-        // Обробник для кнопки кидка кубика
-        if (this.rollDiceBtn) {
+        // Обробник для кнопки кидка кубика (тільки для онлайн режиму)
+        // В локальному режимі обробник буде встановлено в botGame.js
+        if (this.rollDiceBtn && this.isOnlineMode) {
             this.rollDiceBtn.addEventListener('click', () => this.rollTheDice());
         }
         
@@ -1596,7 +1597,7 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     rollTheDice() {
-        console.log('rollTheDice викликано:', {
+        console.log('rollTheDice викликано (MultiplayerGame):', {
             isOnlineMode: this.isOnlineMode,
             isHost: this.isHost,
             gameActive: this.gameActive,
@@ -1605,6 +1606,12 @@ class MultiplayerGame extends EducationalPathGame {
             myPlayerId: this.playerId,
             currentPlayer: this.players?.[this.currentPlayerIndex]
         });
+        
+        // Якщо це локальний режим, не обробляємо тут - це має робити botGame.js
+        if (!this.isOnlineMode) {
+            console.log('⚠️ rollTheDice викликано в MultiplayerGame для локального режиму - ігноруємо');
+            return;
+        }
         
         // Перевіряємо, чи кнопка активна (для онлайн режиму)
         if (this.rollDiceBtn && this.rollDiceBtn.disabled) {
@@ -1644,11 +1651,8 @@ class MultiplayerGame extends EducationalPathGame {
                 }
                 // Звук не програється для неактивних гравців
             }
-        } else {
-            // Локальний режим - завжди програємо звук
-            this.playDiceSound();
-            super.rollTheDice();
         }
+        // Локальний режим обробляється в botGame.js, тому тут нічого не робимо
     }
     
     handleRemoteDiceRoll(data) {

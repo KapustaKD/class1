@@ -153,7 +153,10 @@ class BotGame extends EducationalPathGame {
             avatarUrl: null,
             isBot: false,
             hasWon: false,
-            hasLost: false
+            hasLost: false,
+            moveModifier: 0,
+            skipTurn: false,
+            extraTurn: false
         });
 
         // Додаємо інших гравців
@@ -169,7 +172,10 @@ class BotGame extends EducationalPathGame {
                 avatarUrl: null,
                 isBot: true,
                 hasWon: false,
-                hasLost: false
+                hasLost: false,
+                moveModifier: 0,
+                skipTurn: false,
+                extraTurn: false
             };
             this.players.push(bot);
             this.bots.push(bot);
@@ -477,6 +483,16 @@ class BotGame extends EducationalPathGame {
     async botRollDice() {
         const player = this.players[this.currentPlayerIndex];
         
+        if (!player) {
+            console.error('❌ Гравець не знайдений!');
+            return;
+        }
+        
+        if (!player.class) {
+            console.error(`❌ Гравець ${player.name} не має класу!`);
+            return;
+        }
+        
         console.log(`🎮 ${player.name} кидає кубик`);
         
         // Відтворюємо звук кубика
@@ -484,13 +500,23 @@ class BotGame extends EducationalPathGame {
         
         // Кидаємо кубик
         const roll = Math.floor(Math.random() * 6) + 1;
-        let move = roll + player.class.moveModifier + player.moveModifier;
+        
+        // Обчислюємо рух з перевірками
+        const classModifier = (player.class && typeof player.class.moveModifier === 'number') ? player.class.moveModifier : 0;
+        const playerModifier = (typeof player.moveModifier === 'number') ? player.moveModifier : 0;
+        let move = roll + classModifier + playerModifier;
         
         if (player.class.id === 'peasant') {
             move = Math.max(1, move);
         }
+        
+        // Перевіряємо, чи move валідний
+        if (isNaN(move) || move <= 0) {
+            console.error(`❌ Невірний рух: ${move}, використовуємо значення за замовчуванням`);
+            move = roll; // Використовуємо тільки значення кубика
+        }
 
-        console.log(`🎮 ${player.name} кинув ${roll}, рух: ${move}`);
+        console.log(`🎮 ${player.name} кинув ${roll}, рух: ${move} (клас: ${classModifier}, гравець: ${playerModifier})`);
 
         // Показуємо анімацію кубика
         const rotations = {

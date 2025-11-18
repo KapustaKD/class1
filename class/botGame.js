@@ -407,20 +407,38 @@ class BotGame extends EducationalPathGame {
         this.gameActive = true;
         
         // Налаштовуємо обробник події для кнопки кидання кубика
-        // Використовуємо setTimeout, щоб переконатися, що DOM готовий
+        // Використовуємо setTimeout, щоб переконатися, що DOM готовий і всі інші обробники вже прикріплені
         setTimeout(() => {
             this.rollDiceBtn = document.getElementById('roll-dice-btn');
             if (this.rollDiceBtn) {
-                // Додаємо обробник події
-                this.rollDiceBtn.addEventListener('click', () => {
+                // Видаляємо всі старі обробники подій, клонуючи кнопку
+                // Це гарантує, що обробники з multiplayer.js будуть видалені
+                const parent = this.rollDiceBtn.parentNode;
+                if (parent) {
+                    const newBtn = this.rollDiceBtn.cloneNode(true);
+                    parent.replaceChild(newBtn, this.rollDiceBtn);
+                    this.rollDiceBtn = newBtn;
+                    console.log('🔄 Кнопка клонована для видалення старих обробників');
+                }
+                
+                // Додаємо новий обробник події з використанням capture phase для пріоритету
+                this.rollDiceBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Зупиняємо поширення події
                     const currentPlayer = this.players[this.currentPlayerIndex];
                     // Перевіряємо, чи кнопка не disabled та гра активна, і чи це не бот
-                    if (this.gameActive && !this.rollDiceBtn.disabled && !currentPlayer.isBot) {
-                        console.log('🎲 Гравець натиснув кнопку кидання кубика');
+                    if (this.gameActive && !this.rollDiceBtn.disabled && currentPlayer && !currentPlayer.isBot) {
+                        console.log('🎲 Гравець натиснув кнопку кидання кубика (BotGame)');
                         this.rollTheDice();
+                    } else {
+                        console.log('⚠️ Кнопка кидання кубика заблокована або це не хід гравця', {
+                            gameActive: this.gameActive,
+                            disabled: this.rollDiceBtn.disabled,
+                            currentPlayer: currentPlayer,
+                            isBot: currentPlayer?.isBot
+                        });
                     }
-                });
-                console.log('✅ Обробник події для кнопки кидання кубика налаштовано');
+                }, true); // Використовуємо capture phase для пріоритету
+                console.log('✅ Обробник події для кнопки кидання кубика налаштовано (BotGame)');
                 
                 // Встановлюємо стан кнопки кидання кубика
                 const currentPlayer = this.players[this.currentPlayerIndex];

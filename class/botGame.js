@@ -467,9 +467,21 @@ class BotGame extends EducationalPathGame {
 
     // Обробка ходу іншого гравця
     async handleBotTurn() {
+        // Перевіряємо, чи це дійсно хід бота
+        if (!this.gameActive) {
+            console.log('⚠️ Гра не активна, handleBotTurn скасовано');
+            return;
+        }
+        
         const currentPlayer = this.players[this.currentPlayerIndex];
         
-        if (!currentPlayer.isBot || !this.gameActive) {
+        if (!currentPlayer) {
+            console.error('❌ Поточний гравець не знайдений');
+            return;
+        }
+        
+        if (!currentPlayer.isBot) {
+            console.log(`⚠️ Це не хід бота (${currentPlayer.name}), handleBotTurn скасовано`);
             return;
         }
 
@@ -1056,7 +1068,7 @@ class BotGame extends EducationalPathGame {
                             this.questModal.classList.add('hidden');
                             setTimeout(() => this.nextTurn(), 500);
                         }}
-                    ]);
+                    ], 'image/modal_window/reincarnation.jpg');
                 return;
             }
         }
@@ -1071,7 +1083,7 @@ class BotGame extends EducationalPathGame {
                     this.questModal.classList.add('hidden');
                     setTimeout(() => this.nextTurn(), 500);
                 }}
-            ]);
+            ], 'image/modal_window/reincarnation.jpg');
     }
 
     // Обробка повстання машин для інших гравців
@@ -1087,7 +1099,7 @@ class BotGame extends EducationalPathGame {
                         this.questModal.classList.add('hidden');
                         setTimeout(() => this.nextTurn(), 500);
                     }}
-                ]);
+                ], 'image/modal_window/robot.png');
         } else {
             this.updatePoints(player, -50, `Програв у повстанні машин`);
             this.showQuestModal(`${player.name} - Повстання машин`, 
@@ -1096,7 +1108,7 @@ class BotGame extends EducationalPathGame {
                         this.questModal.classList.add('hidden');
                         setTimeout(() => this.nextTurn(), 500);
                     }}
-                ]);
+                ], 'image/modal_window/robot.png');
         }
     }
 
@@ -1155,7 +1167,7 @@ class BotGame extends EducationalPathGame {
                     this.questModal.classList.add('hidden');
                     setTimeout(() => this.nextTurn(), 500);
                 }}
-            ]);
+            ], 'image/modal_window/bypass_road.png');
     }
 
     // Обробка амфітеатру для ботів
@@ -1171,7 +1183,7 @@ class BotGame extends EducationalPathGame {
                         this.questModal.classList.add('hidden');
                         setTimeout(() => this.nextTurn(), 500);
                     }}
-                ]);
+                ], 'image/modal_window/amfiteatr.jpg');
         } else {
             // Селянин не може потрапити
             this.showQuestModal(`${player.name} - Амфітеатр`, 
@@ -1180,7 +1192,7 @@ class BotGame extends EducationalPathGame {
                         this.questModal.classList.add('hidden');
                         setTimeout(() => this.nextTurn(), 500);
                     }}
-                ]);
+                ], 'image/modal_window/amfiteatr.jpg');
         }
     }
 
@@ -1210,7 +1222,7 @@ class BotGame extends EducationalPathGame {
                 this.questModal.classList.add('hidden');
                 setTimeout(() => this.nextTurn(), 500);
             }}
-        ]);
+        ], 'image/modal_window/shinok.jpg');
     }
 
     // Обробка казино для ботів
@@ -1239,7 +1251,7 @@ class BotGame extends EducationalPathGame {
                 this.questModal.classList.add('hidden');
                 setTimeout(() => this.nextTurn(), 500);
             }}
-        ]);
+        ], 'image/modal_window/casino.jpg');
     }
 
     // Перевизначений метод nextTurn для інших гравців
@@ -1281,19 +1293,29 @@ class BotGame extends EducationalPathGame {
         const nextPlayer = this.players[this.currentPlayerIndex];
         
         if (nextPlayer.isBot) {
-            // Якщо наступний гравець - інший гравець, автоматично кидаємо кубик
+            // Якщо наступний гравець - бот, автоматично кидаємо кубик
             if (this.rollDiceBtn) {
-            this.rollDiceBtn.disabled = true;
+                this.rollDiceBtn.disabled = true;
             }
+            // Додаємо затримку перед кидком кубика ботом
+            console.log(`⏳ Очікуємо ${this.botDelay}мс перед ходом бота ${nextPlayer.name}`);
             setTimeout(() => {
-                this.handleBotTurn();
+                // Перевіряємо ще раз, чи це дійсно хід бота (на випадок, якщо щось змінилося)
+                const currentPlayerCheck = this.players[this.currentPlayerIndex];
+                if (currentPlayerCheck && currentPlayerCheck.isBot && this.gameActive) {
+                    this.handleBotTurn();
+                } else {
+                    console.log('⚠️ Стан змінився, handleBotTurn скасовано');
+                }
             }, this.botDelay);
         } else {
             // Якщо наступний гравець - основний гравець, дозволяємо кинути кубик
             if (this.rollDiceBtn) {
-            this.rollDiceBtn.disabled = false;
+                this.rollDiceBtn.disabled = false;
                 console.log('✅ Кнопка кидання кубика активна для гравця');
             }
+            // Переконаємося, що бот не кидає кубик
+            console.log(`✅ Хід гравця-людини (${nextPlayer.name}), бот не кидає кубик`);
         }
     }
 

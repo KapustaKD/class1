@@ -1145,7 +1145,19 @@ class EducationalPathGame {
         
         const player = this.players[this.currentPlayerIndex];
         if (!player) {
-            console.error(`❌ Гравець з індексом ${this.currentPlayerIndex} не знайдений!`);
+            console.error(`❌ Гравець з індексом ${this.currentPlayerIndex} не знайдений!`, {
+                currentPlayerIndex: this.currentPlayerIndex,
+                playersLength: this.players?.length,
+                players: this.players
+            });
+            return;
+        }
+        
+        if (!player.class) {
+            console.error(`❌ Гравець ${player.name} не має класу!`, {
+                player,
+                playerClasses: this.playerClasses
+            });
             return;
         }
 
@@ -1242,11 +1254,28 @@ class EducationalPathGame {
             console.log(`🎲 Всі спеціальні клітинки використані, кидаємо випадкове число: ${roll}`);
         }
     
-        let move = roll + player.class.moveModifier + player.moveModifier;
-    
-        if (player.class.id === 'peasant') move = Math.max(1, move);
+        // Обчислюємо рух з перевірками
+        const classModifier = (player.class && typeof player.class.moveModifier === 'number') ? player.class.moveModifier : 0;
+        const playerModifier = (typeof player.moveModifier === 'number') ? player.moveModifier : 0;
+        let move = roll + classModifier + playerModifier;
         
-       
+        console.log(`🎲 Обчислення руху для ${player.name}:`, {
+            roll,
+            classModifier,
+            playerModifier,
+            move,
+            playerClass: player.class?.name || 'немає класу'
+        });
+    
+        if (player.class?.id === 'peasant') {
+            move = Math.max(1, move);
+        }
+        
+        // Перевіряємо, чи move валідний
+        if (isNaN(move) || move <= 0) {
+            console.error(`❌ Невірний рух: ${move}, використовуємо значення за замовчуванням`);
+            move = roll; // Використовуємо тільки значення кубика
+        }
         
         const rotations = {
     
@@ -1281,12 +1310,27 @@ class EducationalPathGame {
        
     
         async movePlayer(player, steps) {
+        // Перевіряємо валідність параметрів
+        if (!player) {
+            console.error('❌ Гравець не передано в movePlayer');
+            return;
+        }
+        
+        if (isNaN(steps) || steps <= 0) {
+            console.error(`❌ Невірна кількість кроків: ${steps}`);
+            return;
+        }
+        
+        // Переконаємося, що позиція ініціалізована
+        if (typeof player.position !== 'number' || isNaN(player.position)) {
+            player.position = 0;
+        }
     
             const startPos = player.position;
     
             const endPos = Math.min(startPos + steps, this.BOARD_SIZE);
     
-           
+            console.log(`📍 movePlayer: ${player.name} з ${startPos} до ${endPos}, кроків: ${steps}`);
     
             // Використовуємо нову плавну анімацію
     
@@ -1685,9 +1729,23 @@ class EducationalPathGame {
         // Плавна анімація руху фішки покроково
     
     async animatePawnMovement(player, fromPosition, toPosition, steps) {
+        // Перевіряємо валідність параметрів
+        if (isNaN(fromPosition)) {
+            console.error(`❌ Невірна початкова позиція: ${fromPosition}`);
+            fromPosition = 0;
+        }
+        if (isNaN(toPosition)) {
+            console.error(`❌ Невірна кінцева позиція: ${toPosition}`);
+            toPosition = fromPosition;
+        }
+        if (isNaN(steps) || steps <= 0) {
+            console.error(`❌ Невірна кількість кроків: ${steps}`);
+            steps = Math.max(1, toPosition - fromPosition);
+        }
+        
         // Виправляємо негативну початкову позицію
         fromPosition = Math.max(0, fromPosition);
-        console.log(`Анімація руху ${player.name} з ${fromPosition} до ${toPosition}, кроків: ${steps}`);
+        console.log(`🎬 Анімація руху ${player.name} з ${fromPosition} до ${toPosition}, кроків: ${steps}`);
     
            
     

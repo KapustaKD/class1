@@ -1132,6 +1132,23 @@ class EducationalPathGame {
             return;
         }
 
+        // Перевіряємо, чи є гравці та чи гра активна
+        if (!this.players || this.players.length === 0) {
+            console.error('❌ Гравці не ініціалізовані!');
+            return;
+        }
+        
+        if (!this.gameActive) {
+            console.error('❌ Гра не активна!');
+            return;
+        }
+        
+        const player = this.players[this.currentPlayerIndex];
+        if (!player) {
+            console.error(`❌ Гравець з індексом ${this.currentPlayerIndex} не знайдений!`);
+            return;
+        }
+
         this.rollDiceBtn.disabled = true;
         
         // Ініціалізуємо лічильник, якщо не ініціалізовано
@@ -1173,7 +1190,6 @@ class EducationalPathGame {
         let roll = Math.floor(Math.random() * 6) + 1;
         
         // Логіка підлаштовування кубика для попадання на спеціальні клітинки
-        const player = this.players[this.currentPlayerIndex];
         const currentPosition = player.position;
         
         // Список спеціальних клітинок з подіями

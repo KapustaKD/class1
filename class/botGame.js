@@ -5,7 +5,8 @@ class BotGame extends EducationalPathGame {
         this.bots = [];
         this.botResponses = this.initializeBotResponses();
         this.isBotTurn = false;
-        this.botDelay = 1500; // Затримка між ходами ботів (1.5 секунди)
+        this.botDelay = 3000; // Затримка між ходами ботів (3 секунди)
+        this.isBotTurnProcessing = false; // Прапорець для запобігання одночасним ходам ботів
         this.isModalOpen = false; // Прапорець для відстеження відкритих модальних вікон
         this.modalButtonClicked = false; // Прапорець для відстеження натискань кнопок у модальних вікнах
         
@@ -475,6 +476,12 @@ class BotGame extends EducationalPathGame {
 
     // Обробка ходу іншого гравця
     async handleBotTurn() {
+        // Захист від одночасних викликів
+        if (this.isBotTurnProcessing) {
+            console.log('⚠️ Хід бота вже обробляється, скасовуємо дублікат');
+            return;
+        }
+        
         // Перевіряємо, чи це дійсно хід бота
         if (!this.gameActive) {
             console.log('⚠️ Гра не активна, handleBotTurn скасовано');
@@ -493,10 +500,21 @@ class BotGame extends EducationalPathGame {
             return;
         }
 
-        console.log(`🎮 Хід гравця: ${currentPlayer.name}`);
+        // Встановлюємо прапорець обробки
+        this.isBotTurnProcessing = true;
         
-        // Кидаємо кубик для гравця
-        await this.botRollDice();
+        console.log(`🎮 Хід гравця: ${currentPlayer.name} (індекс: ${this.currentPlayerIndex})`);
+        
+        try {
+            // Кидаємо кубик для гравця
+            await this.botRollDice();
+        } finally {
+            // Скидаємо прапорець після завершення ходу
+            // Затримка, щоб наступний бот не почав одразу
+            setTimeout(() => {
+                this.isBotTurnProcessing = false;
+            }, 500);
+        }
     }
 
     // Кидання кубика іншим гравцем
@@ -597,9 +615,20 @@ class BotGame extends EducationalPathGame {
             // Якщо події немає, передаємо хід тільки якщо це бот
             // Якщо це людина, не викликаємо nextTurn - вона сама викличе його після руху
             if (player.isBot) {
-            setTimeout(() => {
-                this.nextTurn();
-            }, this.botDelay);
+                console.log(`✅ ${player.name} завершив хід без події, передаємо хід через ${this.botDelay}мс`);
+                setTimeout(() => {
+                    // Перевіряємо, чи це дійсно той самий гравець перед викликом nextTurn
+                    const currentCheck = this.players[this.currentPlayerIndex];
+                    if (currentCheck && currentCheck.id === player.id && this.gameActive) {
+                        this.nextTurn();
+                    } else {
+                        console.log('⚠️ Гравець змінився перед nextTurn, скасовуємо', {
+                            expectedId: player.id,
+                            currentId: currentCheck?.id,
+                            currentIndex: this.currentPlayerIndex
+                        });
+                    }
+                }, this.botDelay);
             }
             // Для людини nextTurn викликається в базовому класі після руху
         }
@@ -1501,13 +1530,26 @@ class BotGame extends EducationalPathGame {
             return;
         }
 
+        // Переходимо до наступного гравця, пропускаючи тих, хто програв
+        let attempts = 0;
+        const maxAttempts = this.players.length; // Захист від нескінченного циклу
+        
         do {
             this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
+            attempts++;
+            
+            if (attempts >= maxAttempts) {
+                console.error('❌ Всі гравці програли або помилка в циклі nextTurn');
+                break;
+            }
         } while (this.players[this.currentPlayerIndex].hasLost);
 
         this.updateUI();
 
         const nextPlayer = this.players[this.currentPlayerIndex];
+        
+        // Логування для діагностики
+        console.log(`🔄 Перехід до наступного гравця: ${nextPlayer.name} (індекс: ${this.currentPlayerIndex}, всього гравців: ${this.players.length}, бот: ${nextPlayer.isBot})`);
         
         if (nextPlayer.isBot) {
             // Якщо наступний гравець - бот, автоматично кидаємо кубик
@@ -1718,15 +1760,26 @@ class BotGame extends EducationalPathGame {
 
             // Якщо це хід бота, запускаємо його
             if (currentPlayer && currentPlayer.isBot) {
+                // Перевіряємо, чи хід бота не обробляється вже
+                if (this.isBotTurnProcessing) {
+                    console.log('⚠️ Хід бота вже обробляється, checkAndContinueBotTurn скасовано');
+                    return;
+                }
+                
                 console.log(`🔄 Продовжуємо хід бота ${currentPlayer.name} після закриття вікна`);
                 // Використовуємо невелику затримку для плавності
                 setTimeout(() => {
                     // Перевіряємо ще раз перед викликом handleBotTurn
                     const finalCheck = this.players[this.currentPlayerIndex];
-                    if (finalCheck && finalCheck.isBot && this.gameActive && !this.isModalOpen && this.questModal.classList.contains('hidden')) {
+                    if (finalCheck && finalCheck.isBot && this.gameActive && !this.isModalOpen && this.questModal.classList.contains('hidden') && !this.isBotTurnProcessing) {
                         this.handleBotTurn();
                     } else {
-                        console.log('⚠️ Стан змінився перед handleBotTurn, скасовуємо');
+                        console.log('⚠️ Стан змінився перед handleBotTurn, скасовуємо', {
+                            isBot: finalCheck?.isBot,
+                            gameActive: this.gameActive,
+                            isModalOpen: this.isModalOpen,
+                            isBotTurnProcessing: this.isBotTurnProcessing
+                        });
                     }
                 }, 300);
             } else {

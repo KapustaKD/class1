@@ -135,11 +135,41 @@ function setupModeButtons() {
 
 // Глобальні функції для використання в HTML
 window.startLocalGame = function() {
-    if (window.botGame) {
-        window.botGame.startLocalBotGame();
+    // Показуємо попередження про локальний режим ПЕРЕД створенням гри
+    const warningContent = `
+        <div class="text-center">
+            <h3 class="text-2xl font-bold mb-4 text-yellow-400">⚠️ Попередження</h3>
+            <p class="text-lg mb-4 text-white">
+                Локальний режим гри знаходиться в стадії розробки і може містити баги.
+            </p>
+            <p class="text-lg mb-6 text-white">
+                Ви впевнені, що хочете продовжити?
+            </p>
+        </div>
+    `;
+    
+    // Використовуємо базовий клас для показу модального вікна
+    // EducationalPathGame доступний глобально через window.EducationalPathGame
+    if (window.EducationalPathGame) {
+        const tempGame = new window.EducationalPathGame(true);
+        tempGame.showQuestModal('Локальний режим', warningContent, [
+            { text: 'Так, продовжити', callback: () => {
+                tempGame.questModal.classList.add('hidden');
+                // Після підтвердження створюємо гру
+                if (window.botGame) {
+                    window.botGame.startLocalBotGame();
+                } else {
+                    window.botGame = new BotGame();
+                    window.botGame.startLocalBotGame();
+                }
+            }},
+            { text: 'Ні, скасувати', callback: () => {
+                tempGame.questModal.classList.add('hidden');
+                // Після скасування користувач залишається на виборі режимів
+            }}
+        ]);
     } else {
-        window.botGame = new BotGame();
-        window.botGame.startLocalBotGame();
+        console.error('EducationalPathGame не знайдено. Переконайтеся, що game.js завантажено перед main.js');
     }
 };
 

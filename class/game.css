@@ -637,7 +637,10 @@ body {
 /* Затемнення для модальних вікон з фоновим зображенням (як у реінкарнації) */
 #quest-modal-content[style*="background-image"],
 .modal-content[style*="background-image"] {
-    position: relative;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
 }
 
 #quest-modal-content[style*="background-image"]::before,

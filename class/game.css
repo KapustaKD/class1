@@ -637,7 +637,10 @@ body {
 /* Затемнення для модальних вікон з фоновим зображенням (як у реінкарнації) */
 #quest-modal-content[style*="background-image"],
 .modal-content[style*="background-image"] {
-    position: relative;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
 }
 
 #quest-modal-content[style*="background-image"]::before,
@@ -1228,9 +1231,7 @@ body.glassmorphism-bg {
 }
 
 /* Менше модальне вікно для хрестиків-нуликів */
-.glassmorphism-modal-small {
-    max-width: 500px !important;
-}
+/* Видалено max-width з .glassmorphism-modal-small для правильного центрування */
 
 /* Забезпечуємо центрування вмісту в glassmorphism-modal-small */
 .glassmorphism-modal-small .glassmorphism-content-tictactoe-small,
@@ -1238,7 +1239,7 @@ body.glassmorphism-bg {
 .glassmorphism-modal-small .glassmorphism-content-robot-small {
     margin: auto;
     width: 90%;
-    max-width: 100%;
+    max-width: 500px;
 }
 
 /* Спеціальні стилі для Мегамозок - світліша картинка */
@@ -2043,4 +2044,3 @@ body.glassmorphism-bg {
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
 }
-

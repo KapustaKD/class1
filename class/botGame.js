@@ -439,56 +439,36 @@ class BotGame extends EducationalPathGame {
         this.gameActive = true;
         
         // Налаштовуємо обробник події для кнопки кидання кубика
-        // Використовуємо setTimeout, щоб переконатися, що DOM готовий і всі інші обробники вже прикріплені
+        // Використовуємо setTimeout, щоб переконатися, що DOM готовий
         setTimeout(() => {
             this.rollDiceBtn = document.getElementById('roll-dice-btn');
             if (this.rollDiceBtn) {
-                // Видаляємо всі старі обробники подій, клонуючи кнопку
-                // Це гарантує, що обробники з multiplayer.js будуть видалені
-                const parent = this.rollDiceBtn.parentNode;
-                if (parent) {
-                    const newBtn = this.rollDiceBtn.cloneNode(true);
-                    parent.replaceChild(newBtn, this.rollDiceBtn);
-                    this.rollDiceBtn = newBtn;
-                    console.log('🔄 Кнопка клонована для видалення старих обробників');
-                }
-                
-                // Додаємо новий обробник події з використанням capture phase для пріоритету
-                this.rollDiceBtn.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Зупиняємо поширення події
+                // Пряме присвоєння переписує будь-які попередні обробники
+                this.rollDiceBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    
+                    // Перевірка черги
                     const currentPlayer = this.players[this.currentPlayerIndex];
-                    // Перевіряємо, чи кнопка не disabled та гра активна, і чи це не бот
                     if (this.gameActive && !this.rollDiceBtn.disabled && currentPlayer && !currentPlayer.isBot) {
-                        console.log('🎲 Гравець натиснув кнопку кидання кубика (BotGame)');
+                        console.log('🎲 Гравець кидає кубик');
                         this.rollTheDice();
-                    } else {
-                        console.log('⚠️ Кнопка кидання кубика заблокована або це не хід гравця', {
-                            gameActive: this.gameActive,
-                            disabled: this.rollDiceBtn.disabled,
-                            currentPlayer: currentPlayer,
-                            isBot: currentPlayer?.isBot
-                        });
                     }
-                }, true); // Використовуємо capture phase для пріоритету
-                console.log('✅ Обробник події для кнопки кидання кубика налаштовано (BotGame)');
+                };
                 
-                // Встановлюємо стан кнопки кидання кубика
+                // Оновлюємо стан кнопки
+                this.updateDiceButtonState();
+                
+                // Якщо перший хід бота, автоматично кидаємо кубик
                 const currentPlayer = this.players[this.currentPlayerIndex];
-                if (currentPlayer.isBot) {
-                    // Якщо перший хід бота, блокуємо кнопку та автоматично кидаємо кубик
-                    this.rollDiceBtn.disabled = true;
-            setTimeout(() => {
-                this.handleBotTurn();
-            }, 1000);
-                } else {
-                    // Якщо перший хід людини-гравця, дозволяємо кинути кубик
-                    this.rollDiceBtn.disabled = false;
-                    console.log('✅ Кнопка кидання кубика активна для гравця');
-        }
+                if (currentPlayer && currentPlayer.isBot) {
+                    setTimeout(() => {
+                        this.handleBotTurn();
+                    }, 1000);
+                }
             } else {
                 console.error('❌ Кнопка roll-dice-btn не знайдена після затримки!');
             }
-        }, 200);
+        }, 100);
     }
 
     // Обробка ходу іншого гравця
@@ -840,14 +820,9 @@ class BotGame extends EducationalPathGame {
     handleBotEvent(player, cellData) {
         console.log(`🎮 ${player.name} обробляє подію: ${cellData.type}`);
         
-        // Спочатку показуємо подію без відповіді бота
+        // Показуємо прев'ю і чекаємо натискання "Далі"
+        // НЕ використовуємо setTimeout тут. Нехай гравець прочитає і натисне кнопку.
         this.showBotEventPreview(player, cellData);
-        
-        // Через 2-3 секунди показуємо відповідь бота
-        const delay = 2000 + Math.random() * 1000; // 2-3 секунди
-        setTimeout(() => {
-            this.processBotEvent(player, cellData);
-        }, delay);
     }
     
     // Показ попереднього перегляду події для бота
@@ -902,7 +877,14 @@ class BotGame extends EducationalPathGame {
         }
         
         if (previewText) {
-            this.showQuestModal(`${player.name} - Подія`, previewText, [], backgroundImage);
+            // Додаємо кнопку, яка явно запускає обробку події
+            this.showQuestModal(`${player.name} - Подія`, previewText, [
+                { text: 'Далі', callback: () => {
+                    // Закриваємо це вікно і переходимо до логіки події
+                    this.questModal.classList.add('hidden'); 
+                    this.processBotEvent(player, cellData); 
+                }}
+            ], backgroundImage);
         }
     }
     
@@ -1513,10 +1495,8 @@ class BotGame extends EducationalPathGame {
         
         if (nextPlayer.isBot) {
             // Якщо наступний гравець - бот, автоматично кидаємо кубик
-            if (this.rollDiceBtn) {
-                this.rollDiceBtn.disabled = true;
-                this.rollDiceBtn.textContent = `Хід: ${nextPlayer.name}`;
-            }
+            this.updateDiceButtonState();
+            
             // Перевіряємо, чи немає відкритих модальних вікон
             if (this.isModalOpen || !this.questModal.classList.contains('hidden')) {
                 console.log('⏸️ Модальне вікно відкрите, чекаємо...');
@@ -1548,12 +1528,7 @@ class BotGame extends EducationalPathGame {
             }, this.botDelay);
         } else {
             // Якщо наступний гравець - основний гравець, дозволяємо кинути кубик
-            if (this.rollDiceBtn) {
-                this.rollDiceBtn.disabled = false;
-                this.rollDiceBtn.textContent = 'Кинути кубик';
-                console.log('✅ Кнопка кидання кубика активна для гравця');
-            }
-            // Переконаємося, що бот не кидає кубик
+            this.updateDiceButtonState();
             console.log(`✅ Хід гравця-людини (${nextPlayer.name}), бот не кидає кубик`);
         }
     }
@@ -1571,6 +1546,26 @@ class BotGame extends EducationalPathGame {
         await super.rollTheDice();
     }
 
+    // Оновлення стану кнопки кидання кубика
+    updateDiceButtonState() {
+        if (!this.rollDiceBtn) return;
+        
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        const isHumanTurn = currentPlayer && !currentPlayer.isBot;
+        
+        if (isHumanTurn) {
+            this.rollDiceBtn.disabled = false;
+            this.rollDiceBtn.textContent = 'Кинути кубик';
+            this.rollDiceBtn.style.opacity = '1';
+            this.rollDiceBtn.style.cursor = 'pointer';
+        } else {
+            this.rollDiceBtn.disabled = true;
+            this.rollDiceBtn.textContent = `Хід: ${currentPlayer ? currentPlayer.name : 'Бота'}`;
+            this.rollDiceBtn.style.opacity = '0.5';
+            this.rollDiceBtn.style.cursor = 'not-allowed';
+        }
+    }
+
     // Перевизначений метод showQuestModal для встановлення прапорця isModalOpen
     showQuestModal(title, text, buttons, backgroundImageUrl = null) {
         // Встановлюємо прапорець, що модальне вікно відкрите
@@ -1582,21 +1577,21 @@ class BotGame extends EducationalPathGame {
         // Оновлюємо всі кнопки, щоб вони встановлювали isModalOpen = false при закритті
         setTimeout(() => {
             buttons.forEach((btn, index) => {
-                const originalCallback = btn.callback;
-                if (originalCallback) {
-                    const button = document.getElementById(`modal-btn-${index}`);
-                    if (button) {
-                        button.onclick = () => {
-                            this.isModalOpen = false;
-                            if (originalCallback) {
-                                originalCallback();
-                            }
-                            // Після закриття модального вікна перевіряємо, чи потрібно передати хід боту
-                            setTimeout(() => {
-                                this.checkAndContinueBotTurn();
-                            }, 100);
-                        };
-                    }
+                const button = document.getElementById(`modal-btn-${index}`);
+                if (button) {
+                    // Повністю перезаписуємо onclick, щоб прибрати старі обробники
+                    button.onclick = (e) => {
+                        // Зупиняємо спливання подій
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Виконуємо дію кнопки
+                        if (btn.callback) btn.callback();
+                        
+                        // Закриваємо вікно та передаємо хід
+                        this.questModal.classList.add('hidden');
+                        this.checkAndContinueBotTurn(); 
+                    };
                 }
             });
         }, 100);
@@ -1608,16 +1603,16 @@ class BotGame extends EducationalPathGame {
         
         const currentPlayer = this.players[this.currentPlayerIndex];
         
-        // Якщо це хід бота і модальне вікно закрите, продовжуємо хід бота
-        if (currentPlayer && currentPlayer.isBot && !this.isModalOpen && this.questModal.classList.contains('hidden')) {
-            console.log(`🔄 Продовжуємо хід бота ${currentPlayer.name} після закриття модального вікна`);
+        // Примусово скидаємо прапорець, бо ми точно знаємо, що закрили вікно
+        this.isModalOpen = false;
+
+        // Якщо це хід бота, запускаємо його
+        if (currentPlayer && currentPlayer.isBot) {
+            console.log(`🔄 Продовжуємо хід бота ${currentPlayer.name} після закриття вікна`);
+            // Використовуємо невелику затримку для плавності
             setTimeout(() => {
-                // Перевіряємо ще раз перед викликом
-                const playerCheck = this.players[this.currentPlayerIndex];
-                if (playerCheck && playerCheck.isBot && this.gameActive && !this.isModalOpen) {
-                    this.handleBotTurn();
-                }
-            }, this.botDelay);
+                this.handleBotTurn();
+            }, 500);
         }
     }
 

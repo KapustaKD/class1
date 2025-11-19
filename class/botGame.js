@@ -551,8 +551,18 @@ class BotGame extends EducationalPathGame {
         setTimeout(async () => {
             this.diceInner.style.transform = `${rotations[roll]} translateZ(40px)`;
             
-            // Рухаємо гравця
+            // Зберігаємо початкову позицію перед рухом
+            const startPos = player.position;
+            
+            // Рухаємо гравця (всередині movePlayer позиція оновлюється після анімації)
             await this.movePlayer(player, move);
+            
+            // Перевіряємо, чи позиція не змінилася назад (захист від багів)
+            if (player.position < startPos) {
+                console.warn(`⚠️ Позиція гравця ${player.name} зменшилася з ${startPos} до ${player.position}, виправляємо...`);
+                player.position = startPos + move;
+                this.updatePawnPosition(player);
+            }
             
             // Перевіряємо події (nextTurn викликається всередині checkCell, якщо немає події)
             this.checkCell(player);
@@ -962,7 +972,7 @@ class BotGame extends EducationalPathGame {
         
         this.updatePoints(player, quest.reward, quest.title);
         
-        // Показуємо результат для людини
+        // Показуємо результат для людини (з автоматичним закриттям для бота)
         this.showQuestModal(`${player.name} - ${quest.title}`, 
             `${quest.description}\n\nОтримано: +${quest.reward} ОО`, [
                 { text: 'Далі', callback: () => {
@@ -970,7 +980,7 @@ class BotGame extends EducationalPathGame {
                     this.isModalOpen = false;
                     setTimeout(() => this.nextTurn(), 500);
                 }}
-            ], 'image/modal_window/event_1.jpg');
+            ], 'image/modal_window/event_1.jpg', true);
     }
 
     // Обробка PvP квестів для ботів
@@ -1208,7 +1218,7 @@ class BotGame extends EducationalPathGame {
                     this.isModalOpen = false;
                     setTimeout(() => this.nextTurn(), 500);
                 }}
-            ], 'image/modal_window/owl.png');
+            ], 'image/modal_window/owl.png', true);
     }
 
     // Обробка веб-новела для інших гравців
@@ -1223,7 +1233,7 @@ class BotGame extends EducationalPathGame {
                     this.isModalOpen = false;
                     setTimeout(() => this.nextTurn(), 500);
                 }}
-            ], 'image/modal_window/event_2.jpg');
+            ], 'image/modal_window/event_2.jpg', true);
     }
 
     // Обробка обхідного шляху для інших гравців
@@ -1239,7 +1249,7 @@ class BotGame extends EducationalPathGame {
                     this.isModalOpen = false;
                     setTimeout(() => this.nextTurn(), 500);
                 }}
-            ], 'image/modal_window/bypass_road.png');
+            ], 'image/modal_window/bypass_road.png', true);
     }
 
     // Обробка реінкарнації для інших гравців
@@ -1262,7 +1272,7 @@ class BotGame extends EducationalPathGame {
                             this.isModalOpen = false;
                             setTimeout(() => this.nextTurn(), 500);
                         }}
-                    ], 'image/modal_window/reincarnation.jpg');
+                    ], 'image/modal_window/reincarnation.jpg', true);
                 return;
             }
         }
@@ -1278,7 +1288,7 @@ class BotGame extends EducationalPathGame {
                     this.isModalOpen = false;
                     setTimeout(() => this.nextTurn(), 500);
                 }}
-            ], 'image/modal_window/reincarnation.jpg');
+            ], 'image/modal_window/reincarnation.jpg', true);
     }
 
     // Обробка повстання машин для інших гравців
@@ -1292,18 +1302,20 @@ class BotGame extends EducationalPathGame {
                 `${player.name} вирішив боротися і переміг!\n\nОтримано: +100 ОО`, [
                     { text: 'Далі', callback: () => {
                         this.questModal.classList.add('hidden');
+                        this.isModalOpen = false;
                         setTimeout(() => this.nextTurn(), 500);
                     }}
-                ], 'image/modal_window/robot.png');
+                ], 'image/modal_window/robot.png', true);
         } else {
             this.updatePoints(player, -50, `Програв у повстанні машин`);
             this.showQuestModal(`${player.name} - Повстання машин`, 
                 `${player.name} вирішив боротися, але програв!\n\nВтрачено: -50 ОО`, [
                     { text: 'Далі', callback: () => {
                         this.questModal.classList.add('hidden');
+                        this.isModalOpen = false;
                         setTimeout(() => this.nextTurn(), 500);
                     }}
-                ], 'image/modal_window/robot.png');
+                ], 'image/modal_window/robot.png', true);
         }
     }
 
@@ -1327,7 +1339,7 @@ class BotGame extends EducationalPathGame {
                         this.isModalOpen = false;
                         setTimeout(() => this.nextTurn(), 500);
                     }}
-                ], 'image/modal_window/tests.png');
+                ], 'image/modal_window/tests.png', true);
             return;
         }
         
@@ -1348,7 +1360,7 @@ class BotGame extends EducationalPathGame {
                     this.isModalOpen = false;
                     setTimeout(() => this.nextTurn(), 500);
                 }}
-            ], 'image/modal_window/tests.png');
+            ], 'image/modal_window/tests.png', true);
     }
 
     // Обробка порталу для ботів
@@ -1365,7 +1377,7 @@ class BotGame extends EducationalPathGame {
                     this.isModalOpen = false;
                     setTimeout(() => this.nextTurn(), 500);
                 }}
-            ], 'image/modal_window/bypass_road.png');
+            ], 'image/modal_window/bypass_road.png', true);
     }
 
     // Обробка амфітеатру для ботів
@@ -1379,18 +1391,20 @@ class BotGame extends EducationalPathGame {
                 `🎭 ${player.name} (${player.class.name}) захотів вина та видовищ в Амфітеатрі! У такому стані він не може продовжити гру та пропускає хід.`, [
                     { text: 'Далі', callback: () => {
                         this.questModal.classList.add('hidden');
+                        this.isModalOpen = false;
                         setTimeout(() => this.nextTurn(), 500);
                     }}
-                ], 'image/modal_window/amfiteatr.jpg');
+                ], 'image/modal_window/amfiteatr.jpg', true);
         } else {
             // Селянин не може потрапити
             this.showQuestModal(`${player.name} - Амфітеатр`, 
                 `⛔ ${player.name} (${player.class.name}) хотів потрапити до Амфітеатру, але забув про своє становище у суспільстві - його не пустили.`, [
                     { text: 'Далі', callback: () => {
                         this.questModal.classList.add('hidden');
+                        this.isModalOpen = false;
                         setTimeout(() => this.nextTurn(), 500);
                     }}
-                ], 'image/modal_window/amfiteatr.jpg');
+                ], 'image/modal_window/amfiteatr.jpg', true);
         }
     }
 
@@ -1421,7 +1435,7 @@ class BotGame extends EducationalPathGame {
                 this.isModalOpen = false;
                 setTimeout(() => this.nextTurn(), 500);
             }}
-        ], 'image/modal_window/shinok.jpg');
+        ], 'image/modal_window/shinok.jpg', true);
     }
 
     // Обробка казино для ботів
@@ -1451,7 +1465,7 @@ class BotGame extends EducationalPathGame {
                 this.isModalOpen = false;
                 setTimeout(() => this.nextTurn(), 500);
             }}
-        ], 'image/modal_window/casino.jpg');
+        ], 'image/modal_window/casino.jpg', true);
     }
 
     // Перевизначений метод nextTurn для інших гравців
@@ -1567,12 +1581,23 @@ class BotGame extends EducationalPathGame {
     }
 
     // Перевизначений метод showQuestModal для встановлення прапорця isModalOpen
-    showQuestModal(title, text, buttons, backgroundImageUrl = null) {
+    showQuestModal(title, text, buttons, backgroundImageUrl = null, autoCloseForBot = false) {
         // Встановлюємо прапорець, що модальне вікно відкрите
         this.isModalOpen = true;
         
         // Викликаємо базовий метод
         super.showQuestModal(title, text, buttons, backgroundImageUrl);
+        
+        // Якщо це модальне вікно для бота, автоматично закриваємо через 3 секунди
+        if (autoCloseForBot) {
+            setTimeout(() => {
+                if (!this.questModal.classList.contains('hidden')) {
+                    this.questModal.classList.add('hidden');
+                    this.isModalOpen = false;
+                    this.checkAndContinueBotTurn();
+                }
+            }, 3000);
+        }
         
         // Оновлюємо всі кнопки, щоб вони встановлювали isModalOpen = false при закритті
         setTimeout(() => {

@@ -234,8 +234,16 @@ class MultiplayerGame extends EducationalPathGame {
         }
         
         // Обробник для кнопки кидка кубика
+        // Додаємо обробник завжди, але перевіряємо isOnlineMode всередині rollTheDice()
         if (this.rollDiceBtn) {
-            this.rollDiceBtn.addEventListener('click', () => this.rollTheDice());
+            // Видаляємо старий обробник, якщо він є
+            this.rollDiceBtn.onclick = null;
+            // Додаємо новий обробник
+            this.rollDiceBtn.addEventListener('click', () => {
+                if (this.isOnlineMode) {
+                    this.rollTheDice();
+                }
+            });
         }
         
         // Обробник для кнопки бафів/дебафів
@@ -1596,7 +1604,7 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     rollTheDice() {
-        console.log('rollTheDice викликано:', {
+        console.log('rollTheDice викликано (MultiplayerGame):', {
             isOnlineMode: this.isOnlineMode,
             isHost: this.isHost,
             gameActive: this.gameActive,
@@ -1605,6 +1613,12 @@ class MultiplayerGame extends EducationalPathGame {
             myPlayerId: this.playerId,
             currentPlayer: this.players?.[this.currentPlayerIndex]
         });
+        
+        // Якщо це локальний режим, не обробляємо тут - це має робити botGame.js
+        if (!this.isOnlineMode) {
+            console.log('⚠️ rollTheDice викликано в MultiplayerGame для локального режиму - ігноруємо');
+            return;
+        }
         
         // Перевіряємо, чи кнопка активна (для онлайн режиму)
         if (this.rollDiceBtn && this.rollDiceBtn.disabled) {
@@ -1644,11 +1658,8 @@ class MultiplayerGame extends EducationalPathGame {
                 }
                 // Звук не програється для неактивних гравців
             }
-        } else {
-            // Локальний режим - завжди програємо звук
-            this.playDiceSound();
-            super.rollTheDice();
         }
+        // Локальний режим обробляється в botGame.js, тому тут нічого не робимо
     }
     
     handleRemoteDiceRoll(data) {

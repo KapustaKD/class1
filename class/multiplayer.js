@@ -233,10 +233,17 @@ class MultiplayerGame extends EducationalPathGame {
             this.leaveRoomBtn.addEventListener('click', () => this.leaveRoom());
         }
         
-        // Обробник для кнопки кидка кубика (тільки для онлайн режиму)
-        // В локальному режимі обробник буде встановлено в botGame.js
-        if (this.rollDiceBtn && this.isOnlineMode) {
-            this.rollDiceBtn.addEventListener('click', () => this.rollTheDice());
+        // Обробник для кнопки кидка кубика
+        // Додаємо обробник завжди, але перевіряємо isOnlineMode всередині rollTheDice()
+        if (this.rollDiceBtn) {
+            // Видаляємо старий обробник, якщо він є
+            this.rollDiceBtn.onclick = null;
+            // Додаємо новий обробник
+            this.rollDiceBtn.addEventListener('click', () => {
+                if (this.isOnlineMode) {
+                    this.rollTheDice();
+                }
+            });
         }
         
         // Обробник для кнопки бафів/дебафів

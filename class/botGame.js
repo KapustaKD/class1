@@ -121,13 +121,17 @@ class BotGame extends EducationalPathGame {
                 this.modalButtonClicked = true;
                 this.questModal.classList.add('hidden');
                 this.isModalOpen = false;
-                // Показуємо модальне вікно вибору кількості гравців
-                this.showPlayerCountModal();
+                // Показуємо модальне вікно вибору кількості гравців після невеликої затримки
+                setTimeout(() => {
+                    this.showPlayerCountModal();
+                }, 200);
             }},
             { text: 'Ні, скасувати', callback: () => {
                 this.modalButtonClicked = true;
                 this.questModal.classList.add('hidden');
                 this.isModalOpen = false;
+                // Після скасування користувач залишається на виборі режимів
+                // Нічого більше не робимо
             }}
         ], null, false); // Не автоматично закриваємо це вікно
     }

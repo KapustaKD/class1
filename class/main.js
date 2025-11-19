@@ -116,15 +116,13 @@ function setupGlobalEventListeners() {
 }
 
 function setupModeButtons() {
-    // Обробник для локальної гри (тепер це гра проти ботів)
     const localModeBtn = document.getElementById('local-mode-btn');
     if (localModeBtn) {
         localModeBtn.addEventListener('click', () => {
-            window.startLocalGame();
+            showLocalModeWarning(); // Спочатку показуємо попередження
         });
     }
     
-    // Обробник для онлайн гри
     const onlineModeBtn = document.getElementById('online-mode-btn');
     if (onlineModeBtn) {
         onlineModeBtn.addEventListener('click', () => {
@@ -133,14 +131,65 @@ function setupModeButtons() {
     }
 }
 
-// Глобальні функції для використання в HTML
-window.startLocalGame = function() {
-    if (window.botGame) {
-        window.botGame.startLocalBotGame();
+// Функція для показу попередження про локальний режим
+function showLocalModeWarning() {
+    const warningContent = `
+        <div class="text-center">
+            <h3 class="text-2xl font-bold mb-4 text-yellow-400">⚠️ Попередження</h3>
+            <p class="text-lg mb-4 text-white">
+                Локальний режим гри знаходиться в стадії розробки і може містити баги.
+            </p>
+            <p class="text-lg mb-6 text-white">
+                Ви впевнені, що хочете продовжити?
+            </p>
+        </div>
+    `;
+
+    // Використовуємо існуючий gameUI для показу вікна
+    if (window.gameUI) {
+        window.gameUI.showQuestModal('Локальний режим', warningContent, [
+            { 
+                text: 'Так, продовжити', 
+                callback: () => {
+                    // Тільки ТУТ ми запускаємо гру
+                    window.gameUI.hideModal('quest');
+                    window.realStartLocalGame(); 
+                }
+            },
+            { 
+                text: 'Ні, скасувати', 
+                callback: () => {
+                    window.gameUI.hideModal('quest');
+                    // Нічого більше не робимо, гравець залишається в меню
+                }
+            }
+        ]);
     } else {
-        window.botGame = new BotGame();
-        window.botGame.startLocalBotGame();
+        console.error('UI не ініціалізовано, запускаємо гру напряму');
+        window.realStartLocalGame();
     }
+}
+
+// Глобальні функції для використання в HTML
+window.realStartLocalGame = function() {
+    console.log('🚀 Запуск локальної гри...');
+    
+    // Створюємо екземпляр BotGame тільки зараз
+    if (!window.botGame) {
+        // Переконуємося, що клас доступний
+        if (typeof BotGame !== 'undefined') {
+            window.botGame = new BotGame();
+        } else {
+            console.error('Клас BotGame не знайдено!');
+            return;
+        }
+    }
+    
+    // Замінюємо глобальний об'єкт гри на бота
+    window.game = window.botGame;
+    
+    // Запускаємо
+    window.botGame.startLocalBotGame();
 };
 
 window.startOnlineGame = function() {

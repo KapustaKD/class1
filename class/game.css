@@ -1455,7 +1455,7 @@ body.glassmorphism-bg {
     color: #e2e8f0; /* Light gray text (Tailwind gray-200) */
     font-family: 'Montserrat', sans-serif;
     height: calc(100vh - 2rem); /* Match container height */
-    max-height: 90vh;
+    max-height: 822px;
     border-radius: 1rem;
     padding: 1rem;
     display: flex;
@@ -2043,3 +2043,4 @@ body.glassmorphism-bg {
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
 }
+

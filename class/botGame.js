@@ -102,15 +102,30 @@ class BotGame extends EducationalPathGame {
 
     // Показ модального вікна вибору кількості гравців
     showPlayerCountModal() {
+        // Прибираємо вікно налаштувань гри, якщо воно видиме
+        const startModal = document.getElementById('start-modal');
+        if (startModal) {
+            startModal.classList.add('hidden');
+        }
+        
         const modalContent = `
             <h2 class="text-3xl font-bold mb-4 text-center">Локальна гра</h2>
             <p class="text-center mb-6">Оберіть кількість гравців:</p>
-            <div class="flex gap-4 justify-center mb-6">
+            <div class="flex flex-wrap gap-4 justify-center mb-6">
                 <button id="bot-2-players" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-xl">
                     2 гравці
                 </button>
                 <button id="bot-3-players" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-xl">
                     3 гравці
+                </button>
+                <button id="bot-4-players" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-xl">
+                    4 гравці
+                </button>
+                <button id="bot-5-players" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-xl">
+                    5 гравців
+                </button>
+                <button id="bot-6-players" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 text-xl">
+                    6 гравців
                 </button>
             </div>
             <p class="text-sm text-gray-600 text-center">Інші гравці будуть грати автоматично</p>
@@ -122,15 +137,15 @@ class BotGame extends EducationalPathGame {
 
         // Додаємо обробники подій для кнопок
         setTimeout(() => {
-            document.getElementById('bot-2-players').addEventListener('click', () => {
-                this.questModal.classList.add('hidden');
-                this.initializeGame(2);
-            });
-            
-            document.getElementById('bot-3-players').addEventListener('click', () => {
-                this.questModal.classList.add('hidden');
-                this.initializeGame(3);
-            });
+            for (let i = 2; i <= 6; i++) {
+                const btn = document.getElementById(`bot-${i}-players`);
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        this.questModal.classList.add('hidden');
+                        this.initializeGame(i);
+                    });
+                }
+            }
         }, 100);
     }
 
@@ -160,7 +175,7 @@ class BotGame extends EducationalPathGame {
         });
 
         // Додаємо інших гравців
-        const playerNames = ['Алекс', 'Макс', 'Софія', 'Даніель'];
+        const playerNames = ['Алекс', 'Макс', 'Софія', 'Даніель', 'Олександр', 'Марія', 'Дмитро', 'Анна', 'Владислав', 'Катерина', 'Іван', 'Олена', 'Михайло', 'Наталія', 'Андрій', 'Юлія', 'Сергій', 'Тетяна', 'Олег', 'Ірина'];
         for (let i = 1; i < playerCount; i++) {
             const bot = {
                 id: `bot-${i}`,
@@ -548,7 +563,7 @@ class BotGame extends EducationalPathGame {
             // Рухаємо гравця
             await this.movePlayer(player, move);
             
-            // Перевіряємо події
+            // Перевіряємо події (nextTurn викликається всередині checkCell, якщо немає події)
             this.checkCell(player);
             
         }, 1000);
@@ -576,10 +591,14 @@ class BotGame extends EducationalPathGame {
                 }
             }
         } else {
-            // Якщо події немає, передаємо хід
-            setTimeout(() => {
-                this.nextTurn();
-            }, this.botDelay);
+            // Якщо події немає, передаємо хід тільки якщо це бот
+            // Якщо це людина, не викликаємо nextTurn - вона сама викличе його після руху
+            if (player.isBot) {
+                setTimeout(() => {
+                    this.nextTurn();
+                }, this.botDelay);
+            }
+            // Для людини nextTurn викликається в базовому класі після руху
         }
     }
 
@@ -707,6 +726,77 @@ class BotGame extends EducationalPathGame {
     // Обробка подій для інших гравців
     handleBotEvent(player, cellData) {
         console.log(`🎮 ${player.name} обробляє подію: ${cellData.type}`);
+        
+        // Спочатку показуємо подію без відповіді бота
+        this.showBotEventPreview(player, cellData);
+        
+        // Через 2-3 секунди показуємо відповідь бота
+        const delay = 2000 + Math.random() * 1000; // 2-3 секунди
+        setTimeout(() => {
+            this.processBotEvent(player, cellData);
+        }, delay);
+    }
+    
+    // Показ попереднього перегляду події для бота
+    showBotEventPreview(player, cellData) {
+        let previewText = '';
+        let backgroundImage = null;
+        
+        // Визначаємо текст та картинку залежно від типу події
+        switch (cellData.type) {
+            case 'tavern':
+                previewText = `${player.name} потрапив на Шинок!`;
+                backgroundImage = 'image/modal_window/shinok.jpg';
+                break;
+            case 'casino':
+                previewText = `${player.name} потрапив на Казино!`;
+                backgroundImage = 'image/modal_window/casino.jpg';
+                break;
+            case 'amphitheater':
+                previewText = `${player.name} потрапив на Амфітеатр!`;
+                backgroundImage = 'image/modal_window/amfiteatr.jpg';
+                break;
+            case 'pvp-quest':
+            case 'pvp':
+                previewText = `${player.name} потрапив на PvP квест: ${cellData.questName || 'Дуель'}!`;
+                backgroundImage = cellData.gameType === 'rock_paper_scissors' ? 'image/modal_window/rock_paper_scissors.png' : 'image/modal_window/tic_tac_toe.jpg';
+                break;
+            case 'creative-quest':
+            case 'creative':
+                previewText = `${player.name} потрапив на Творчий конкурс: ${cellData.questName || 'Творче завдання'}!`;
+                backgroundImage = 'image/modal_window/big_pedagogik.png';
+                break;
+            case 'reincarnation':
+            case 'early-reincarnation':
+                previewText = `${player.name} потрапив на Реінкарнацію!`;
+                backgroundImage = 'image/modal_window/reincarnation.jpg';
+                break;
+            case 'machine-uprising':
+                previewText = `${player.name} потрапив на Повстання машин!`;
+                backgroundImage = 'image/modal_window/robot.png';
+                break;
+            case 'test-question':
+                previewText = `${player.name} потрапив на Тестове завдання!`;
+                backgroundImage = 'image/modal_window/tests.png';
+                break;
+            case 'portal':
+            case 'alternative-path':
+                previewText = `${player.name} потрапив на Таємний портал!`;
+                backgroundImage = 'image/modal_window/bypass_road.png';
+                break;
+            default:
+                previewText = `${player.name} потрапив на подію: ${cellData.type}!`;
+        }
+        
+        if (previewText) {
+            this.showQuestModal(`${player.name} - Подія`, previewText, [], backgroundImage);
+        }
+    }
+    
+    // Обробка події для бота (після затримки)
+    processBotEvent(player, cellData) {
+        // Закриваємо попередній перегляд
+        this.questModal.classList.add('hidden');
         
         switch (cellData.type) {
             case 'quest':
@@ -1296,6 +1386,7 @@ class BotGame extends EducationalPathGame {
             // Якщо наступний гравець - бот, автоматично кидаємо кубик
             if (this.rollDiceBtn) {
                 this.rollDiceBtn.disabled = true;
+                this.rollDiceBtn.textContent = `Хід: ${nextPlayer.name}`;
             }
             // Додаємо затримку перед кидком кубика ботом
             console.log(`⏳ Очікуємо ${this.botDelay}мс перед ходом бота ${nextPlayer.name}`);
@@ -1312,6 +1403,7 @@ class BotGame extends EducationalPathGame {
             // Якщо наступний гравець - основний гравець, дозволяємо кинути кубик
             if (this.rollDiceBtn) {
                 this.rollDiceBtn.disabled = false;
+                this.rollDiceBtn.textContent = 'Кинути кубик';
                 console.log('✅ Кнопка кидання кубика активна для гравця');
             }
             // Переконаємося, що бот не кидає кубик

@@ -799,7 +799,7 @@ class EducationalPathGame {
         // Встановлюємо правильний масштаб карти після створення
         setTimeout(() => {
             console.log('⏰ createBoard() - встановлюємо масштаб через setTimeout');
-            this.setInitialScale();
+            // setInitialScale видалено - використовується глобальне масштабування
             this.applyTransform();
             console.log('✅ createBoard() - масштаб встановлено після створення дошки');
         }, 100);
@@ -1455,7 +1455,12 @@ class EducationalPathGame {
     
                     this.showQuestModal('Таємний портал!', `Ризикнути та стрибнути на клітинку ${cellData.target} за ${cellData.cost} ОО?`, [
     
-                        { text: 'Так', callback: () => { this.updatePoints(player, -cellData.cost); this.movePlayerTo(player, cellData.target); this.questModal.classList.add('hidden'); }},
+                        { text: 'Так', callback: () => { 
+                        this.updatePoints(player, -cellData.cost); 
+                        this.movePlayerTo(player, cellData.target); 
+                        this.questModal.classList.add('hidden'); 
+                        this.nextTurn();
+                    }},
     
                         { text: 'Ні', callback: () => { this.questModal.classList.add('hidden'); this.nextTurn(); }}
     
@@ -1467,9 +1472,17 @@ class EducationalPathGame {
     
                     this.showQuestModal('Обхідна дорога!', `${cellData.description}`, [
     
-                        { text: 'Так', callback: () => { this.updatePoints(player, -cellData.cost); this.movePlayerTo(player, cellData.target); this.questModal.classList.add('hidden'); }},
+                        { text: 'Так', callback: () => { 
+                        this.updatePoints(player, -cellData.cost); 
+                        this.movePlayerTo(player, cellData.target); 
+                        this.questModal.classList.add('hidden'); 
+                        this.nextTurn();
+                    }},
     
-                        { text: 'Ні', callback: () => { this.questModal.classList.add('hidden'); this.nextTurn(); }}
+                        { text: 'Ні', callback: () => { 
+                        this.questModal.classList.add('hidden'); 
+                        this.nextTurn(); 
+                    }}
     
                     ]);
 
@@ -2196,9 +2209,14 @@ class EducationalPathGame {
                             });
                         }
                     } else {
-                        // Звичайне зображення
-                        this.questModalContent.style.backgroundImage = `url('${backgroundImageUrl}')`;
-                        this.questModalContent.style.backgroundSize = 'cover';
+                        // Звичайне зображення
+                        // Переконаємося, що модальне вікно залишається по центру
+                        this.questModalContent.style.position = 'fixed';
+                        this.questModalContent.style.top = '50%';
+                        this.questModalContent.style.left = '50%';
+                        this.questModalContent.style.transform = 'translate(-50%, -50%)';
+                        this.questModalContent.style.backgroundImage = `url('${backgroundImageUrl}')`;
+                        this.questModalContent.style.backgroundSize = 'cover';
                         this.questModalContent.style.backgroundPosition = 'center';
                         this.questModalContent.style.backgroundRepeat = 'no-repeat';
                         // Додаємо затемнення для кращої читабельності тексту
@@ -2261,6 +2279,11 @@ class EducationalPathGame {
     
             // Встановлюємо фонове зображення, якщо передано
             if (backgroundImageUrl) {
+                // Переконаємося, що модальне вікно залишається по центру
+                this.questModalContent.style.position = 'fixed';
+                this.questModalContent.style.top = '50%';
+                this.questModalContent.style.left = '50%';
+                this.questModalContent.style.transform = 'translate(-50%, -50%)';
                 this.questModalContent.style.backgroundImage = `url('${backgroundImageUrl}')`;
                 this.questModalContent.style.backgroundSize = 'cover';
                 this.questModalContent.style.backgroundPosition = 'center';
@@ -2396,13 +2419,24 @@ class EducationalPathGame {
         modalContent += `
             </div>
             <div class="mt-4 text-center">
-                <button class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="document.getElementById('quest-modal').classList.add('hidden')">
+                <button class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" id="test-close-btn">
                     Закрити
                 </button>
             </div>
         `;
 
         this.showQuestModal('Тестове завдання', modalContent, [], 'image/modal_window/tests.png');
+
+        // Додаємо обробник для кнопки "Закрити"
+        setTimeout(() => {
+            const closeBtn = document.getElementById('test-close-btn');
+            if (closeBtn) {
+                closeBtn.onclick = () => {
+                    this.questModal.classList.add('hidden');
+                    this.nextTurn();
+                };
+            }
+        }, 100);
 
         // Додаємо обробники для кнопок відповідей
         setTimeout(() => {
@@ -2428,7 +2462,7 @@ class EducationalPathGame {
             <h3 class="text-2xl font-bold mb-4">${isCorrect ? '✅ Правильно!' : '❌ Неправильно'}</h3>
             <p class="mb-4 text-lg">${resultText}</p>
             <div class="text-center">
-                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" onclick="document.getElementById('quest-modal').classList.add('hidden')">
+                <button class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded" id="test-result-continue-btn">
                     Продовжити
                 </button>
             </div>
@@ -2440,11 +2474,17 @@ class EducationalPathGame {
         if (isCorrect) {
             this.updatePoints(player, 5);
         }
-
-        // Передаємо хід наступному гравцю
+        
+        // Додаємо обробник для кнопки "Продовжити"
         setTimeout(() => {
-            this.nextTurn();
-        }, 1000);
+            const continueBtn = document.getElementById('test-result-continue-btn');
+            if (continueBtn) {
+                continueBtn.onclick = () => {
+                    this.questModal.classList.add('hidden');
+                    this.nextTurn();
+                };
+            }
+        }, 100);
     }
     
     // Початок переміщення карти

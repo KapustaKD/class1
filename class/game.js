@@ -456,7 +456,8 @@ class EducationalPathGame {
     
                 this.rulesModal.classList.add('hidden');
     
-                this.startModal.classList.remove('hidden');
+                // ВИДАЛЕНО: Показ start-modal - не використовується в локальному режимі
+                // В локальному режимі використовується власне вікно вибору кількості гравців
     
             });
     

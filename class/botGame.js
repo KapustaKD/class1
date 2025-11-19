@@ -613,6 +613,105 @@ class BotGame extends EducationalPathGame {
         }
     }
 
+    // Обробка подій для людини-гравця (перевизначений handleSpecialCell)
+    handleSpecialCellForHuman(player, cellData) {
+        // Позначаємо клітинку як використану
+        this.usedEventCells.add(player.position);
+        console.log(`📍 Клітинка ${player.position} позначена як використана`);
+        
+        // Позначаємо тип події як використаний (крім обхідних доріг та реінкарнації)
+        if (cellData.type !== 'alternative-path' && cellData.type !== 'reincarnation') {
+            this.usedEventTypes.add(cellData.type);
+            console.log(`🎭 Тип події ${cellData.type} позначений як використаний`);
+        }
+
+        switch(cellData.type) {
+            case 'quest':
+                this.triggerRandomQuest(player);
+                break;
+            case 'pvp-quest':
+                this.triggerPvpQuest(player);
+                break;
+            case 'mad-libs-quest':
+                this.triggerMadLibsQuest(player);
+                break;
+            case 'webnovella-quest':
+                this.triggerWebNovellaQuest(player);
+                break;
+            case 'reincarnation':
+                this.triggerReincarnation(player, cellData);
+                break;
+            case 'machine-uprising':
+                // Показуємо повідомлення про повстання машин
+                this.showQuestModal('Повстання машин!', 
+                    'Машини повстали проти людства! Ви загинули в битві з роботами. Але не втрачайте надію - ви реінкарнуєтеся в попередній епосі для нової спроби!', 
+                    [
+                        { text: 'Зрозуміло', callback: () => {
+                            // Переміщуємо гравця на передостанню клітинку попередньої епохи (клітинка 75)
+                            player.position = 75;
+                            player.hasLost = false; // Відновлюємо гравця
+                            
+                            // Оновлюємо позицію фішки
+                            this.updatePawnPosition(player);
+                            
+                            this.questModal.classList.add('hidden');
+                            this.isModalOpen = false;
+                            this.nextTurn();
+                        }}
+                    ], 'image/modal_window/robot.png');
+                break;
+            case 'test-question':
+                this.triggerTestQuestion(player);
+                break;
+            case 'portal':
+                this.showQuestModal('Таємний портал!', `Ризикнути та стрибнути на клітинку ${cellData.target} за ${cellData.cost} ОО?`, [
+                    { text: 'Так', callback: () => { 
+                        this.updatePoints(player, -cellData.cost, 'Використання порталу'); 
+                        this.movePlayerTo(player, cellData.target); 
+                        this.questModal.classList.add('hidden');
+                        this.isModalOpen = false;
+                        this.nextTurn();
+                    }},
+                    { text: 'Ні', callback: () => { 
+                        this.questModal.classList.add('hidden');
+                        this.isModalOpen = false;
+                        this.nextTurn();
+                    }}
+                ], 'image/modal_window/bypass_road.png');
+                break;
+            case 'alternative-path':
+                this.showQuestModal('Обхідна дорога!', `${cellData.description}`, [
+                    { text: 'Так', callback: () => { 
+                        this.updatePoints(player, -cellData.cost, 'Використання обхідного шляху'); 
+                        this.movePlayerTo(player, cellData.target); 
+                        this.questModal.classList.add('hidden');
+                        this.isModalOpen = false;
+                        this.nextTurn();
+                    }},
+                    { text: 'Ні', callback: () => { 
+                        this.questModal.classList.add('hidden');
+                        this.isModalOpen = false;
+                        this.nextTurn();
+                    }}
+                ], 'image/modal_window/bypass_road.png');
+                break;
+            case 'amphitheater':
+            case 'tavern':
+            case 'casino':
+                // Викликаємо базовий метод, який вже обробляє ці події
+                super.handleSpecialCell(player, cellData);
+                break;
+            default:
+                this.showQuestModal('Подія', 'Подія у розробці. Скоро буде цікаво!', [
+                    { text: 'Зрозуміло', callback: () => {
+                        this.questModal.classList.add('hidden');
+                        this.isModalOpen = false;
+                        this.nextTurn();
+                    }}
+                ], 'image/modal_window/event_3.jpg');
+        }
+    }
+
     // Обробка творчого квесту для людини-гравця
     handleHumanCreativeQuest(player, cellData) {
         const creativeTypes = Object.keys(this.botResponses.creative);
@@ -1489,12 +1588,37 @@ class BotGame extends EducationalPathGame {
                     if (button) {
                         button.onclick = () => {
                             this.isModalOpen = false;
-                            if (originalCallback) originalCallback();
+                            if (originalCallback) {
+                                originalCallback();
+                            }
+                            // Після закриття модального вікна перевіряємо, чи потрібно передати хід боту
+                            setTimeout(() => {
+                                this.checkAndContinueBotTurn();
+                            }, 100);
                         };
                     }
                 }
             });
         }, 100);
+    }
+    
+    // Перевірка та продовження ходу бота після закриття модального вікна
+    checkAndContinueBotTurn() {
+        if (!this.gameActive) return;
+        
+        const currentPlayer = this.players[this.currentPlayerIndex];
+        
+        // Якщо це хід бота і модальне вікно закрите, продовжуємо хід бота
+        if (currentPlayer && currentPlayer.isBot && !this.isModalOpen && this.questModal.classList.contains('hidden')) {
+            console.log(`🔄 Продовжуємо хід бота ${currentPlayer.name} після закриття модального вікна`);
+            setTimeout(() => {
+                // Перевіряємо ще раз перед викликом
+                const playerCheck = this.players[this.currentPlayerIndex];
+                if (playerCheck && playerCheck.isBot && this.gameActive && !this.isModalOpen) {
+                    this.handleBotTurn();
+                }
+            }, this.botDelay);
+        }
     }
 
     // Показ контейнера гри

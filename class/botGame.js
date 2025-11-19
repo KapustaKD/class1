@@ -98,42 +98,9 @@ class BotGame extends EducationalPathGame {
     startLocalBotGame() {
         console.log('🎮 Починаємо локальну гру');
         
-        // Показуємо попередження про локальний режим
-        this.showLocalModeWarning();
-    }
-    
-    // Показ попередження про локальний режим
-    showLocalModeWarning() {
-        const warningContent = `
-            <div class="text-center">
-                <h3 class="text-2xl font-bold mb-4 text-yellow-400">⚠️ Попередження</h3>
-                <p class="text-lg mb-4 text-white">
-                    Локальний режим гри знаходиться в стадії розробки і може містити баги.
-                </p>
-                <p class="text-lg mb-6 text-white">
-                    Ви впевнені, що хочете продовжити?
-                </p>
-            </div>
-        `;
-        
-        this.showQuestModal('Локальний режим', warningContent, [
-            { text: 'Так, продовжити', callback: () => {
-                this.modalButtonClicked = true;
-                this.questModal.classList.add('hidden');
-                this.isModalOpen = false;
-                // Показуємо модальне вікно вибору кількості гравців після невеликої затримки
-                setTimeout(() => {
-                    this.showPlayerCountModal();
-                }, 200);
-            }},
-            { text: 'Ні, скасувати', callback: () => {
-                this.modalButtonClicked = true;
-                this.questModal.classList.add('hidden');
-                this.isModalOpen = false;
-                // Після скасування користувач залишається на виборі режимів
-                // Нічого більше не робимо
-            }}
-        ], null, false); // Не автоматично закриваємо це вікно
+        // Показуємо модальне вікно вибору кількості гравців
+        // Попередження вже показано в main.js перед викликом цього методу
+        this.showPlayerCountModal();
     }
 
     // Показ модального вікна вибору кількості гравців
@@ -1620,6 +1587,51 @@ class BotGame extends EducationalPathGame {
         }
     }
 
+    // Перевизначені методи для тестів, щоб правильно оновлювати прапорці
+    showTestQuestion(player, cellNumber) {
+        // Встановлюємо прапорець, що модальне вікно відкрите
+        this.isModalOpen = true;
+        this.modalButtonClicked = false;
+        
+        // Викликаємо базовий метод
+        super.showTestQuestion(player, cellNumber);
+        
+        // Оновлюємо обробник закриття тесту
+        setTimeout(() => {
+            const closeBtn = document.getElementById('test-close-btn');
+            if (closeBtn) {
+                closeBtn.onclick = () => {
+                    this.questModal.classList.add('hidden');
+                    this.isModalOpen = false;
+                    this.modalButtonClicked = true;
+                    this.checkAndContinueBotTurn();
+                };
+            }
+        }, 100);
+    }
+    
+    showTestResult(player, isCorrect, correctAnswer, selectedAnswer) {
+        // Встановлюємо прапорець, що модальне вікно відкрите
+        this.isModalOpen = true;
+        this.modalButtonClicked = false;
+        
+        // Викликаємо базовий метод
+        super.showTestResult(player, isCorrect, correctAnswer, selectedAnswer);
+        
+        // Оновлюємо обробник продовження тесту
+        setTimeout(() => {
+            const continueBtn = document.getElementById('test-result-continue-btn');
+            if (continueBtn) {
+                continueBtn.onclick = () => {
+                    this.questModal.classList.add('hidden');
+                    this.isModalOpen = false;
+                    this.modalButtonClicked = true;
+                    this.checkAndContinueBotTurn();
+                };
+            }
+        }, 100);
+    }
+
     // Перевизначений метод showQuestModal для встановлення прапорця isModalOpen
     showQuestModal(title, text, buttons, backgroundImageUrl = null, autoCloseForBot = false) {
         // Скидаємо прапорець кнопки перед відкриттям нового вікна
@@ -1673,35 +1685,54 @@ class BotGame extends EducationalPathGame {
     
     // Перевірка та продовження ходу бота після закриття модального вікна
     checkAndContinueBotTurn() {
-        if (!this.gameActive) return;
+        if (!this.gameActive) {
+            console.log('⚠️ Гра неактивна, checkAndContinueBotTurn скасовано');
+            return;
+        }
         
         const currentPlayer = this.players[this.currentPlayerIndex];
         
         // Перевіряємо, чи вікно дійсно закрите
-        if (this.isModalOpen || !this.questModal.classList.contains('hidden')) {
-            console.log('⏸️ Модальне вікно ще відкрите, чекаємо...');
-            return;
-        }
-        
-        // Якщо вікно закрите, перевіряємо, чи кнопка була натиснута
-        // Якщо кнопка не була натиснута, це означає, що вікно закрилося іншим способом (наприклад, автоматично)
-        // У такому випадку ми все одно продовжуємо, бо вікно вже закрите
-        if (!this.modalButtonClicked) {
-            console.log('ℹ️ Вікно закрито без натискання кнопки (можливо, автоматично)');
-        }
-        
-        // Скидаємо прапорці
-        this.isModalOpen = false;
-        this.modalButtonClicked = false;
+        // Використовуємо невелику затримку, щоб переконатися, що DOM оновився
+        setTimeout(() => {
+            const isModalStillOpen = !this.questModal.classList.contains('hidden');
+            
+            if (this.isModalOpen || isModalStillOpen) {
+                console.log('⏸️ Модальне вікно ще відкрите, чекаємо...', {
+                    isModalOpen: this.isModalOpen,
+                    hasHiddenClass: this.questModal.classList.contains('hidden')
+                });
+                return;
+            }
+            
+            // Якщо вікно закрите, перевіряємо, чи кнопка була натиснута
+            // Якщо кнопка не була натиснута, це означає, що вікно закрилося іншим способом (наприклад, автоматично)
+            // У такому випадку ми все одно продовжуємо, бо вікно вже закрите
+            if (!this.modalButtonClicked) {
+                console.log('ℹ️ Вікно закрито без натискання кнопки (можливо, автоматично)');
+            }
+            
+            // Скидаємо прапорці
+            this.isModalOpen = false;
+            this.modalButtonClicked = false;
 
-        // Якщо це хід бота, запускаємо його
-        if (currentPlayer && currentPlayer.isBot) {
-            console.log(`🔄 Продовжуємо хід бота ${currentPlayer.name} після закриття вікна`);
-            // Використовуємо невелику затримку для плавності
-            setTimeout(() => {
-                this.handleBotTurn();
-            }, 500);
-        }
+            // Якщо це хід бота, запускаємо його
+            if (currentPlayer && currentPlayer.isBot) {
+                console.log(`🔄 Продовжуємо хід бота ${currentPlayer.name} після закриття вікна`);
+                // Використовуємо невелику затримку для плавності
+                setTimeout(() => {
+                    // Перевіряємо ще раз перед викликом handleBotTurn
+                    const finalCheck = this.players[this.currentPlayerIndex];
+                    if (finalCheck && finalCheck.isBot && this.gameActive && !this.isModalOpen && this.questModal.classList.contains('hidden')) {
+                        this.handleBotTurn();
+                    } else {
+                        console.log('⚠️ Стан змінився перед handleBotTurn, скасовуємо');
+                    }
+                }, 300);
+            } else {
+                console.log('ℹ️ Не хід бота, checkAndContinueBotTurn завершено');
+            }
+        }, 100);
     }
 
     // Показ контейнера гри

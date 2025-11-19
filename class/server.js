@@ -1495,59 +1495,516 @@ io.on('connection', (socket) => {
         }
     });
     
-    // Обробляємо застосування бафів/дебафів
+    // Обробляємо застосування бафів/дебафів (ВИПРАВЛЕНО)
     socket.on('apply_effect', (data) => {
-        // ... (Логіка бафів без змін)
+        console.log('Отримано застосування бафа/дебафа:', data);
+        const player = players.get(socket.id);
+        if (!player) {
+            console.log('Гравець не знайдений');
+            socket.emit('effect_error', { message: 'Помилка: гравець не знайдений' });
+            return;
+        }
+        
+        const room = rooms.get(data.roomId);
+        if (!room || room.gameState !== 'playing') {
+            console.log('Кімната не знайдена або гра не активна');
+            socket.emit('effect_error', { message: 'Гра не активна або кімната не знайдена' });
+            return;
+        }
+        
+        // Знаходимо гравця в кімнаті
+        const caster = room.gameData.players.find(p => p.id === player.id);
+        if (!caster) {
+            console.log('Гравець не знайдений в кімнаті');
+            socket.emit('effect_error', { message: 'Вас не знайдено в кімнаті' });
+            return;
+        }
+        
+        // Перевірка, чи це хід гравця
+        const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+        if (currentPlayer.id !== caster.id) {
+            console.log('Не хід цього гравця');
+            socket.emit('effect_error', { message: 'Зараз не ваш хід! Бафи можна використовувати лише у свій хід.' });
+            return;
+        }
+        
+        // Перевірка, чи гравець вже використав баф у цьому колі
+        if (!room.playersBuffUsedThisRound) {
+            room.playersBuffUsedThisRound = {};
+        }
+        if (room.playersBuffUsedThisRound[caster.id]) {
+            console.log('Гравець вже використав баф у цьому колі');
+            io.to(socket.id).emit('effect_error', {
+                message: 'Ви вже використали баф/дебаф у цьому колі. Зачекайте до наступного кола.'
+            });
+            return;
+        }
+        
+        // Визначаємо вартість та ціль ефекту
+        let cost = 0;
+        let targetPlayer = null;
+        
+        if (data.effectType === 'hateClone') {
+            cost = 100;
+            if (!data.targetPlayerId) {
+                socket.emit('effect_error', { message: 'Оберіть ціль!' });
+                return;
+            }
+            targetPlayer = room.gameData.players.find(p => p.id === data.targetPlayerId);
+        } else if (data.effectType === 'happinessCharm') {
+            cost = 100;
+            targetPlayer = caster;
+        } else if (data.effectType === 'procrastination') {
+            cost = 50;
+            if (!data.targetPlayerId) {
+                socket.emit('effect_error', { message: 'Оберіть ціль!' });
+                return;
+            }
+            targetPlayer = room.gameData.players.find(p => p.id === data.targetPlayerId);
+        } else if (data.effectType === 'pushBack') {
+            cost = 50;
+            if (!data.targetPlayerId) {
+                socket.emit('effect_error', { message: 'Оберіть ціль!' });
+                return;
+            }
+            targetPlayer = room.gameData.players.find(p => p.id === data.targetPlayerId);
+        } else if (data.effectType === 'boostForward') {
+            cost = 50;
+            targetPlayer = caster;
+        }
+        
+        if (!targetPlayer) {
+            console.log('Ціль не знайдена');
+            socket.emit('effect_error', { message: 'Цільовий гравець не знайдений або вийшов з гри.' });
+            return;
+        }
+        
+        // Перевірка достатності ОО
+        if ((caster.points || 0) < cost) {
+            console.log('Недостатньо ОО');
+            socket.emit('effect_error', { message: `Недостатньо очок! Потрібно ${cost}, у вас ${caster.points || 0}.` });
+            return;
+        }
+        
+        // Списуємо ОО
+        caster.points -= cost;
+        
+        // Відмічаємо, що гравець використав баф у цьому колі
+        room.playersBuffUsedThisRound[caster.id] = true;
+        
+        let moveAmount = 0;
+        let targetNewPosition = targetPlayer.position;
+        
+        // Застосовуємо ефект
+        if (data.effectType === 'hateClone') {
+            // Ініціалізуємо effects, якщо їх немає
+            if (!targetPlayer.effects) {
+                targetPlayer.effects = {};
+            }
+            // Збільшуємо лічильник на 3 (3 ходи)
+            targetPlayer.effects.hateClone = (targetPlayer.effects.hateClone || 0) + 3;
+        } else if (data.effectType === 'happinessCharm') {
+            if (!targetPlayer.effects) {
+                targetPlayer.effects = {};
+            }
+            targetPlayer.effects.happinessCharm = (targetPlayer.effects.happinessCharm || 0) + 3;
+        } else if (data.effectType === 'procrastination') {
+            if (!targetPlayer.effects) {
+                targetPlayer.effects = {};
+            }
+            targetPlayer.effects.skipTurn = (targetPlayer.effects.skipTurn || 0) + 1;
+        } else if (data.effectType === 'pushBack') {
+            // Відкидаємо гравця назад
+            moveAmount = Math.floor(Math.random() * 6) + 10; // 10-15 клітинок
+            targetNewPosition = Math.max(0, targetPlayer.position - moveAmount);
+            targetPlayer.position = targetNewPosition;
+        } else if (data.effectType === 'boostForward') {
+            // Переміщуємо гравця вперед
+            moveAmount = Math.floor(Math.random() * 6) + 10; // 10-15 клітинок
+            targetNewPosition = Math.min(101, caster.position + moveAmount);
+            caster.position = targetNewPosition;
+            
+            // Перевірка перемоги після стрибка
+            if (caster.position >= 101) {
+                caster.hasWon = true;
+                room.gameState = 'finished';
+                io.to(room.id).emit('game_ended', { 
+                    winner: caster, 
+                    reason: `${caster.name} переміг за допомогою стрибка у майбутнє!` 
+                });
+                
+                // Відправляємо сповіщення
+                io.to(room.id).emit('effect_applied', {
+                    casterId: caster.id,
+                    casterName: caster.name,
+                    targetId: targetPlayer.id,
+                    targetName: targetPlayer.name,
+                    effectType: data.effectType,
+                    targetNewPosition: targetNewPosition,
+                    moveAmount: moveAmount
+                });
+                
+                // Оновлюємо стан гри
+                io.to(room.id).emit('game_state_update', room.gameData);
+                return;
+            }
+        }
+        
+        console.log(`Ефект ${data.effectType} застосовано. Відправляємо сповіщення.`);
+        
+        // Відправляємо сповіщення
+        io.to(room.id).emit('effect_applied', {
+            casterId: caster.id,
+            casterName: caster.name,
+            targetId: targetPlayer.id,
+            targetName: targetPlayer.name,
+            effectType: data.effectType,
+            targetNewPosition: targetNewPosition,
+            moveAmount: moveAmount
+        });
+        
+        // Оновлюємо стан гри
+        io.to(room.id).emit('game_state_update', room.gameData);
     });
 
     // [НОВИЙ ОБРОБНИК] Для режиму тестування
     socket.on('test_trigger_event', (data) => {
-        // ... (Логіка тестування без змін)
+        const player = players.get(socket.id);
+        if (!player || !player.isHost) {
+            socket.emit('error', { message: 'Тільки хост може тестувати події' });
+            return;
+        }
+        const room = rooms.get(player.roomId);
+        if (!room) return;
+
+        const currentPlayer = room.gameData.players[room.gameData.currentPlayerIndex];
+        
+        // Телепортуємо поточного гравця на клітинку тесту
+        currentPlayer.position = data.cellNumber;
+        room.currentEventPlayerId = currentPlayer.id;
+        
+        // Знаходимо дані про подію
+        const cellData = specialCells[data.cellNumber];
+        
+        if (cellData) {
+            console.log(`[TEST MODE] Хост запускає подію ${cellData.type} на клітинці ${data.cellNumber}`);
+            // Імітуємо потрапляння гравця на подію
+            // Ми відправляємо це самому собі (серверу) через емуляцію виклику або клієнту
+            // Найкраще - змусити сервер обробити це як реальну подію
+            // Для цього ми можемо викликати логіку обробки події напряму або через emit
+            
+            // Варіант: відправляємо клієнту, щоб він ініціював player_on_event (як у реальній грі)
+            // Або емулюємо тут. Давайте емулюємо вхідні дані для player_on_event:
+            const eventData = { 
+                roomId: room.id, 
+                eventType: cellData.type, 
+                eventData: { ...cellData, cellNumber: data.cellNumber },
+                cellNumber: data.cellNumber
+            };
+            
+            // Викликаємо логіку обробки події (тут ми просто емулюємо виклик через socket.emit самому собі, 
+            // але оскільки це сервер, краще викликати обробник. 
+            // Але для простоти, ми відправимо клієнту інструкцію запустити подію)
+            
+            // Оскільки ми вже перемістили гравця, оновимо стан
+            io.to(room.id).emit('player_moved', { playerId: currentPlayer.id, position: data.cellNumber });
+            
+            // І запускаємо подію через існуючий механізм
+            // Ми робимо вигляд, що клієнт надіслав 'player_on_event'
+            // Для цього ми вручну викликаємо логіку, або просимо клієнта це зробити.
+            // Надійніше - емулювати це на сервері, викликавши обробку:
+            
+            // Тимчасовий хак: відправляємо клієнту підтвердження, а він шле player_on_event
+            // Або просто викликаємо player_on_event логіку тут. 
+            // Давайте просто викличемо player_on_event логіку, скопіювавши виклик (через emit на себе не спрацює так просто).
+            
+            // Тому: відправляємо хосту сигнал, щоб він надіслав player_on_event
+            socket.emit('debug_trigger_event', eventData); 
+            // (Вам треба додати client-side обробник для debug_trigger_event -> socket.emit('player_on_event', data))
+            // АБО, якщо ви не хочете змінювати клієнт, просто продублюйте виклик player_on_event тут:
+            
+             // Емуляція player_on_event
+             if (['amphitheater', 'tavern', 'casino'].includes(cellData.type)) {
+                const msg = handleImmediateEvent(room, currentPlayer, cellData.type);
+                io.to(room.id).emit('event_result', {
+                    playerId: currentPlayer.id,
+                    resultMessage: msg,
+                    newPoints: currentPlayer.points,
+                    newPosition: currentPlayer.position,
+                    eventType: cellData.type
+                });
+                passTurnToNextPlayer(room);
+             } else if (cellData.type === 'test-question') {
+                 io.to(room.id).emit('show_event_prompt', {
+                    eventType: 'test-question',
+                    eventData: { ...cellData, cellNumber: data.cellNumber },
+                    playerId: currentPlayer.id,
+                    playerName: currentPlayer.name,
+                    activePlayerId: currentPlayer.id
+                });
+             } else {
+                 // Інші складні квести запускаються через client->server. 
+                 // Тут ми просто повідомимо клієнту, що подія сталась
+                  io.to(room.id).emit('game_state_update', room.gameData);
+                  // Емулюємо отримання player_on_event через рекурсивний виклик listeners (складно)
+                  // Простіше:
+                  socket.emit('force_event_start', eventData); // Клієнт має обробити це і надіслати player_on_event
+             }
+        } else {
+            socket.emit('error', { message: 'На цій клітинці немає події' });
+        }
     });
     
     // Гравець покидає кімнату
     socket.on('leave_room', (data) => {
-       // ... (Логіка виходу без змін)
+        const room = rooms.get(data.roomId);
+        if (room) {
+            // Видаляємо гравця зі списків
+            room.players = room.players.filter(p => p.id !== socket.id);
+            room.gameData.players = room.gameData.players.filter(p => p.id !== socket.id);
+            
+            // Повідомляємо інших
+            io.to(data.roomId).emit('player_left', { 
+                playerId: socket.id,
+                player: { name: players.get(socket.id)?.name }
+            });
+            
+            // Якщо кімната порожня - видаляємо
+            if (room.players.length === 0) {
+                rooms.delete(data.roomId);
+                console.log(`Кімната ${data.roomId} видалена (порожня)`);
+            } else {
+                // Якщо вийшов хост, передаємо права
+                const wasHost = players.get(socket.id)?.isHost;
+                if (wasHost && room.players.length > 0) {
+                    const newHost = room.players[0];
+                    const globalNewHost = players.get(newHost.id);
+                    if (globalNewHost) globalNewHost.isHost = true;
+                    io.to(room.id).emit('chat_message', { type: 'system', message: `👑 Новий хост: ${newHost.name}` });
+                }
+                
+                // Оновлюємо стан гри (наприклад, якщо це був поточний гравець)
+                if (room.gameData.gameActive) {
+                    // Якщо вийшов поточний гравець, передаємо хід
+                    const currentPlayerId = room.gameData.players[room.gameData.currentPlayerIndex]?.id;
+                    if (currentPlayerId === socket.id) { // Це був його хід, але його вже видалили з масиву
+                         // Індекс міг зсунутися, тому просто оновлюємо індекс безпечно
+                         if (room.gameData.currentPlayerIndex >= room.gameData.players.length) {
+                             room.gameData.currentPlayerIndex = 0;
+                         }
+                         // Передаємо хід новому гравцю на цьому індексі
+                         passTurnToNextPlayer(room);
+                    }
+                    io.to(room.id).emit('game_state_update', room.gameData);
+                }
+            }
+        }
+        players.delete(socket.id);
     });
     
     // Гравець досяг перемоги
     socket.on('player_won', (data) => {
-        // ... (Логіка перемоги без змін)
+        const room = rooms.get(data.roomId);
+        if (room) {
+            const winner = room.gameData.players.find(p => p.id === data.playerId);
+            if (winner) {
+                winner.hasWon = true;
+                // Визначаємо місце
+                if (!room.gameData.finalPositions) room.gameData.finalPositions = [];
+                // Перевіряємо, чи гравець вже не в списку переможців
+                if (!room.gameData.finalPositions.find(p => p.id === winner.id)) {
+                     winner.finalPosition = room.gameData.finalPositions.length + 1;
+                     room.gameData.finalPositions.push(winner);
+                }
+
+                io.to(room.id).emit('player_eliminated', { 
+                    playerId: winner.id, 
+                    reason: 'Успішно завершив навчання! (Перемога)', 
+                    position: winner.finalPosition 
+                });
+                
+                io.to(room.id).emit('chat_message', {
+                    type: 'system',
+                    message: `🏆 ${winner.name} здобув перемогу та зайняв ${winner.finalPosition} місце!`
+                });
+
+                // Перевіряємо, чи залишилося більше 1 активного гравця
+                const activePlayers = room.gameData.players.filter(p => !p.hasWon && !p.hasLost);
+                if (activePlayers.length < 2) {
+                    // Гра завершена (турнір)
+                    room.gameData.gameActive = false;
+                    io.to(room.id).emit('tournament_ended', { 
+                        finalPositions: room.gameData.finalPositions 
+                    });
+                } else {
+                    // Гра продовжується за 2-3 місця
+                    passTurnToNextPlayer(room);
+                }
+            }
+        }
     });
     
     // Переміщення гравця
     socket.on('player_moved', (data) => {
-        // ... (Логіка переміщення без змін)
+        const playerInfo = players.get(socket.id);
+        if (!playerInfo) return;
+        
+        const room = rooms.get(playerInfo.roomId);
+        if (room) {
+            const p = room.gameData.players.find(pl => pl.id === socket.id);
+            if (p) {
+                p.position = data.position;
+                // Синхронізуємо позицію з усіма
+                socket.to(room.id).emit('player_moved', { 
+                    playerId: socket.id, 
+                    position: data.position 
+                });
+            }
+        }
     });
     
     // Оновлення стану гри
     socket.on('game_state_update', (data) => {
-        // ... (Логіка оновлення без змін)
+        const player = players.get(socket.id);
+        if (!player) return; // Тільки хост мав би це робити, але для синхронізації іноді дозволяємо клієнтам
+        
+        const room = rooms.get(data.roomId);
+        if (room) {
+            // Обережне оновлення, щоб не перезаписати важливі серверні дані
+            if (data.players) room.gameData.players = data.players;
+            if (typeof data.currentPlayerIndex !== 'undefined') room.gameData.currentPlayerIndex = data.currentPlayerIndex;
+            
+            socket.to(room.id).emit('game_state_update', room.gameData);
+        }
     });
     
     // Повідомлення в чаті
     socket.on('chat_message', (data) => {
-        // ... (Логіка чату без змін)
+        const player = players.get(socket.id);
+        io.to(data.roomId).emit('chat_message', {
+            type: 'player',
+            message: data.message,
+            player: { 
+                name: player?.name || 'Невідомий', 
+                id: socket.id,
+                color: player?.color
+            }
+        });
     });
     
     // PvP квест
     socket.on('start_pvp_quest', (data) => {
-        // ... (Логіка початку PvP без змін)
+        // Повідомляємо клієнтам, що треба показати UI початку квесту
+        io.to(data.roomId).emit('quest_started', {
+            type: 'pvp',
+            playerId: socket.id, // Хто ініціював
+            title: 'PvP Битва',
+            description: 'Гравець викликає на дуель! Очікування вибору суперника...'
+        });
     });
     
     // Творчий квест
     socket.on('start_creative_quest', (data) => {
-        // ... (Логіка початку творчого без змін)
+        io.to(data.roomId).emit('quest_started', {
+            type: 'creative',
+            playerId: socket.id,
+            title: 'Творчий конкурс',
+            description: 'Підготуйте свої клавіатури! Час творити.'
+        });
     });
     
     // Голосування в творчому квесті
     socket.on('creative_quest_vote', (data) => {
-         // ... (Логіка голосування без змін)
+        const room = rooms.get(data.roomId);
+        if (room && room.creativeWritingState) {
+            const player = players.get(socket.id);
+            if (!player) return;
+            
+            // Записуємо голос (перезаписує, якщо гравець передумав)
+            room.creativeWritingState.votes[socket.id] = data.submissionIndex;
+            
+            console.log(`[Creative] ${player.name} проголосував. Всього голосів: ${Object.keys(room.creativeWritingState.votes).length}`);
+
+            // Перевірка чи всі АКТИВНІ гравці (ті, хто не вибув і не боти) проголосували
+            // Важливо: у творчому конкурсі голосують всі, крім (опціонально) авторів, але зазвичай всі.
+            // Тут перевіряємо всіх активних.
+            const activePlayers = room.gameData.players.filter(p => !p.hasLost && !p.hasWon);
+            const totalVotersNeeded = activePlayers.length;
+            const currentVotes = Object.keys(room.creativeWritingState.votes).length;
+            
+            if (currentVotes >= totalVotersNeeded) {
+                console.log('[Creative] Всі проголосували. Підрахунок...');
+                
+                // Підрахунок голосів
+                const voteCounts = {};
+                Object.values(room.creativeWritingState.votes).forEach(index => {
+                    voteCounts[index] = (voteCounts[index] || 0) + 1;
+                });
+                
+                // Знаходимо переможця (індекс роботи)
+                let winnerIndex = -1;
+                let maxVotes = -1;
+                let isTie = false;
+                
+                for (const [indexStr, count] of Object.entries(voteCounts)) {
+                    const index = parseInt(indexStr);
+                    if (count > maxVotes) {
+                        maxVotes = count;
+                        winnerIndex = index;
+                        isTie = false;
+                    } else if (count === maxVotes) {
+                        isTie = true;
+                    }
+                }
+                
+                let resultMessage = "";
+                const submissions = room.creativeWritingState.submissions;
+                
+                if (isTie || winnerIndex === -1) {
+                    resultMessage = "Нічия! Перемогла дружба. Всі отримують по 10 ОО.";
+                    // Нараховуємо всім по 10
+                     activePlayers.forEach(p => p.points += 10);
+                } else {
+                    const winnerSubmission = submissions[winnerIndex];
+                    if (winnerSubmission) {
+                        resultMessage = `Переміг ${winnerSubmission.playerName}! (+30 ОО)`;
+                        const winnerPlayer = room.gameData.players.find(p => p.id === winnerSubmission.playerId);
+                        if (winnerPlayer) {
+                            winnerPlayer.points += 30;
+                        }
+                    }
+                }
+                
+                // Оновлюємо стан гри
+                io.to(room.id).emit('game_state_update', room.gameData);
+                
+                // Оголошуємо результати
+                io.to(room.id).emit('creative_voting_end', { 
+                    resultMessage: resultMessage,
+                    winnerIndex: winnerIndex,
+                    isTie: isTie
+                });
+                
+                // Очищаємо стан квесту
+                room.creativeWritingState = null;
+                
+                // КРИТИЧНО ВАЖЛИВО: ПЕРЕДАЄМО ХІД ДАЛІ
+                passTurnToNextPlayer(room);
+            }
+        }
     });
     
-    // Завершення гри
+    // Завершення гри (повне)
     socket.on('game_ended', (data) => {
-         // ... (Логіка кінця гри без змін)
+        const room = rooms.get(data.roomId);
+        if (room) {
+            room.gameState = 'finished';
+            room.gameData.gameActive = false;
+            io.to(data.roomId).emit('game_ended', {
+                winner: data.winner,
+                reason: data.reason || 'Гра завершена.'
+            });
+        }
     });
 
     
@@ -1624,7 +2081,31 @@ io.on('connection', (socket) => {
 
     // Обробляємо відповідь в спільній історії
     socket.on('collaborative_story_sentence', (data) => {
-        // ... (Логіка речень без змін)
+        console.log('Отримано речення для спільної історії:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+
+        const room = rooms.get(data.roomId);
+        if (!room || !room.collaborativeStoryState) return;
+
+        // Додаємо речення до історії
+        room.collaborativeStoryState.story.push({
+            sentence: data.sentence,
+            playerName: player.name,
+            playerId: player.id
+        });
+
+        // Переходимо до наступного гравця
+        room.collaborativeStoryState.currentPlayerIndex = 
+            (room.collaborativeStoryState.currentPlayerIndex + 1) % room.collaborativeStoryState.players.length;
+
+        const nextPlayer = room.collaborativeStoryState.players[room.collaborativeStoryState.currentPlayerIndex];
+
+        // Відправляємо оновлену історію та чергу наступного гравця
+        io.to(room.id).emit('collaborative_story_update', {
+            gameState: room.collaborativeStoryState,
+            currentPlayer: nextPlayer
+        });
     });
 
     // Обробляємо пропуск ходу в спільній історії
@@ -1661,14 +2142,62 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Обробляємо творче завдання
+    // Обробляємо творче завдання (для режиму, де пише один гравець)
     socket.on('creative_task_submission', (data) => {
-        // ... (Логіка без змін)
+        console.log('Отримано творче завдання:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+
+        const room = rooms.get(data.roomId);
+        if (!room || !room.creativeWritingState) return;
+
+        // Зберігаємо відповідь
+        room.creativeWritingState.submissions.push({
+            text: data.text,
+            playerName: player.name,
+            playerId: player.id
+        });
+
+        // Оскільки це завдання для одного гравця, одразу починаємо голосування
+        console.log('🗳️ Відправляємо start_voting:', {
+            submissions: room.creativeWritingState.submissions,
+            gameState: room.creativeWritingState
+        });
+        io.to(room.id).emit('start_voting', {
+            submissions: room.creativeWritingState.submissions,
+            gameState: room.creativeWritingState
+        });
     });
 
-    // Обробляємо відправку творчої роботи
+    // Обробляємо відправку творчої роботи (для режиму, де пишуть усі)
     socket.on('submit_creative_entry', (data) => {
-        // ... (Логіка без змін)
+        console.log('Отримано творчу роботу:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+
+        const room = rooms.get(data.roomId);
+        if (!room || !room.creativeWritingState) return;
+
+        // Зберігаємо відповідь
+        room.creativeWritingState.submissions.push({
+            text: data.text,
+            playerName: player.name,
+            playerId: player.id
+        });
+
+        console.log(`Гравець ${player.name} відправив творчу роботу. Всього: ${room.creativeWritingState.submissions.length}/${room.gameData.players.length}`);
+
+        // Перевіряємо, чи всі гравці (що не вибули) відправили роботи
+        const activePlayersCount = room.gameData.players.filter(p => !p.hasLost && !p.hasWon).length;
+        
+        if (room.creativeWritingState.submissions.length >= activePlayersCount) {
+            // Всі відправили, починаємо голосування
+            console.log('🗳️ Всі відправили роботи, починаємо голосування');
+            io.to(room.id).emit('start_voting', {
+                submissions: room.creativeWritingState.submissions,
+                gameState: room.creativeWritingState
+            });
+        }
     });
 
     // Обробляємо голосування в творчій грі
@@ -1866,9 +2395,33 @@ io.on('connection', (socket) => {
         }
     });
     
-    // Обмін місцями, реконнект та інше без змін...
-    // ...
-});
+    // Обмін місцями (після PvP)
+    socket.on('swap_positions', (data) => {
+        const room = rooms.get(data.roomId);
+        if (!room) return;
+        
+        const currentPlayer = room.gameData.players.find(p => p.id === data.playerId);
+        const targetPlayer = room.gameData.players.find(p => p.id === data.targetPlayerId);
+        
+        if (currentPlayer && targetPlayer) {
+            // Обмінюємося позиціями
+            const tempPosition = currentPlayer.position;
+            currentPlayer.position = targetPlayer.position;
+            targetPlayer.position = tempPosition;
+            
+            // Повідомляємо всіх гравців
+            io.to(room.id).emit('positions_swapped', {
+                player1: { id: currentPlayer.id, name: currentPlayer.name, position: currentPlayer.position },
+                player2: { id: targetPlayer.id, name: targetPlayer.name, position: targetPlayer.position },
+                message: `${currentPlayer.name} обмінявся місцями з ${targetPlayer.name}!`
+            });
+            
+            console.log(`${currentPlayer.name} обмінявся місцями з ${targetPlayer.name}`);
+            
+            // Передаємо хід, оскільки дія завершена
+            passTurnToNextPlayer(room);
+        }
+    });
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';

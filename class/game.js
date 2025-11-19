@@ -2199,8 +2199,26 @@ class EducationalPathGame {
                         // Звичайне зображення
                         this.questModalContent.style.backgroundImage = `url('${backgroundImageUrl}')`;
                         this.questModalContent.style.backgroundSize = 'cover';
-                        this.questModalContent.style.backgroundPosition = 'center';
-                        this.questModalContent.style.backgroundRepeat = 'no-repeat';
+                        this.questModalContent.style.backgroundPosition = 'center';
+                        this.questModalContent.style.backgroundRepeat = 'no-repeat';
+                        // Додаємо затемнення для кращої читабельності тексту
+                        // Створюємо overlay для затемнення
+                        let overlay = this.questModalContent.querySelector('.modal-overlay');
+                        if (!overlay) {
+                            overlay = document.createElement('div');
+                            overlay.className = 'modal-overlay';
+                            overlay.style.cssText = 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); border-radius: inherit; z-index: 0; pointer-events: none;';
+                        }
+                        // Переконаємося, що overlay є першим елементом
+                        if (overlay.parentNode !== this.questModalContent) {
+                            this.questModalContent.insertBefore(overlay, this.questModalContent.firstChild);
+                        }
+                        // Переконаємося, що контент поверх overlay
+                        const contentDiv = this.questModalContent.querySelector('div[style*="z-index: 1"]');
+                        if (contentDiv) {
+                            contentDiv.style.position = 'relative';
+                            contentDiv.style.zIndex = '1';
+                        }
                     }
                 } else {
                     this.questModalContent.style.backgroundImage = 'none';
@@ -2233,14 +2251,36 @@ class EducationalPathGame {
             const currentBackgroundPosition = this.questModalContent.style.backgroundPosition;
             const currentBackgroundRepeat = this.questModalContent.style.backgroundRepeat;
     
+            // Видаляємо старий overlay, якщо він є
+            const oldOverlay = this.questModalContent.querySelector('.modal-overlay');
+            if (oldOverlay) {
+                oldOverlay.remove();
+            }
+    
             this.questModalContent.innerHTML = html;
     
             // Встановлюємо фонове зображення, якщо передано
             if (backgroundImageUrl) {
-                this.questModalContent.style.backgroundImage = `url('${backgroundImageUrl}')`;
-                this.questModalContent.style.backgroundSize = 'cover';
-                this.questModalContent.style.backgroundPosition = 'center';
-                this.questModalContent.style.backgroundRepeat = 'no-repeat';
+                this.questModalContent.style.backgroundImage = `url('${backgroundImageUrl}')`;
+                this.questModalContent.style.backgroundSize = 'cover';
+                this.questModalContent.style.backgroundPosition = 'center';
+                this.questModalContent.style.backgroundRepeat = 'no-repeat';
+                // Додаємо затемнення для кращої читабельності тексту
+                setTimeout(() => {
+                    let overlay = this.questModalContent.querySelector('.modal-overlay');
+                    if (!overlay) {
+                        overlay = document.createElement('div');
+                        overlay.className = 'modal-overlay';
+                        overlay.style.cssText = 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); border-radius: inherit; z-index: 0; pointer-events: none;';
+                        this.questModalContent.insertBefore(overlay, this.questModalContent.firstChild);
+                    }
+                    // Переконаємося, що контент поверх overlay
+                    const contentDiv = this.questModalContent.querySelector('div');
+                    if (contentDiv) {
+                        contentDiv.style.position = 'relative';
+                        contentDiv.style.zIndex = '1';
+                    }
+                }, 10);
             } else {
                 // Відновлюємо фонове зображення після вставки HTML
                 if (currentBackground && currentBackground !== 'none') {

@@ -53,18 +53,31 @@ class GameUI {
         console.log('🏠 Показано головне меню');
     }
     
-    showQuestModal(title, content, buttons = [], backgroundImageUrl = null) {
+    showQuestModal(title, content, buttons = [], backgroundImageUrl = null, noDarken = false, scaleUp = false) {
         const modalContent = document.getElementById('quest-modal-content');
         // Скидаємо можливі класи/фон від інших модалок (наприклад, madlibs-bg)
         if (modalContent) {
-            modalContent.classList.remove('madlibs-bg');
+            modalContent.classList.remove('madlibs-bg', 'winer-modal', 'winer-modal-scaled');
             modalContent.style.removeProperty('--quest-bg');
+            modalContent.style.filter = '';
+            modalContent.style.transform = '';
             
             // Видаляємо старе відео, якщо воно існує
             const existingVideo = modalContent.querySelector('.modal-background-video');
             if (existingVideo) {
                 existingVideo.pause();
                 existingVideo.remove();
+            }
+            
+            // Додаємо клас для winer модального вікна
+            if (backgroundImageUrl && (backgroundImageUrl.includes('winer') || scaleUp || noDarken)) {
+                modalContent.classList.add('winer-modal');
+                if (scaleUp) {
+                    modalContent.classList.add('winer-modal-scaled');
+                }
+                if (noDarken) {
+                    modalContent.style.filter = 'none';
+                }
             }
         }
         const buttonsHTML = buttons.map((btn, index) => 

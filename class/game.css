@@ -2238,7 +2238,7 @@ html.winer-modal-active {
 }
 
 #quest-modal-content.winer-modal-scaled {
-    transform: scale(1.5) !important;
+    transform: scale(1.0) !important; /* Зменшено з 1.5 до 1.0 для 101.png */
     transform-origin: center center;
     overflow: visible !important; /* Дозволяємо показувати весь контент без обрізання */
     width: 100% !important;

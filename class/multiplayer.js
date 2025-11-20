@@ -34,6 +34,7 @@ class MultiplayerGame extends EducationalPathGame {
         this.timerSound.preload = 'auto';
         this.timerSound.loop = true; // Зациклюємо звук таймера
         this.timerSoundInterval = null; // Для зберігання інтервалу зациклення
+        this.currentWebNovellaBackground = null;
         
         // Відстеження використаних клітинок з подіями
         this.usedEventCells = new Set();
@@ -3255,6 +3256,11 @@ class MultiplayerGame extends EducationalPathGame {
         const submitBtn = document.getElementById('submit-result-btn');
         const textInput = document.getElementById('text-input');
         
+        if (!timerElement || !submitBtn || !textInput) {
+            console.warn('Timed text quest UI елементи не знайдено для старту таймера');
+            return;
+        }
+        
         // Відтворюємо звук таймера
         this.playTimerSound();
         
@@ -3785,9 +3791,9 @@ class MultiplayerGame extends EducationalPathGame {
             <p class="mb-4">${data.resultMessage}</p>
             <div class="mb-4">
                 <h4 class="font-bold">Переможець:</h4>
-                <div class="p-3 bg-green-100 rounded">
-                    <p class="font-bold">${data.winner.playerName}:</p>
-                    <p>${data.winner.text}</p>
+                <div class="p-3 rounded border border-green-400 bg-black bg-opacity-60 text-white">
+                    <p class="font-bold text-green-300">${data.winner.playerName}:</p>
+                    <p class="whitespace-pre-line">${data.winner.text}</p>
                 </div>
             </div>
         `;
@@ -3933,16 +3939,24 @@ class MultiplayerGame extends EducationalPathGame {
         const isMyEvent = data.activePlayerId === this.playerId;
         
         // Визначаємо номер новели за поточною подією
+        const currentEventKey = (data.gameState?.currentEvent || '').toLowerCase();
         let backgroundImage = null;
         let isEvent2 = false;
-        const currentEvent = data.gameState?.currentEvent || '';
-        if (currentEvent.includes('event_1') || currentEvent.includes('start_event_1')) {
+        
+        if (currentEventKey.includes('event_1') || currentEventKey.includes('consequence_1') || currentEventKey.includes('start_event_1')) {
             backgroundImage = 'image/modal_window/event_1.jpg';
-        } else if (currentEvent.includes('event_2') || currentEvent.includes('start_event_2')) {
+        } else if (currentEventKey.includes('event_2') || currentEventKey.includes('consequence_2') || currentEventKey.includes('start_event_2')) {
             backgroundImage = 'image/modal_window/event_2.jpg';
             isEvent2 = true;
-        } else if (currentEvent.includes('event_3') || currentEvent.includes('start_event_3')) {
+        } else if (currentEventKey.includes('event_3') || currentEventKey.includes('consequence_3') || currentEventKey.includes('start_event_3')) {
             backgroundImage = 'image/modal_window/event_3.jpg';
+        }
+        
+        if (!backgroundImage && this.currentWebNovellaBackground) {
+            backgroundImage = this.currentWebNovellaBackground;
+        }
+        if (backgroundImage) {
+            this.currentWebNovellaBackground = backgroundImage;
         }
         
         let modalContent = `
@@ -3970,13 +3984,15 @@ class MultiplayerGame extends EducationalPathGame {
             modalContent += `<p class="text-center text-gray-600">Очікуйте вибору гравця</p>`;
         }
         
-        // Додаємо клас для event_2, щоб зробити його світлішим
-        const modalElement = document.getElementById('quest-modal-content');
-        if (isEvent2 && modalElement) {
-            modalElement.classList.add('event-2-bg');
-        }
-        
         this.showQuestModal('Вебновела', modalContent, [], backgroundImage);
+        
+        const modalElement = document.getElementById('quest-modal-content');
+        if (modalElement) {
+            modalElement.classList.remove('event-2-bg');
+            if (isEvent2) {
+                modalElement.classList.add('event-2-bg');
+            }
+        }
         
         // Застосовуємо filter для event_2 після створення модального вікна
         if (isEvent2) {

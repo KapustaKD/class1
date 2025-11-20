@@ -2493,7 +2493,7 @@ class MultiplayerGame extends EducationalPathGame {
                                         window.location.href = '/';
                                     }
                                 }
-                            ], 'image/modal_window/101.png', false, false);
+                            ], 'image/modal_window/101.png', true, true);
                         }, 300);
                     }
                 }

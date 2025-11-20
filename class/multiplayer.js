@@ -1961,8 +1961,19 @@ class MultiplayerGame extends EducationalPathGame {
                                 modal.remove();
                                 document.body.classList.remove('glassmorphism-bg');
                             }
-                            // Оновлюємо cost в eventData перед відправкою
-                            const updatedEventData = { ...data.eventData, cost: cost };
+                            // Оновлюємо cost і target в eventData перед відправкою
+                            // Переконаємося, що target встановлено правильно
+                            let target = data.eventData.target;
+                            if (!target && data.eventData.cellNumber) {
+                                // Якщо target не встановлено, використовуємо відомі значення
+                                const cellNumber = data.eventData.cellNumber;
+                                if (cellNumber === 5) target = 11;
+                                else if (cellNumber === 14) target = 18;
+                                else if (cellNumber === 26) target = 33;
+                                else if (cellNumber === 46) target = 57;
+                                else if (cellNumber === 80) target = 91;
+                            }
+                            const updatedEventData = { ...data.eventData, cost: cost, target: target };
                             this.makeEventChoice('yes', data.eventType, updatedEventData);
                         });
                     }
@@ -2137,6 +2148,10 @@ class MultiplayerGame extends EducationalPathGame {
             if (bypassModal2) {
                 bypassModal2.remove();
                 document.body.classList.remove('glassmorphism-bg');
+            }
+            // Також закриваємо стандартне модальне вікно події для інших гравців
+            if (this.questModal) {
+                this.questModal.classList.add('hidden');
             }
         }
         

@@ -291,9 +291,36 @@ app.get('/ping', (req, res) => {
 
 // Періодичний keep-alive механізм (для запобігання закриття на Render)
 if (process.env.NODE_ENV === 'production') {
+    // Внутрішній keep-alive через HTTP запити до себе
+    const keepAliveInterval = setInterval(() => {
+        const http = require('http');
+        const options = {
+            hostname: process.env.RENDER_EXTERNAL_HOSTNAME || 'localhost',
+            port: process.env.PORT || 3000,
+            path: '/ping',
+            method: 'GET',
+            timeout: 5000
+        };
+        
+        const req = http.request(options, (res) => {
+            console.log('💓 Keep-alive: сервер активний', new Date().toISOString(), 'Status:', res.statusCode);
+        });
+        
+        req.on('error', (err) => {
+            console.log('⚠️ Keep-alive помилка (це нормально на локальному сервері):', err.message);
+        });
+        
+        req.on('timeout', () => {
+            req.destroy();
+        });
+        
+        req.end();
+    }, 5 * 60 * 1000); // Кожні 5 хвилин (Render закриває сервер після 15 хв неактивності)
+    
+    // Також логуємо кожні 10 хвилин для моніторингу
     setInterval(() => {
         console.log('💓 Keep-alive: сервер активний', new Date().toISOString());
-    }, 10 * 60 * 1000); // Кожні 10 хвилин
+    }, 10 * 60 * 1000);
 }
 
 // Зберігання кімнат та гравців
@@ -1226,10 +1253,19 @@ io.on('connection', (socket) => {
                 
                 if (Math.random() < 0.5) {
                     if (roomPlayer) {
-                        roomPlayer.position = data.eventData.target;
+                        const targetPosition = data.eventData.target;
+                        roomPlayer.position = targetPosition;
                         roomPlayer.points = Math.max(0, roomPlayer.points - data.eventData.cost);
-                        player.position = data.eventData.target;
+                        player.position = targetPosition;
                         player.points = Math.max(0, player.points - data.eventData.cost);
+                        // Оновлюємо позицію фішки на клієнті
+                        io.to(room.id).emit('player_moved', {
+                            playerId: player.id,
+                            newPosition: targetPosition,
+                            position: targetPosition,
+                            newPoints: roomPlayer.points
+                        });
+                        console.log(`Гравець ${player.name} переміщено на клітинку ${targetPosition} через альтернативний шлях`);
                     }
                     resultMessage = `${player.name} успішно скоротив шлях! Переміщено на клітинку ${data.eventData.target}, втрачено ${data.eventData.cost} ОО.`;
                 } else {
@@ -1743,12 +1779,27 @@ io.on('connection', (socket) => {
                     activePlayerId: currentPlayer.id
                 });
              } else {
-                 // Інші складні квести запускаються через client->server. 
-                 // Тут ми просто повідомимо клієнту, що подія сталась
-                  io.to(room.id).emit('game_state_update', room.gameData);
-                  // Емулюємо отримання player_on_event через рекурсивний виклик listeners (складно)
-                  // Простіше:
-                  socket.emit('force_event_start', eventData); // Клієнт має обробити це і надіслати player_on_event
+                 // Інші складні квести - відправляємо show_event_prompt та сигнал для запуску
+                 const playerOnEventData = {
+                     roomId: room.id,
+                     eventType: cellData.type,
+                     eventData: { ...cellData, cellNumber: data.cellNumber },
+                     cellNumber: data.cellNumber
+                 };
+                 
+                 // Відправляємо show_event_prompt для всіх типів подій
+                 io.to(room.id).emit('show_event_prompt', {
+                     eventType: cellData.type,
+                     eventData: { ...cellData, cellNumber: data.cellNumber },
+                     playerId: currentPlayer.id,
+                     playerName: currentPlayer.name,
+                     activePlayerId: currentPlayer.id,
+                     cellNumber: data.cellNumber
+                 });
+                 
+                 // Відправляємо сигнал хосту, щоб він надіслав player_on_event
+                 // Це дозволить запустити подію через стандартний механізм
+                 socket.emit('force_event_start', playerOnEventData);
              }
         } else {
             socket.emit('error', { message: 'На цій клітинці немає події' });
@@ -2285,12 +2336,9 @@ io.on('connection', (socket) => {
         room.madLibsState.currentQuestionIndex++;
         
         if (room.madLibsState.currentQuestionIndex < room.madLibsState.questions.length) {
-            if (room.madLibsState.currentQuestionIndex === 1) {
-                // НЕ змінюємо currentPlayerIndex
-            } else {
-                room.madLibsState.currentPlayerIndex = 
-                    (room.madLibsState.currentPlayerIndex + 1) % room.madLibsState.players.length;
-            }
+            // Завжди переходимо до наступного гравця після кожної відповіді
+            room.madLibsState.currentPlayerIndex = 
+                (room.madLibsState.currentPlayerIndex + 1) % room.madLibsState.players.length;
             
             const nextPlayer = room.madLibsState.players[room.madLibsState.currentPlayerIndex];
             const nextQuestion = room.madLibsState.questions[room.madLibsState.currentQuestionIndex];

@@ -887,6 +887,96 @@ io.on('connection', (socket) => {
                 finalPosition = finalPosition + 1;
             }
             currentPlayer.position = finalPosition;
+            
+            // Визначаємо наступну епоху та початкову позицію
+            const currentEpoch = getEpochForPosition(finalPosition);
+            const nextEpoch = currentEpoch + 1;
+            const epochStartPositions = { 2: 13, 3: 23, 4: 43, 5: 76, 6: 98 };
+            const targetPosition = epochStartPositions[nextEpoch] || 0;
+            
+            // Показуємо вікно переродження і чекаємо на погодження
+            // НЕ передаємо хід одразу - гравець має погодитися
+            console.log(`Гравець ${currentPlayer.name} зупинився на межі епохи ${currentEpoch} (клітинка ${finalPosition}). Показуємо вікно переродження.`);
+            
+            // Визначаємо новий клас для нової епохи
+            const occupiedClassesInNewEpoch = room.gameData.players
+                .filter(p => p.id !== currentPlayer.id && p.class && getEpochForPosition(p.position) === nextEpoch)
+                .map(p => p.class.id);
+            
+            const availableClasses = [
+                { id: 'aristocrat', name: '⚜️ Аристократ', startPoints: 50, moveModifier: 1 },
+                { id: 'burgher', name: '⚖️ Міщанин', startPoints: 20, moveModifier: 0 },
+                { id: 'peasant', name: '🌱 Селянин', startPoints: 0, moveModifier: -1 }
+            ];
+            
+            const classCounts = {};
+            for (const classId of occupiedClassesInNewEpoch) {
+                classCounts[classId] = (classCounts[classId] || 0) + 1;
+            }
+            
+            let availableClassPool = availableClasses.filter(cls => {
+                const count = classCounts[cls.id] || 0;
+                if (room.gameData.players.length <= 3) {
+                    return count < 1;
+                } else {
+                    return count < 2;
+                }
+            });
+            
+            if (availableClassPool.length === 0) {
+                availableClassPool = availableClasses;
+            }
+            
+            const newClass = availableClassPool[Math.floor(Math.random() * availableClassPool.length)];
+            
+            // Зберігаємо дані для переродження
+            room.currentEventPlayerId = currentPlayer.id;
+            room.currentEventData = {
+                type: 'epoch_reincarnation',
+                targetPosition: targetPosition,
+                newClass: newClass,
+                bonusPoints: 50,
+                currentEpoch: currentEpoch,
+                nextEpoch: nextEpoch
+            };
+            
+            // Показуємо вікно переродження
+            io.to(currentPlayer.id).emit('early_reincarnation_event', {
+                playerId: currentPlayer.id,
+                playerName: currentPlayer.name,
+                cellNumber: finalPosition,
+                eventData: {
+                    points: 50,
+                    targetEpoch: nextEpoch,
+                    cellNumber: finalPosition
+                },
+                newClass: newClass
+            });
+            
+            // Відправляємо dice_result, щоб показати рух до межі епохи
+            io.to(room.id).emit('dice_result', {
+                playerId: currentPlayer.id,
+                playerName: currentPlayer.name,
+                roll: adjustedRoll,
+                originalRoll: roll,
+                move: move,
+                oldPosition: oldPosition,
+                newPosition: finalPosition,
+                newPoints: currentPlayer.points,
+                newClass: currentPlayer.class,
+                currentPlayerIndex: room.gameData.currentPlayerIndex,
+                eventInfo: {
+                    hasEvent: false,
+                    eventType: null,
+                    eventData: null,
+                    playerId: currentPlayer.id,
+                    playerName: currentPlayer.name
+                },
+                stopAtEpochBoundary: true // Позначка, що гравець зупинився на межі епохи
+            });
+            
+            // НЕ передаємо хід - чекаємо на погодження гравця
+            return;
         } else {
             // Якщо фінальна позиція все ще заборонена (через пропуск), переміщуємо далі
             if (FORBIDDEN_CELLS.includes(finalPosition)) {
@@ -941,10 +1031,12 @@ io.on('connection', (socket) => {
             }
         }
         
+        // Перевірка переходу в нову епоху (тільки якщо НЕ stopMove - бо stopMove вже оброблено вище)
+        // Ця логіка спрацьовує тільки якщо гравець перейшов в нову епоху БЕЗ зупинки на межі
         const oldEpochAfterMove = getEpochForPosition(oldPosition);
         const newEpochAfterMove = getEpochForPosition(finalPosition);
         
-        if (oldEpochAfterMove !== newEpochAfterMove && finalPosition > oldPosition) {
+        if (!stopMove && oldEpochAfterMove !== newEpochAfterMove && finalPosition > oldPosition) {
             console.log(`${currentPlayer.name} перейшов в нову епоху ${newEpochAfterMove} - реінкарнація!`);
             currentPlayer.points += 50;
             
@@ -1318,7 +1410,7 @@ io.on('connection', (socket) => {
                 newPoints: room.gameData.players.find(p => p.id === player.id)?.points || player.points
             });
             passTurnToNextPlayer(room);
-        } else if (data.eventType === 'early-reincarnation') {
+        } else if (data.eventType === 'early-reincarnation' || data.eventType === 'epoch_reincarnation') {
             const targetEpoch = data.eventData.targetEpoch;
             const cellNumber = data.eventData.cellNumber;
             let targetPosition;
@@ -1332,10 +1424,14 @@ io.on('connection', (socket) => {
             
             const roomPlayer = room.gameData.players.find(p => p.id === player.id);
             if (roomPlayer) {
+                // Зберігаємо стару позицію (межа епохи) для анімації
+                const oldPosition = roomPlayer.position;
+                
+                // Переміщуємо гравця на початок нової епохи
                 roomPlayer.position = targetPosition;
-                roomPlayer.points += data.eventData.points;
+                roomPlayer.points += data.eventData.points || 50;
                 player.position = targetPosition;
-                player.points += data.eventData.points;
+                player.points += data.eventData.points || 50;
                 
                 const newEpoch = getEpochForPosition(targetPosition);
                 const occupiedClassesInNewEpoch = room.gameData.players
@@ -1360,37 +1456,45 @@ io.on('connection', (socket) => {
                 
                 if (availableClassPool.length === 0) availableClassPool = availableClasses;
                 
-                roomPlayer.class = availableClassPool[Math.floor(Math.random() * availableClassPool.length)];
+                // Використовуємо клас з eventData, якщо він є (для epoch_reincarnation)
+                if (data.eventType === 'epoch_reincarnation' && room.currentEventData && room.currentEventData.newClass) {
+                    roomPlayer.class = room.currentEventData.newClass;
+                } else {
+                    roomPlayer.class = availableClassPool[Math.floor(Math.random() * availableClassPool.length)];
+                }
                 player.class = roomPlayer.class;
+                
+                console.log(`${player.name} перемістився на початок епохи ${newEpoch} (клітинка ${targetPosition}) після переродження`);
+                
+                // Системні повідомлення не відправляємо в чат (тільки повідомлення гравців)
+                
+                // Показуємо інформацію про переродження іншим гравцям
+                room.players.forEach(p => {
+                    if (p.id !== player.id) {
+                        io.to(p.id).emit('show_reincarnation_class', {
+                            playerId: player.id,
+                            playerName: player.name,
+                            newClass: roomPlayer.class,
+                            bonusPoints: data.eventData.points || 50,
+                            isOtherPlayer: true
+                        });
+                    }
+                });
+                
+                // Оновлюємо стан гри
+                io.to(room.id).emit('game_state_update', room.gameData);
+                
+                // Відправляємо оновлення позиції гравця з анімацією
+                io.to(room.id).emit('player_reincarnated', {
+                    playerId: player.id,
+                    newPosition: targetPosition,
+                    oldPosition: oldPosition, // Позиція до переміщення (межа епохи)
+                    newPoints: roomPlayer.points,
+                    newClass: roomPlayer.class,
+                    bonusPoints: data.eventData.points || 50
+                });
             }
             
-            // Системні повідомлення не відправляємо в чат (тільки повідомлення гравців)
-            
-            io.to(player.id).emit('early_reincarnation_event', {
-                playerId: player.id,
-                playerName: player.name,
-                cellNumber: cellNumber,
-                eventData: {
-                    points: data.eventData.points,
-                    targetEpoch: targetEpoch,
-                    cellNumber: cellNumber
-                },
-                newClass: roomPlayer.class
-            });
-            
-            room.players.forEach(p => {
-                if (p.id !== player.id) {
-                    io.to(p.id).emit('show_reincarnation_class', {
-                        playerId: player.id,
-                        playerName: player.name,
-                        newClass: roomPlayer.class,
-                        bonusPoints: data.eventData.points || 0,
-                        isOtherPlayer: true
-                    });
-                }
-            });
-            
-            io.to(room.id).emit('game_state_update', room.gameData);
             // ВАЖЛИВО: Очищаємо currentEventPlayerId перед передачею ходу
             room.currentEventPlayerId = null;
             room.currentEventData = null;

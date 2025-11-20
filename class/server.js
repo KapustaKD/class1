@@ -1253,21 +1253,49 @@ io.on('connection', (socket) => {
                 
                 if (Math.random() < 0.5) {
                     if (roomPlayer) {
-                        const targetPosition = data.eventData.target;
-                        roomPlayer.position = targetPosition;
-                        roomPlayer.points = Math.max(0, roomPlayer.points - data.eventData.cost);
-                        player.position = targetPosition;
-                        player.points = Math.max(0, player.points - data.eventData.cost);
-                        // Оновлюємо позицію фішки на клієнті
-                        io.to(room.id).emit('player_moved', {
-                            playerId: player.id,
-                            newPosition: targetPosition,
-                            position: targetPosition,
-                            newPoints: roomPlayer.points
-                        });
-                        console.log(`Гравець ${player.name} переміщено на клітинку ${targetPosition} через альтернативний шлях`);
+                        // Жорстко визначаємо target на основі поточної позиції гравця
+                        let targetPosition = data.eventData.target;
+                        const currentPosition = roomPlayer.position;
+                        
+                        // Fallback logic - жорстко встановлюємо target для конкретних клітинок
+                        if (currentPosition === 5) targetPosition = 11;
+                        else if (currentPosition === 14) targetPosition = 18;
+                        else if (currentPosition === 26) targetPosition = 33;
+                        else if (currentPosition === 46) targetPosition = 57;
+                        else if (currentPosition === 80) targetPosition = 91;
+                        // Якщо target не встановлено, використовуємо з eventData
+                        else if (!targetPosition && data.eventData.target) {
+                            targetPosition = data.eventData.target;
+                        }
+                        
+                        // Якщо все ще немає target, беремо з specialCells
+                        if (!targetPosition) {
+                            const specialCells = require('./specialCells.js');
+                            const cellData = specialCells[currentPosition];
+                            if (cellData && cellData.target) {
+                                targetPosition = cellData.target;
+                            }
+                        }
+                        
+                        if (targetPosition) {
+                            roomPlayer.position = targetPosition;
+                            roomPlayer.points = Math.max(0, roomPlayer.points - data.eventData.cost);
+                            player.position = targetPosition;
+                            player.points = Math.max(0, player.points - data.eventData.cost);
+                            // Оновлюємо позицію фішки на клієнті
+                            io.to(room.id).emit('player_moved', {
+                                playerId: player.id,
+                                newPosition: targetPosition,
+                                position: targetPosition,
+                                newPoints: roomPlayer.points
+                            });
+                            console.log(`Гравець ${player.name} переміщено з клітинки ${currentPosition} на клітинку ${targetPosition} через альтернативний шлях`);
+                            resultMessage = `${player.name} успішно скоротив шлях! Переміщено на клітинку ${targetPosition}, втрачено ${data.eventData.cost} ОО.`;
+                        } else {
+                            console.error(`Не вдалося визначити target для альтернативного шляху на клітинці ${currentPosition}`);
+                            resultMessage = `${player.name} не вдалося скористатися обхідною дорогою. ОО не списано.`;
+                        }
                     }
-                    resultMessage = `${player.name} успішно скоротив шлях! Переміщено на клітинку ${data.eventData.target}, втрачено ${data.eventData.cost} ОО.`;
                 } else {
                     if (roomPlayer) {
                         roomPlayer.points = Math.max(0, roomPlayer.points - data.eventData.cost);
@@ -1316,6 +1344,7 @@ io.on('connection', (socket) => {
             playerId: player.id,
             playerName: player.name,
             choice: data.choice,
+            eventType: data.eventType, // Додаємо eventType для правильного закриття модальних вікон
             resultMessage,
             newPosition: roomPlayer ? roomPlayer.position : player.position,
             newPoints: roomPlayer ? roomPlayer.points : player.points
@@ -2475,17 +2504,31 @@ io.on('connection', (socket) => {
     });
 });
 
-// --- ЗАБЕЗПЕЧЕННЯ СТАБІЛЬНОСТІ СЕРВЕРА ---
-process.on('uncaughtException', (err) => {
-    console.error('CRITICAL ERROR (Uncaught Exception):', err);
-});
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('CRITICAL ERROR (Unhandled Rejection):', reason);
-});
-
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 
 server.listen(PORT, HOST, () => {
     console.log(`🚀 Сервер запущено на ${HOST}:${PORT}`);
+    console.log(`🌐 Режим: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📊 Socket.IO підключено`);
+});
+
+server.on('error', (error) => {
+    console.error('❌ Помилка сервера:', error);
+});
+
+process.on('SIGTERM', () => {
+    console.log('🛑 Отримано SIGTERM, закриваємо сервер...');
+    server.close(() => {
+        console.log('✅ Сервер закрито');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('🛑 Отримано SIGINT, закриваємо сервер...');
+    server.close(() => {
+        console.log('✅ Сервер закрито');
+        process.exit(0);
+    });
 });

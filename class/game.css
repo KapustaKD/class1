@@ -4,6 +4,16 @@ body {
     touch-action: none; 
 }
 
+/* Анімація пульсації для індикатора "Думає..." */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
 /* Контейнер ігрового поля */
 #game-container {
     min-height: 500px; /* Мінімальна висота для контейнера */

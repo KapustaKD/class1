@@ -34,6 +34,32 @@ class BotGame extends EducationalPathGame {
         this.creativeVotes = {};
     }
 
+    // Метод для ботів, щоб вони "говорили" в чат
+    botSay(player, context) {
+        const phrases = {
+            'roll_1': ["О ні, тільки не одиниця!", "Кубик зламаний!", "Смешно...", "Ну що це таке?"],
+            'roll_6': ["О так! Полетіли!", "Стережіться, я йду!", "Фортуна зі мною!", "Відмінно!"],
+            'win_pvp': ["Легка перемога.", "Тобі треба потренуватися.", "Ха-ха!", "Я кращий!"],
+            'lose_pvp': ["Це було нечесно!", "Реванш!", "Пощастило тобі.", "Наступного разу виграю!"],
+            'test_correct': ["Так, я знав це!", "Легко!", "Просто як два рази два."],
+            'test_wrong': ["Хм, це було складно...", "Не вдалося вгадати.", "Спробую краще наступного разу."],
+            'alternative_path_yes': ["Ризик - благородна справа!", "Йду на обхід!", "Спробую швидший шлях!"],
+            'alternative_path_no': ["Краще безпечно.", "Не ризикую.", "Піду звичайним шляхом."]
+        };
+        
+        if (!phrases[context]) return;
+        
+        const msg = phrases[context][Math.floor(Math.random() * phrases[context].length)];
+        
+        // Додаємо повідомлення в чат, якщо він існує
+        if (window.gameUI && window.gameUI.addChatMessage) {
+            window.gameUI.addChatMessage(player.name, msg, player);
+        } else {
+            // Fallback - просто виводимо в консоль
+            console.log(`💬 ${player.name}: ${msg}`);
+        }
+    }
+
     // Ініціалізація відповідей ботів для різних завдань
     initializeBotResponses() {
         return {
@@ -183,6 +209,7 @@ class BotGame extends EducationalPathGame {
 
         // Додаємо інших гравців
         const playerNames = ['Алекс', 'Макс', 'Софія', 'Даніель', 'Олександр', 'Марія', 'Дмитро', 'Анна', 'Владислав', 'Катерина', 'Іван', 'Олена', 'Михайло', 'Наталія', 'Андрій', 'Юлія', 'Сергій', 'Тетяна', 'Олег', 'Ірина'];
+        const personalities = ['aggressive', 'smart', 'random', 'cautious'];
         for (let i = 1; i < playerCount; i++) {
             const bot = {
                 id: `bot-${i}`,
@@ -197,7 +224,8 @@ class BotGame extends EducationalPathGame {
                 hasLost: false,
                 moveModifier: 0,
                 skipTurn: false,
-                extraTurn: false
+                extraTurn: false,
+                personality: personalities[(i - 1) % personalities.length] // Додаємо особистість
             };
             this.players.push(bot);
             this.bots.push(bot);
@@ -474,7 +502,7 @@ class BotGame extends EducationalPathGame {
         }, 100);
     }
 
-    // Обробка ходу іншого гравця
+    // Обробка ходу іншого гравця з "думанням"
     async handleBotTurn() {
         // Захист від одночасних викликів
         if (this.isBotTurnProcessing) {
@@ -494,26 +522,74 @@ class BotGame extends EducationalPathGame {
             console.error('❌ Поточний гравець не знайдений');
             return;
         }
-        
+
         if (!currentPlayer.isBot) {
             console.log(`⚠️ Це не хід бота (${currentPlayer.name}), handleBotTurn скасовано`);
             return;
         }
 
-        // Встановлюємо прапорець обробки
+        // Встановлюємо прапорець обробки та показуємо індикатор "Думає..."
         this.isBotTurnProcessing = true;
+        this.showBotThinkingIndicator(currentPlayer, true);
+        
+        // Жорстко блокуємо кнопку кидання кубика
+        if (this.rollDiceBtn) {
+            this.rollDiceBtn.disabled = true;
+            this.rollDiceBtn.style.opacity = '0.5';
+            this.rollDiceBtn.style.cursor = 'not-allowed';
+            this.rollDiceBtn.style.pointerEvents = 'none'; // Додаткова захист від кліків
+        }
         
         console.log(`🎮 Хід гравця: ${currentPlayer.name} (індекс: ${this.currentPlayerIndex})`);
         
         try {
-            // Кидаємо кубик для гравця
+            // 1. "Думає" (змінна затримка для реалізму)
+            const thinkingTime = Math.random() * 2000 + 1000; // 1-3 секунди
+            await new Promise(r => setTimeout(r, thinkingTime));
+            
+            // 2. Кидаємо кубик
             await this.botRollDice();
         } finally {
+            // Приховуємо індикатор "Думає..."
+            this.showBotThinkingIndicator(currentPlayer, false);
+            
+            // Відновлюємо кнопку кидання кубика (якщо наступний гравець - людина)
+            const nextPlayer = this.players[this.currentPlayerIndex];
+            if (this.rollDiceBtn && nextPlayer && !nextPlayer.isBot) {
+                this.rollDiceBtn.disabled = false;
+                this.rollDiceBtn.style.opacity = '1';
+                this.rollDiceBtn.style.cursor = 'pointer';
+                this.rollDiceBtn.style.pointerEvents = 'auto';
+            }
+            
             // Скидаємо прапорець після завершення ходу
             // Затримка, щоб наступний бот не почав одразу
             setTimeout(() => {
                 this.isBotTurnProcessing = false;
             }, 500);
+        }
+    }
+    
+    // Показ/приховування індикатора "Думає..." для бота
+    showBotThinkingIndicator(player, show) {
+        // Знаходимо елемент гравця в списку
+        const playerElement = document.querySelector(`[data-player-id="${player.id}"]`);
+        if (playerElement) {
+            let indicator = playerElement.querySelector('.bot-thinking-indicator');
+            if (show) {
+                if (!indicator) {
+                    indicator = document.createElement('span');
+                    indicator.className = 'bot-thinking-indicator';
+                    indicator.textContent = 'Думає...';
+                    indicator.style.cssText = 'color: #a855f7; font-style: italic; margin-left: 8px; animation: pulse 1.5s ease-in-out infinite;';
+                    playerElement.appendChild(indicator);
+                }
+                indicator.style.display = 'inline';
+            } else {
+                if (indicator) {
+                    indicator.style.display = 'none';
+                }
+            }
         }
     }
 
@@ -555,6 +631,13 @@ class BotGame extends EducationalPathGame {
         }
 
         console.log(`🎮 ${player.name} кинув ${roll}, рух: ${move} (клас: ${classModifier}, гравець: ${playerModifier})`);
+
+        // Бот реагує на результат кидка
+        if (roll === 1) {
+            this.botSay(player, 'roll_1');
+        } else if (roll === 6) {
+            this.botSay(player, 'roll_6');
+        }
 
         // Показуємо анімацію кубика
         const rotations = {
@@ -616,11 +699,11 @@ class BotGame extends EducationalPathGame {
             // Якщо це людина, не викликаємо nextTurn - вона сама викличе його після руху
             if (player.isBot) {
                 console.log(`✅ ${player.name} завершив хід без події, передаємо хід через ${this.botDelay}мс`);
-                setTimeout(() => {
+            setTimeout(() => {
                     // Перевіряємо, чи це дійсно той самий гравець перед викликом nextTurn
                     const currentCheck = this.players[this.currentPlayerIndex];
                     if (currentCheck && currentCheck.id === player.id && this.gameActive) {
-                        this.nextTurn();
+                this.nextTurn();
                     } else {
                         console.log('⚠️ Гравець змінився перед nextTurn, скасовуємо', {
                             expectedId: player.id,
@@ -628,7 +711,7 @@ class BotGame extends EducationalPathGame {
                             currentIndex: this.currentPlayerIndex
                         });
                     }
-                }, this.botDelay);
+            }, this.botDelay);
             }
             // Для людини nextTurn викликається в базовому класі після руху
         }
@@ -1096,7 +1179,7 @@ class BotGame extends EducationalPathGame {
             this.showQuestModal(`${player.name} - Творчий конкурс`, 
                 `${player.name} здав свою роботу:\n\n"${botResponse}"\n\nОчікуємо вашої роботи...`, [
                     { text: 'Зрозуміло', callback: () => {
-                        this.questModal.classList.add('hidden');
+                    this.questModal.classList.add('hidden');
                         this.isModalOpen = false;
                         // НЕ викликаємо nextTurn - чекаємо на людину
                     }}
@@ -1169,7 +1252,7 @@ class BotGame extends EducationalPathGame {
             alert('Ви не можете голосувати за свою роботу!');
             return;
         }
-        
+
         this.creativeVotes[humanPlayer.id] = submissionIndex;
         console.log(`🎮 ${humanPlayer.name} проголосував за роботу ${submission?.playerName}`);
         
@@ -1225,15 +1308,15 @@ class BotGame extends EducationalPathGame {
             : `Переможець: ${winner?.playerName}!`;
         
         this.showQuestModal('Результати голосування', resultMessage, [
-            { text: 'Далі', callback: () => {
-                this.questModal.classList.add('hidden');
+                { text: 'Далі', callback: () => {
+                    this.questModal.classList.add('hidden');
                 this.isModalOpen = false;
                 // Очищаємо стан
                 this.creativeSubmissions = [];
                 this.playersExpectedToSubmit = [];
                 this.creativeVotes = {};
-                setTimeout(() => this.nextTurn(), 500);
-            }}
+                    setTimeout(() => this.nextTurn(), 500);
+                }}
         ], 'image/modal_window/big_pedagogik.png');
     }
 
@@ -1269,18 +1352,42 @@ class BotGame extends EducationalPathGame {
 
     // Обробка обхідного шляху для інших гравців
     handleBotAlternativePath(player, cellData) {
-        // Гравець завжди вибирає "Так" (ризикує)
-        this.updatePoints(player, -cellData.cost, `Використав обхідний шлях`);
-        this.movePlayerTo(player, cellData.target);
+        // Рішення залежить від особистості бота
+        let willTakePath = false;
         
-        this.showQuestModal(`${player.name} - Обхідний шлях`, 
-            `${player.name} вирішив ризикнути і використати обхідний шлях!\n\nСплачено: ${cellData.cost} ОО\nПереміщено на клітинку: ${cellData.target}`, [
-                { text: 'Далі', callback: () => {
-                    this.questModal.classList.add('hidden');
-                    this.isModalOpen = false;
-                    setTimeout(() => this.nextTurn(), 500);
-                }}
-            ], 'image/modal_window/bypass_road.png', true);
+        if (player.personality === 'cautious') {
+            willTakePath = false; // Обережний ніколи не ризикує
+        } else if (player.personality === 'aggressive') {
+            willTakePath = true; // Агресивний завжди ризикує
+        } else {
+            willTakePath = Math.random() > 0.5; // Інші - рандомно
+        }
+        
+        if (willTakePath) {
+            this.updatePoints(player, -cellData.cost, `Використав обхідний шлях`);
+            this.movePlayerTo(player, cellData.target);
+            this.botSay(player, 'alternative_path_yes');
+            
+            this.showQuestModal(`${player.name} - Обхідний шлях`, 
+                `${player.name} вирішив ризикнути і використати обхідний шлях!\n\nСплачено: ${cellData.cost} ОО\nПереміщено на клітинку: ${cellData.target}`, [
+                    { text: 'Далі', callback: () => {
+                        this.questModal.classList.add('hidden');
+                        this.isModalOpen = false;
+                        setTimeout(() => this.nextTurn(), 500);
+                    }}
+                ], 'image/modal_window/bypass_road.png', true);
+        } else {
+            this.botSay(player, 'alternative_path_no');
+            
+            this.showQuestModal(`${player.name} - Обхідний шлях`, 
+                `${player.name} вирішив не ризикувати і піти звичайним шляхом.`, [
+                    { text: 'Далі', callback: () => {
+                        this.questModal.classList.add('hidden');
+                        this.isModalOpen = false;
+                        setTimeout(() => this.nextTurn(), 500);
+                    }}
+                ], 'image/modal_window/bypass_road.png', true);
+        }
     }
 
     // Обробка реінкарнації для інших гравців
@@ -1354,9 +1461,25 @@ class BotGame extends EducationalPathGame {
     handleBotTestQuestion(player, cellNumber) {
         const questionData = window.TEST_QUESTIONS && window.TEST_QUESTIONS[cellNumber];
         
+        // Розраховуємо шанс правильної відповіді на основі класу та особистості
+        let chance = 0.3; // Базовий шанс 30%
+        
+        // Аристократи мають кращу освіту (згідно лору)
+        if (player.class && player.class.id === 'aristocrat') chance = 0.7;
+        // Міщани середньо
+        else if (player.class && player.class.id === 'burgher') chance = 0.5;
+        
+        // "Smart" особистість додає бонус
+        if (player.personality === 'smart') chance += 0.2;
+        // "Cautious" також додає невеликий бонус (обережність = краще навчання)
+        else if (player.personality === 'cautious') chance += 0.1;
+        
+        // Обмежуємо шанс максимумом 0.95 (завжди є шанс помилитися)
+        chance = Math.min(chance, 0.95);
+        
         if (!questionData) {
-            // Якщо немає питання, даємо випадкову відповідь
-            const isCorrect = Math.random() < 0.5; // 50% шанс правильної відповіді
+            // Якщо немає питання, використовуємо розрахований шанс
+            const isCorrect = Math.random() < chance;
             const reward = isCorrect ? 5 : 0;
             
             if (isCorrect) {
@@ -1374,24 +1497,50 @@ class BotGame extends EducationalPathGame {
             return;
         }
         
-        // Бот вибирає випадкову відповідь
+        // Бот вибирає відповідь з урахуванням шансу
         const options = Object.keys(questionData.options);
-        const selectedAnswer = options[Math.floor(Math.random() * options.length)];
+        let selectedAnswer;
+        
+        if (Math.random() < chance) {
+            // Правильна відповідь
+            selectedAnswer = questionData.correctAnswer;
+        } else {
+            // Неправильна відповідь (випадкова з неправильних)
+            const wrongAnswers = options.filter(opt => opt !== questionData.correctAnswer);
+            selectedAnswer = wrongAnswers[Math.floor(Math.random() * wrongAnswers.length)];
+        }
+        
         const isCorrect = selectedAnswer === questionData.correctAnswer;
         const reward = isCorrect ? 5 : 0;
         
         if (isCorrect) {
             this.updatePoints(player, reward, 'Правильна відповідь на тест');
+            this.botSay(player, 'test_correct');
+        } else {
+            this.botSay(player, 'test_wrong');
         }
         
-        this.showQuestModal(`${player.name} - Тестове завдання`, 
-            `Питання: ${questionData.question}\n\n${player.name} обрав відповідь: ${selectedAnswer})\n\n${isCorrect ? `✅ Правильно! Отримано: +${reward} ОО` : `❌ Неправильно. Правильна відповідь: ${questionData.correctAnswer}`}`, [
-                { text: 'Далі', callback: () => {
-                    this.questModal.classList.add('hidden');
-                    this.isModalOpen = false;
-                    setTimeout(() => this.nextTurn(), 500);
-                }}
-            ], 'image/modal_window/tests.png', true);
+        const modalText = `Питання: ${questionData.question}\n\n${player.name} обрав відповідь: ${selectedAnswer})\n\n${isCorrect ? `✅ Правильно! Отримано: +${reward} ОО` : `❌ Неправильно. Правильна відповідь: ${questionData.correctAnswer}`}`;
+        
+        // Розраховуємо час читання на основі довжини тексту
+        const readTime = Math.max(2000, Math.min(8000, modalText.length * 50 + 1500));
+        
+        this.showQuestModal(`${player.name} - Тестове завдання`, modalText, [
+            { text: 'Далі', callback: () => {
+                this.questModal.classList.add('hidden');
+                this.isModalOpen = false;
+                setTimeout(() => this.nextTurn(), 500);
+            }}
+        ], 'image/modal_window/tests.png', true);
+        
+        // Автоматично закриваємо через розрахований час (якщо не закрито вручну)
+        setTimeout(() => {
+            if (!this.questModal.classList.contains('hidden')) {
+                this.questModal.classList.add('hidden');
+                this.isModalOpen = false;
+                setTimeout(() => this.nextTurn(), 500);
+            }
+        }, readTime);
     }
 
     // Обробка порталу для ботів
@@ -1533,7 +1682,7 @@ class BotGame extends EducationalPathGame {
         // Переходимо до наступного гравця, пропускаючи тих, хто програв
         let attempts = 0;
         const maxAttempts = this.players.length; // Захист від нескінченного циклу
-        
+
         do {
             this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
             attempts++;
@@ -1558,22 +1707,20 @@ class BotGame extends EducationalPathGame {
             // Перевіряємо, чи немає відкритих модальних вікон
             if (this.isModalOpen || !this.questModal.classList.contains('hidden')) {
                 console.log('⏸️ Модальне вікно відкрите, чекаємо...');
-                // Чекаємо, поки модальне вікно закриється
-                const checkModal = setInterval(() => {
-                    // Перевіряємо, чи вікно закрите (незалежно від того, як воно закрилося)
-                    if (!this.isModalOpen && this.questModal.classList.contains('hidden')) {
-                        clearInterval(checkModal);
-                        // Скидаємо прапорець кнопки (якщо він був встановлений)
-                        this.modalButtonClicked = false;
-                        // Після закриття модального вікна чекаємо ще трохи перед ходом бота
-                        setTimeout(() => {
-                            const currentPlayerCheck = this.players[this.currentPlayerIndex];
-                            if (currentPlayerCheck && currentPlayerCheck.isBot && this.gameActive) {
-                                this.handleBotTurn();
-                            }
-                        }, this.botDelay);
-                    }
-                }, 100);
+                // Використовуємо Promise-based підхід замість setInterval
+                this.waitForModalClose().then(() => {
+                    // Скидаємо прапорець кнопки (якщо він був встановлений)
+                    this.modalButtonClicked = false;
+                    // Після закриття модального вікна чекаємо ще трохи перед ходом бота
+                    setTimeout(() => {
+                        const currentPlayerCheck = this.players[this.currentPlayerIndex];
+                        if (currentPlayerCheck && currentPlayerCheck.isBot && this.gameActive) {
+                            this.handleBotTurn();
+                        }
+                    }, this.botDelay);
+                }).catch(() => {
+                    console.log('⚠️ Очікування закриття модального вікна перервано');
+                });
                 return;
             }
             // Додаємо затримку перед кидком кубика ботом
@@ -1726,6 +1873,38 @@ class BotGame extends EducationalPathGame {
     }
     
     // Перевірка та продовження ходу бота після закриття модального вікна
+    // Promise-based метод для очікування закриття модального вікна
+    waitForModalClose() {
+        return new Promise((resolve, reject) => {
+            // Якщо вікно вже закрите, одразу резолвимо
+            if (!this.isModalOpen && this.questModal.classList.contains('hidden')) {
+                resolve();
+                return;
+            }
+            
+            // Перевіряємо кожні 100мс, але з таймаутом 10 секунд
+            const startTime = Date.now();
+            const timeout = 10000; // 10 секунд максимум
+            const checkInterval = 100; // Перевірка кожні 100мс
+            
+            const checkModal = setInterval(() => {
+                // Перевіряємо таймаут
+                if (Date.now() - startTime > timeout) {
+                    clearInterval(checkModal);
+                    reject(new Error('Таймаут очікування закриття модального вікна'));
+                    return;
+                }
+                
+                // Перевіряємо, чи вікно закрите
+                if (!this.isModalOpen && this.questModal.classList.contains('hidden')) {
+                    clearInterval(checkModal);
+                    resolve();
+                }
+            }, checkInterval);
+        });
+    }
+    
+    // Застарілий метод - залишаємо для сумісності, але використовуємо waitForModalClose
     checkAndContinueBotTurn() {
         if (!this.gameActive) {
             console.log('⚠️ Гра неактивна, checkAndContinueBotTurn скасовано');
@@ -1734,26 +1913,8 @@ class BotGame extends EducationalPathGame {
         
         const currentPlayer = this.players[this.currentPlayerIndex];
         
-        // Перевіряємо, чи вікно дійсно закрите
-        // Використовуємо невелику затримку, щоб переконатися, що DOM оновився
-        setTimeout(() => {
-            const isModalStillOpen = !this.questModal.classList.contains('hidden');
-            
-            if (this.isModalOpen || isModalStillOpen) {
-                console.log('⏸️ Модальне вікно ще відкрите, чекаємо...', {
-                    isModalOpen: this.isModalOpen,
-                    hasHiddenClass: this.questModal.classList.contains('hidden')
-                });
-                return;
-            }
-            
-            // Якщо вікно закрите, перевіряємо, чи кнопка була натиснута
-            // Якщо кнопка не була натиснута, це означає, що вікно закрилося іншим способом (наприклад, автоматично)
-            // У такому випадку ми все одно продовжуємо, бо вікно вже закрите
-            if (!this.modalButtonClicked) {
-                console.log('ℹ️ Вікно закрито без натискання кнопки (можливо, автоматично)');
-            }
-            
+        // Використовуємо Promise-based підхід
+        this.waitForModalClose().then(() => {
             // Скидаємо прапорці
             this.isModalOpen = false;
             this.modalButtonClicked = false;
@@ -1785,7 +1946,9 @@ class BotGame extends EducationalPathGame {
             } else {
                 console.log('ℹ️ Не хід бота, checkAndContinueBotTurn завершено');
             }
-        }, 100);
+        }).catch((error) => {
+            console.error('❌ Помилка очікування закриття модального вікна:', error);
+        });
     }
 
     // Показ контейнера гри
@@ -2035,26 +2198,37 @@ class BotGame extends EducationalPathGame {
         }, 1000);
     }
     
-    // Хід бота в хрестиках-нуликах
+    // Хід бота в хрестиках-нуликах з покращеним AI
     makeBotTicTacToeMove() {
         if (!this.ticTacToeState || !this.ticTacToeState.gameActive) return;
         
-        // Знаходимо вільні клітинки
-        const freeCells = [];
-        for (let i = 0; i < 9; i++) {
-            if (!this.ticTacToeState.gameState[i]) {
-                freeCells.push(i);
-            }
+        const board = this.ticTacToeState.gameState;
+        const botSym = 'O';
+        const humanSym = 'X';
+        let moveIndex = -1;
+        
+        // 1. Спроба виграти (знайти лінію, де вже є 2 'O')
+        moveIndex = this.findWinningMove(board, botSym);
+        
+        // 2. Якщо не виграємо, то блокуємо гравця (знайти лінію, де є 2 'X')
+        if (moveIndex === -1) {
+            moveIndex = this.findWinningMove(board, humanSym);
         }
         
-        if (freeCells.length === 0) return;
+        // 3. Якщо центр вільний - займаємо центр
+        if (moveIndex === -1 && !board[4]) {
+            moveIndex = 4;
+        }
         
-        // Вибираємо випадкову вільну клітинку
-        const cellIndex = freeCells[Math.floor(Math.random() * freeCells.length)];
+        // 4. Інакше - рандом
+        if (moveIndex === -1) {
+            const freeCells = board.map((val, idx) => val ? null : idx).filter(val => val !== null);
+            moveIndex = freeCells[Math.floor(Math.random() * freeCells.length)];
+        }
         
         // Хід бота
-        this.ticTacToeState.gameState[cellIndex] = 'O';
-        const cell = document.querySelector(`[data-index="${cellIndex}"]`);
+        this.ticTacToeState.gameState[moveIndex] = 'O';
+        const cell = document.querySelector(`[data-index="${moveIndex}"]`);
         if (cell) {
             cell.innerHTML = this.createPlayerSVG('O');
             cell.classList.add('o', 'disabled');
@@ -2070,6 +2244,24 @@ class BotGame extends EducationalPathGame {
         // Повертаємо хід людині
         this.ticTacToeState.currentPlayer = 'X';
         this.updateTicTacToeStatus('Ваш хід!');
+    }
+    
+    // Допоміжний метод для пошуку виграшного ходу або блокування
+    findWinningMove(board, symbol) {
+        const lines = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // cols
+            [0, 4, 8], [2, 4, 6]             // diagonals
+        ];
+        
+        for (let line of lines) {
+            const [a, b, c] = line;
+            // Якщо в лінії два символи наші, а третій пустий - повертаємо індекс пустого
+            if (board[a] === symbol && board[b] === symbol && !board[c]) return c;
+            if (board[a] === symbol && board[c] === symbol && !board[b]) return b;
+            if (board[b] === symbol && board[c] === symbol && !board[a]) return a;
+        }
+        return -1;
     }
     
     // Перевірка результату хрестиків-нуликів
@@ -2104,16 +2296,21 @@ class BotGame extends EducationalPathGame {
         const cells = document.querySelectorAll('.tic-tac-toe-cell');
         cells.forEach(cell => cell.classList.add('disabled'));
         
-        // Нараховуємо очки
+        // Нараховуємо очки та додаємо реакції
         if (result.winner === 'X') {
             const humanPlayer = this.players.find(p => !p.isBot);
             if (humanPlayer) {
                 this.updatePoints(humanPlayer, 30, 'Перемога в хрестиках-нуликах');
             }
+            const botPlayer = this.players.find(p => p.isBot);
+            if (botPlayer) {
+                this.botSay(botPlayer, 'lose_pvp');
+            }
         } else if (result.winner === 'O') {
             const botPlayer = this.players.find(p => p.isBot);
             if (botPlayer) {
                 this.updatePoints(botPlayer, 30, 'Перемога в хрестиках-нуликах');
+                this.botSay(botPlayer, 'win_pvp');
             }
         }
         

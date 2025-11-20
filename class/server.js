@@ -65,11 +65,27 @@ function passTurnToNextPlayer(room) {
             continue; // Шукаємо далі
         }
         
-        // 2. Перевірка на пропуск ходу через "Прокрастинацію"
+        // 2. Перевірка на пропуск ходу через "Прокрастинацію" або Амфітеатр
         if (nextPlayer.effects && nextPlayer.effects.skipTurn && nextPlayer.effects.skipTurn > 0) {
             console.log(`Гравець ${nextPlayer.name} пропускає хід через Прокрастинацію.`);
             nextPlayer.effects.skipTurn--;
             if (nextPlayer.effects.skipTurn <= 0) delete nextPlayer.effects.skipTurn;
+            
+            // Системні повідомлення не відправляємо в чат (тільки повідомлення гравців)
+            
+            // Відправляємо оновлення стану
+            io.to(room.id).emit('game_state_update', room.gameData);
+            
+            // Переходимо до наступного гравця
+            room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+            room.currentPlayerIndex = room.gameData.currentPlayerIndex; // Синхронізуємо
+            continue; // Шукаємо далі
+        }
+        
+        // 2.1. Перевірка на пропуск ходу через Амфітеатр
+        if (nextPlayer.skipTurn === true) {
+            console.log(`Гравець ${nextPlayer.name} пропускає хід через Амфітеатр.`);
+            nextPlayer.skipTurn = false; // Скидаємо пропуск ходу
             
             // Системні повідомлення не відправляємо в чат (тільки повідомлення гравців)
             
@@ -1481,7 +1497,8 @@ io.on('connection', (socket) => {
                 newPoints: room.gameData.players.find(p => p.id === player.id)?.points || player.points
             });
             passTurnToNextPlayer(room);
-        } else if (data.eventType === 'early-reincarnation' || data.eventType === 'epoch_reincarnation') {
+        } else if (data.eventType === 'early-reincarnation') {
+            // Примусове переродження (не межа епохи) - просто переміщуємо на початок цільової епохи
             const targetEpoch = data.eventData.targetEpoch;
             const cellNumber = data.eventData.cellNumber;
             let targetPosition;
@@ -1495,10 +1512,10 @@ io.on('connection', (socket) => {
             
             const roomPlayer = room.gameData.players.find(p => p.id === player.id);
             if (roomPlayer) {
-                // Зберігаємо стару позицію (межа епохи) для анімації
+                // Зберігаємо стару позицію (поточна клітинка) для анімації
                 const oldPosition = roomPlayer.position;
                 
-                // Переміщуємо гравця на початок нової епохи
+                // Переміщуємо гравця на початок цільової епохи
                 roomPlayer.position = targetPosition;
                 roomPlayer.points += data.eventData.points || 50;
                 player.position = targetPosition;
@@ -1527,15 +1544,77 @@ io.on('connection', (socket) => {
                 
                 if (availableClassPool.length === 0) availableClassPool = availableClasses;
                 
-                // Використовуємо клас з eventData, якщо він є (для epoch_reincarnation)
-                if (data.eventType === 'epoch_reincarnation' && room.currentEventData && room.currentEventData.newClass) {
-                    roomPlayer.class = room.currentEventData.newClass;
-                } else {
-                    roomPlayer.class = availableClassPool[Math.floor(Math.random() * availableClassPool.length)];
-                }
+                roomPlayer.class = availableClassPool[Math.floor(Math.random() * availableClassPool.length)];
                 player.class = roomPlayer.class;
                 
-                console.log(`${player.name} перемістився на початок епохи ${newEpoch} (клітинка ${targetPosition}) після переродження`);
+                console.log(`${player.name} перемістився на початок епохи ${newEpoch} (клітинка ${targetPosition}) після примусового переродження`);
+                
+                // Системні повідомлення не відправляємо в чат (тільки повідомлення гравців)
+                
+                // Показуємо інформацію про переродження іншим гравцям
+                room.players.forEach(p => {
+                    if (p.id !== player.id) {
+                        io.to(p.id).emit('show_reincarnation_class', {
+                            playerId: player.id,
+                            playerName: player.name,
+                            newClass: roomPlayer.class,
+                            bonusPoints: data.eventData.points || 50,
+                            isOtherPlayer: true
+                        });
+                    }
+                });
+                
+                // Оновлюємо стан гри
+                io.to(room.id).emit('game_state_update', room.gameData);
+                
+                // Відправляємо оновлення позиції гравця з анімацією (без старого коду для epoch_reincarnation)
+                io.to(room.id).emit('player_reincarnated', {
+                    playerId: player.id,
+                    newPosition: targetPosition,
+                    oldPosition: oldPosition, // Поточна позиція (не межа епохи)
+                    newPoints: roomPlayer.points,
+                    newClass: roomPlayer.class,
+                    bonusPoints: data.eventData.points || 50
+                });
+            }
+            
+            // ВАЖЛИВО: Очищаємо currentEventPlayerId перед передачею ходу
+            room.currentEventPlayerId = null;
+            room.currentEventData = null;
+            passTurnToNextPlayer(room);
+        } else if (data.eventType === 'epoch_reincarnation') {
+            // Переродження на межі епохи - використовуємо збережені дані
+            const targetEpoch = data.eventData.targetEpoch;
+            const cellNumber = data.eventData.cellNumber;
+            let targetPosition;
+            
+            if (targetEpoch === 2) targetPosition = 13;
+            else if (targetEpoch === 3) targetPosition = 23;
+            else if (targetEpoch === 4) targetPosition = 43;
+            else if (targetEpoch === 5) targetPosition = 76;
+            else if (targetEpoch === 6) targetPosition = 98;
+            else targetPosition = data.eventData.targetEpoch * 12;
+            
+            const roomPlayer = room.gameData.players.find(p => p.id === player.id);
+            if (roomPlayer) {
+                // Зберігаємо стару позицію (межа епохи) для анімації
+                const oldPosition = roomPlayer.position;
+                
+                // Переміщуємо гравця на початок нової епохи
+                roomPlayer.position = targetPosition;
+                roomPlayer.points += data.eventData.points || 50;
+                player.position = targetPosition;
+                player.points += data.eventData.points || 50;
+                
+                const newEpoch = getEpochForPosition(targetPosition);
+                
+                // Використовуємо клас з eventData (для epoch_reincarnation)
+                if (room.currentEventData && room.currentEventData.newClass) {
+                    roomPlayer.class = room.currentEventData.newClass;
+                    player.class = roomPlayer.class;
+                }
+                
+                console.log(`${player.name} перемістився на початок епохи ${newEpoch} (клітинка ${targetPosition}) після переродження на межі епохи`);
                 
                 // Системні повідомлення не відправляємо в чат (тільки повідомлення гравців)
                 

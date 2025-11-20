@@ -827,6 +827,18 @@ class MultiplayerGame extends EducationalPathGame {
             this.handleTournamentEnd(data);
         });
         
+        // Обробник для тестового режиму - запуск події з сервера
+        this.socket.on('force_event_start', (data) => {
+            console.log('[TEST MODE] Отримано сигнал запуску події з сервера:', data);
+            // Відправляємо player_on_event на сервер для обробки
+            this.socket.emit('player_on_event', {
+                roomId: data.roomId,
+                eventType: data.eventType,
+                eventData: data.eventData,
+                cellNumber: data.cellNumber
+            });
+        });
+        
         this.socket.on('game_started', (data) => {
             console.log('Гра почалася:', data);
             
@@ -5286,6 +5298,49 @@ class MultiplayerGame extends EducationalPathGame {
     testEvent(eventType) {
         console.log(`Тестуємо подію: ${eventType}`);
         
+        // Якщо це онлайн режим, знаходимо клітинку з цією подією та відправляємо на сервер
+        if (this.isOnlineMode && this.socket && this.socket.connected) {
+            // Знаходимо клітинку з потрібним типом події
+            // Використовуємо window.specialCells якщо доступний, інакше використовуємо відомі клітинки
+            const specialCells = window.specialCells || {};
+            let targetCellNumber = null;
+            
+            // Перевіряємо window.specialCells
+            for (const [cellNum, cellData] of Object.entries(specialCells)) {
+                if (cellData && cellData.type === eventType) {
+                    targetCellNumber = parseInt(cellNum);
+                    break;
+                }
+            }
+            
+            // Якщо не знайдено, використовуємо відомі клітинки з подіями
+            if (targetCellNumber === null) {
+                const knownEventCells = {
+                    'pvp-quest': 10, // Приклад клітинки з pvp-quest
+                    'creative-quest': 21, // Приклад клітинки з creative-quest
+                    'mad-libs-quest': 3, // Клітинка 3 - "Хто, де, коли?"
+                    'webnovella-quest': 32, // Приклад клітинки з webnovella-quest
+                    'alternative-path': 5, // Клітинка 5 - альтернативний шлях
+                    'reincarnation': 13 // Приклад клітинки з реінкарнацією
+                };
+                targetCellNumber = knownEventCells[eventType] || null;
+            }
+            
+            if (targetCellNumber !== null) {
+                console.log(`[TEST MODE] Відправка події ${eventType} на клітинці ${targetCellNumber} на сервер`);
+                this.testEventOnCell(targetCellNumber);
+                // Закриваємо модальне вікно
+                if (this.questModal) {
+                    this.questModal.classList.add('hidden');
+                }
+                return;
+            } else {
+                console.warn(`[TEST MODE] Не знайдено клітинку з подією типу ${eventType}. Спробуйте вибрати клітинку вручну.`);
+                alert(`Не знайдено клітинку з подією типу ${eventType}. Будь ласка, виберіть клітинку вручну в режимі тестування.`);
+            }
+        }
+        
+        // Локальне тестування (для офлайн режиму)
         switch(eventType) {
             case 'pvp-quest':
                 this.testPvPQuest();

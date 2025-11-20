@@ -1085,8 +1085,44 @@ io.on('connection', (socket) => {
                              {board: Array(9).fill(null), winner: null, currentPlayer: player.id}],
                     scores: {[player.id]: 0, [opponent.id]: 0},
                     gameActive: true,
-                    currentPlayer: player.id
+                    currentPlayer: player.id,
+                    timer: selectedGame.timer,
+                    startTime: Date.now()
                 };
+                
+                // Запускаємо таймер для автоматичного завершення гри
+                room.tictactoeTimer = setTimeout(() => {
+                    if (room.tictactoeState && room.tictactoeState.gameActive) {
+                        room.tictactoeState.gameActive = false;
+                        // Визначаємо переможця за поточними рахунками
+                        const player1Score = room.tictactoeState.scores[player.id] || 0;
+                        const player2Score = room.tictactoeState.scores[opponent.id] || 0;
+                        let winnerId = null;
+                        if (player1Score > player2Score) {
+                            winnerId = player.id;
+                        } else if (player2Score > player1Score) {
+                            winnerId = opponent.id;
+                        }
+                        
+                        if (winnerId) {
+                            const winnerPlayer = room.gameData.players.find(p => p.id === winnerId);
+                            if (winnerPlayer) winnerPlayer.points += 30;
+                        } else {
+                            // Нічия - даємо по 10 очок обом
+                            room.tictactoeState.players.forEach(pid => {
+                                const p = room.gameData.players.find(pl => pl.id === pid);
+                                if(p) p.points += 10;
+                            });
+                        }
+                        
+                        io.to(room.id).emit('game_state_update', room.gameData);
+                        io.to(room.id).emit('tic_tac_toe_timeout', {
+                            gameState: room.tictactoeState,
+                            winner: winnerId
+                        });
+                        passTurnToNextPlayer(room);
+                    }
+                }, selectedGame.timer * 1000);
                 
                 io.to(room.id).emit('tic_tac_toe_start', {
                     gameState: room.tictactoeState,
@@ -1107,8 +1143,44 @@ io.on('connection', (socket) => {
                     choices: { [player.id]: null, [opponent.id]: null },
                     scores: { [player.id]: 0, [opponent.id]: 0 },
                     gameActive: true,
-                    currentPlayer: player.id
+                    currentPlayer: player.id,
+                    timer: selectedGame.timer,
+                    startTime: Date.now()
                 };
+                
+                // Запускаємо таймер для автоматичного завершення гри
+                room.rpsTimer = setTimeout(() => {
+                    if (room.rockPaperScissorsState && room.rockPaperScissorsState.gameActive) {
+                        room.rockPaperScissorsState.gameActive = false;
+                        // Визначаємо переможця за поточними рахунками
+                        const player1Score = room.rockPaperScissorsState.scores[player.id] || 0;
+                        const player2Score = room.rockPaperScissorsState.scores[opponent.id] || 0;
+                        let winnerId = null;
+                        if (player1Score > player2Score) {
+                            winnerId = player.id;
+                        } else if (player2Score > player1Score) {
+                            winnerId = opponent.id;
+                        }
+                        
+                        if (winnerId) {
+                            const winnerPlayer = room.gameData.players.find(p => p.id === winnerId);
+                            if (winnerPlayer) winnerPlayer.points += 30;
+                        } else {
+                            // Нічия - даємо по 10 очок обом
+                            room.rockPaperScissorsState.players.forEach(pid => {
+                                const p = room.gameData.players.find(pl => pl.id === pid);
+                                if(p) p.points += 10;
+                            });
+                        }
+                        
+                        io.to(room.id).emit('game_state_update', room.gameData);
+                        io.to(room.id).emit('rps_timeout', {
+                            gameState: room.rockPaperScissorsState,
+                            winner: winnerId
+                        });
+                        passTurnToNextPlayer(room);
+                    }
+                }, selectedGame.timer * 1000);
                 
                 io.to(room.id).emit('rock_paper_scissors_start', {
                     gameState: room.rockPaperScissorsState,
@@ -1593,6 +1665,11 @@ io.on('connection', (socket) => {
             
             if (currentRound >= 2 || gameState.scores[winner] >= 2) {
                 gameState.gameActive = false;
+                // Очищаємо таймер, якщо він існує
+                if (room.tictactoeTimer) {
+                    clearTimeout(room.tictactoeTimer);
+                    room.tictactoeTimer = null;
+                }
                 // ВИПРАВЛЕННЯ: Нараховуємо очки переможцю і передаємо хід
                 const winnerPlayer = room.gameData.players.find(p => p.id === winner);
                 if (winnerPlayer) winnerPlayer.points += 30;
@@ -1618,6 +1695,11 @@ io.on('connection', (socket) => {
             gameState.currentRound = currentRound + 1;
             if (gameState.currentRound >= 3) {
                 gameState.gameActive = false;
+                // Очищаємо таймер, якщо він існує
+                if (room.tictactoeTimer) {
+                    clearTimeout(room.tictactoeTimer);
+                    room.tictactoeTimer = null;
+                }
                 // ВИПРАВЛЕННЯ: Нічия, даємо по 10 очок і передаємо хід
                 gameState.players.forEach(pid => {
                     const p = room.gameData.players.find(pl => pl.id === pid);
@@ -1702,6 +1784,11 @@ io.on('connection', (socket) => {
             gameState.currentRound++;
             if (gameState.currentRound > gameState.maxRounds || gameState.scores[player1Id] >= 2 || gameState.scores[player2Id] >= 2) {
                 gameState.gameActive = false;
+                // Очищаємо таймер, якщо він існує
+                if (room.rpsTimer) {
+                    clearTimeout(room.rpsTimer);
+                    room.rpsTimer = null;
+                }
                 // ВИПРАВЛЕННЯ: Нараховуємо очки та передаємо хід
                 if (gameState.scores[player1Id] > gameState.scores[player2Id]) {
                     const wp = room.gameData.players.find(p => p.id === player1Id);

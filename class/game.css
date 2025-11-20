@@ -1335,28 +1335,30 @@ body.glassmorphism-bg {
 .tic-tac-toe-grid {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important; /* Рівно 3 стовпчики однакової ширини */
-    gap: 8px !important;          /* Відступи між клітинками */
+    gap: 4px !important;          /* Зменшуємо відступи між клітинками */
     width: fit-content !important; /* Сітка займає рівно стільки місця, скільки треба клітинкам */
     margin: 0 auto 1rem auto !important; /* Центрування сітки */
-    padding: 10px;                /* Невеликий відступ всередині темного блоку */
+    padding: 12px;                /* Відступ всередині темного блоку */
     
     /* Якщо темний фон на самій сітці, це змусить його стиснутись */
     background-color: rgba(30, 41, 59, 0.5); /* Темний фон (якщо його немає в HTML) */
     border-radius: 12px;
 }
 
-/* 3. Фіксуємо розмір самих клітинок, щоб вони були квадратними */
+/* 3. Фіксуємо розмір самих клітинок, щоб вони були квадратними та більшими */
 .tic-tac-toe-cell {
-    width: 70px !important;   /* Фіксована ширина */
-    height: 70px !important;  /* Фіксована висота */
-    min-width: 70px;
+    width: 90px !important;   /* Збільшена ширина */
+    height: 90px !important;  /* Збільшена висота */
+    min-width: 90px;
+    min-height: 90px;
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: rgba(255, 255, 255, 0.1); /* Колір порожньої клітинки */
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s;
+    border: 2px solid rgba(255, 255, 255, 0.2); /* Додаємо рамку для кращого вигляду */
 }
 
 /* Ефект наведення */
@@ -2193,6 +2195,9 @@ html.winer-modal-active {
 #quest-modal.winer-modal-container {
     overflow: visible !important; /* Дозволяємо показувати весь контент без обрізання */
     padding: 5vh 5vw !important; /* Додаємо відступи, щоб збільшений контент не обрізався */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 #quest-modal.winer-modal-container .modal-content,
@@ -2204,6 +2209,10 @@ html.winer-modal-active {
     overflow: visible !important; /* Дозволяємо показувати весь контент без обрізання */
     min-width: 600px; /* Мінімальна ширина для зображення */
     min-height: 400px; /* Мінімальна висота для зображення */
+    position: relative !important; /* Для правильного центрування */
+    top: auto !important;
+    left: auto !important;
+    transform: none !important; /* Прибираємо стандартний transform, щоб scale працював правильно */
 }
 
 #quest-modal-content.winer-modal-scaled {
@@ -2213,6 +2222,7 @@ html.winer-modal-active {
     width: 100% !important;
     height: 100% !important;
     display: block !important;
+    margin: 0 auto !important; /* Додаткове центрування */
 }
 
 #quest-modal-content.winer-modal .winer-text-overlay {

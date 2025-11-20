@@ -37,6 +37,9 @@ const specialCells = {
     // Ціни за епохами: 1 - 20 ОО, 2 - 12 ОО, 3 - 24 ОО, 4 - 40 ОО, 5 - 40 ОО
     5: { type: 'alternative-path', target: 11, cost: 20, description: 'Обхідний шлях до клітинки 11 за 20 ОО' }, // Епоха 1
     46: { type: 'alternative-path', target: 57, cost: 40, description: 'Обхідний шлях до клітинки 57 за 40 ОО' }, // Епоха 4
+    14: { type: 'alternative-path', target: 18, cost: 12, description: 'Обхідний шлях до клітинки 18 за 12 ОО' },
+    26: { type: 'alternative-path', target: 33, cost: 24, description: 'Обхідний шлях до клітинки 33 за 24 ОО' },
+    80: { type: 'alternative-path', target: 91, cost: 40, description: 'Обхідний шлях до клітинки 91 за 40 ОО' },
 
     // Реінкарнація
     12: { type: 'reincarnation', nextEpoch: 2, points: 30 },
@@ -48,11 +51,10 @@ const specialCells = {
     // Тестові завдання
     2: { type: 'test-question' },
     8: { type: 'test-question' },
-    11: { type: 'test-question' },
+    9: { type: 'test-question' },
     17: { type: 'test-question' },
     20: { type: 'test-question' },
     23: { type: 'test-question' },
-    26: { type: 'test-question' },
     29: { type: 'test-question' },
     35: { type: 'test-question' },
     38: { type: 'test-question' },

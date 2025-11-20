@@ -1321,6 +1321,61 @@ body.glassmorphism-bg {
     max-width: 500px;
 }
 
+/* === ВИПРАВЛЕННЯ ДИЗАЙНУ ХРЕСТИКІВ-НУЛИКІВ === */
+
+/* 1. Робимо саме вікно вужчим */
+#tictactoe-modal .glassmorphism-content-tictactoe-small {
+    max-width: 380px !important; /* Жорстке обмеження ширини */
+    width: 95% !important;       /* Для мобільних */
+    min-width: 300px;
+    margin: 0 auto;             /* Центрування */
+}
+
+/* 2. Налаштовуємо сітку (Grid), щоб вона не мала "дірок" справа */
+.tic-tac-toe-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important; /* Рівно 3 стовпчики однакової ширини */
+    gap: 8px !important;          /* Відступи між клітинками */
+    width: fit-content !important; /* Сітка займає рівно стільки місця, скільки треба клітинкам */
+    margin: 0 auto 1rem auto !important; /* Центрування сітки */
+    padding: 10px;                /* Невеликий відступ всередині темного блоку */
+    
+    /* Якщо темний фон на самій сітці, це змусить його стиснутись */
+    background-color: rgba(30, 41, 59, 0.5); /* Темний фон (якщо його немає в HTML) */
+    border-radius: 12px;
+}
+
+/* 3. Фіксуємо розмір самих клітинок, щоб вони були квадратними */
+.tic-tac-toe-cell {
+    width: 70px !important;   /* Фіксована ширина */
+    height: 70px !important;  /* Фіксована висота */
+    min-width: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.1); /* Колір порожньої клітинки */
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+/* Ефект наведення */
+.tic-tac-toe-cell:hover:not(.disabled) {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 4. Вирівнюємо кнопки знизу */
+#tictactoe-modal .glassmorphism-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+#tictactoe-modal .glassmorphism-actions button {
+    width: 100%; /* Кнопки на всю ширину вузького вікна */
+}
+
 /* Спеціальні стилі для Мегамозок - світліша картинка */
 #quest-modal-content.megabrain-bg,
 .modal-content.megabrain-bg {
@@ -2129,9 +2184,35 @@ body.glassmorphism-bg {
     display: none !important; /* Вимикаємо затемнення */
 }
 
+/* Збільшуємо розміри контейнера для winer-modal, щоб вмістити збільшене зображення */
+body.winer-modal-active,
+html.winer-modal-active {
+    overflow: visible !important; /* Дозволяємо показувати весь контент без обрізання */
+}
+
+#quest-modal.winer-modal-container {
+    overflow: visible !important; /* Дозволяємо показувати весь контент без обрізання */
+    padding: 5vh 5vw !important; /* Додаємо відступи, щоб збільшений контент не обрізався */
+}
+
+#quest-modal.winer-modal-container .modal-content,
+.modal-content.winer-modal-content {
+    max-width: none !important; /* Прибираємо обмеження ширини */
+    max-height: none !important; /* Прибираємо обмеження висоти */
+    width: auto !important; /* Автоматична ширина */
+    height: auto !important; /* Автоматична висота */
+    overflow: visible !important; /* Дозволяємо показувати весь контент без обрізання */
+    min-width: 600px; /* Мінімальна ширина для зображення */
+    min-height: 400px; /* Мінімальна висота для зображення */
+}
+
 #quest-modal-content.winer-modal-scaled {
     transform: scale(1.5) !important;
     transform-origin: center center;
+    overflow: visible !important; /* Дозволяємо показувати весь контент без обрізання */
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
 }
 
 #quest-modal-content.winer-modal .winer-text-overlay {

@@ -986,10 +986,37 @@ io.on('connection', (socket) => {
             if (finalPosition >= 101) {
                 currentPlayer.hasWon = true;
                 room.gameState = 'finished';
-                io.to(room.id).emit('game_ended', {
-                    winner: currentPlayer,
-                    reason: `${currentPlayer.name} переміг, досягнувши кінця освітнього шляху!`
+                
+                // Зберігаємо дані для завершення гри (відправимо після завершення анімації)
+                room.currentEventPlayerId = currentPlayer.id;
+                room.currentEventData = {
+                    type: 'game_end',
+                    winner: currentPlayer
+                };
+                
+                // Відправляємо dice_result з позначкою, що гра завершилася
+                io.to(room.id).emit('dice_result', {
+                    playerId: currentPlayer.id,
+                    playerName: currentPlayer.name,
+                    roll: adjustedRoll,
+                    originalRoll: roll,
+                    move: move,
+                    oldPosition: oldPosition,
+                    newPosition: finalPosition,
+                    newPoints: currentPlayer.points,
+                    newClass: currentPlayer.class,
+                    currentPlayerIndex: room.gameData.currentPlayerIndex,
+                    eventInfo: {
+                        hasEvent: false,
+                        eventType: null,
+                        eventData: null,
+                        playerId: currentPlayer.id,
+                        playerName: currentPlayer.name
+                    },
+                    gameEnded: true // Позначка, що гра завершилася
                 });
+                
+                // НЕ відправляємо game_ended одразу - відправимо після завершення анімації на клієнті
                 return;
             }
         }
@@ -1105,6 +1132,30 @@ io.on('connection', (socket) => {
             passTurnToNextPlayer(room);
         } else {
             passTurnToNextPlayer(room);
+        }
+    });
+    
+    // Обробник запиту даних завершення гри (після завершення анімації руху)
+    socket.on('request_game_end_data', (data) => {
+        console.log('Запит даних завершення гри:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+        
+        const room = rooms.get(data.roomId);
+        if (!room) return;
+        
+        // Перевіряємо, чи це правильний гравець і чи є дані для завершення гри
+        if (room.currentEventPlayerId === player.id && room.currentEventData && room.currentEventData.type === 'game_end') {
+            const eventData = room.currentEventData;
+            console.log(`Відправляємо дані завершення гри гравцю ${player.name}`);
+            
+            // Відправляємо дані завершення гри
+            io.to(room.id).emit('game_ended', {
+                winner: eventData.winner,
+                reason: `${eventData.winner.name} переміг, досягнувши кінця освітнього шляху!`
+            });
+        } else {
+            console.log('Немає даних для завершення гри або не той гравець');
         }
     });
     

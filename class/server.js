@@ -399,7 +399,7 @@ function leaveRoom(playerId) {
 // Socket.io підключення
 io.on('connection', (socket) => {
     console.log(`Користувач підключився: ${socket.id}`);
-    
+    });
     // Створення кімнати
     socket.on('create_room', (data) => {
         console.log('Сервер отримав подію create_room:', data);

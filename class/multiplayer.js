@@ -1831,6 +1831,17 @@ class MultiplayerGame extends EducationalPathGame {
                 player.class = data.newClass;
             }
             
+            // Якщо гра закінчилася (гравець досяг 101), запитуємо дані завершення гри після анімації
+            if (data.gameEnded) {
+                console.log('Гра завершилася, запитуємо дані завершення гри після анімації');
+                // Запитуємо дані завершення гри з сервера після завершення анімації
+                this.socket.emit('request_game_end_data', {
+                    roomId: this.roomId,
+                    playerId: data.playerId
+                });
+                return;
+            }
+            
             // Якщо гравець зупинився на межі епохи, запитуємо дані переродження після завершення анімації
             if (data.stopAtEpochBoundary) {
                 console.log('Гравець зупинився на межі епохи, запитуємо дані переродження після анімації');
@@ -2435,7 +2446,57 @@ class MultiplayerGame extends EducationalPathGame {
             
             // Використовуємо winer.jpg як фонове зображення без затемнення
             this.showQuestModal('', modalContent, [
-                { text: 'Закрити', callback: () => this.closeMiniGame() }
+                { 
+                    text: 'Закрити', 
+                    callback: () => {
+                        // Закриваємо поточне вікно
+                        if (window.gameUI) {
+                            window.gameUI.hideModal('quest');
+                        }
+                        const modal = document.getElementById('quest-modal');
+                        if (modal) {
+                            modal.classList.add('hidden');
+                            // Очищаємо контент
+                            const modalContent = document.getElementById('quest-modal-content');
+                            if (modalContent) {
+                                modalContent.innerHTML = '';
+                            }
+                        }
+                        
+                        // Невелика затримка перед показом нового вікна
+                        setTimeout(() => {
+                            // Показуємо друге вікно з 101.png
+                            const secondModalContent = `
+                                <div style="text-align: center; padding: 20px;">
+                                    <p style="color: #fff; font-size: 24px; font-weight: bold; margin: 0;">Молодець, тримай автомат</p>
+                                </div>
+                            `;
+                            
+                            this.showQuestModal('', secondModalContent, [
+                                { 
+                                    text: 'Закрити', 
+                                    callback: () => {
+                                        // Закриваємо друге вікно
+                                        if (window.gameUI) {
+                                            window.gameUI.hideModal('quest');
+                                        }
+                                        const modal2 = document.getElementById('quest-modal');
+                                        if (modal2) {
+                                            modal2.classList.add('hidden');
+                                        }
+                                        
+                                        // Скидаємо весь прогрес і перезавантажуємо сторінку
+                                        // Очищаємо localStorage
+                                        localStorage.clear();
+                                        
+                                        // Перезавантажуємо сторінку, перекидаючи на головну
+                                        window.location.href = '/';
+                                    }
+                                }
+                            ], 'image/modal_window/101.png', false, false);
+                        }, 300);
+                    }
+                }
             ], 'image/modal_window/winer.jpg', true, true);
         } else {
             // Для інших випадків використовуємо стандартну обробку

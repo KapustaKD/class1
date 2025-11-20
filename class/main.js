@@ -1,8 +1,5 @@
 // Головний файл гри
 document.addEventListener('DOMContentLoaded', () => {
-    // Показуємо модальне вікно love одразу при завантаженні сторінки для всіх користувачів
-    showLoveModalOnLoad();
-    
     // Ініціалізуємо UI
     window.gameUI = new GameUI();
     
@@ -57,11 +54,12 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🎮 Освітній Шлях: Революція завантажено!');
 });
 
-// Функція для показу модального вікна love при завантаженні сторінки
+// Функція для показу модального вікна love
 function showLoveModalOnLoad() {
-    // Перевіряємо, чи модальне вікно вже було показано (щоб не показувати повторно)
-    if (localStorage.getItem('loveModalShown') === 'true') {
-        return;
+    // Перевіряємо, чи модальне вікно вже відкрите
+    const existingModal = document.getElementById('love-modal-backdrop');
+    if (existingModal) {
+        return; // Якщо вже відкрите, не показуємо повторно
     }
     
     // Створюємо backdrop
@@ -133,7 +131,6 @@ function showLoveModalOnLoad() {
     // Обробник закриття
     const closeModal = () => {
         backdrop.remove();
-        localStorage.setItem('loveModalShown', 'true');
     };
     
     closeBtn.addEventListener('click', closeModal);
@@ -214,6 +211,13 @@ function setupModeButtons() {
     if (localModeBtn) {
         localModeBtn.addEventListener('click', () => {
             showLocalModeWarning(); // Спочатку показуємо попередження
+        });
+    }
+    
+    const loveModalBtn = document.getElementById('love-modal-btn');
+    if (loveModalBtn) {
+        loveModalBtn.addEventListener('click', () => {
+            showLoveModalOnLoad(); // Показуємо модальне вікно love
         });
     }
     

@@ -23,6 +23,11 @@ class GameUI {
     hideModal(modalName) {
         if (this.modals[modalName]) {
             this.modals[modalName].classList.add('hidden');
+            // Видаляємо класи winer-modal-active, якщо закриваємо quest-modal
+            if (modalName === 'quest') {
+                document.body.classList.remove('winer-modal-active');
+                document.documentElement.classList.remove('winer-modal-active');
+            }
         }
     }
     
@@ -55,9 +60,10 @@ class GameUI {
     
     showQuestModal(title, content, buttons = [], backgroundImageUrl = null, noDarken = false, scaleUp = false) {
         const modalContent = document.getElementById('quest-modal-content');
+        const questModal = document.getElementById('quest-modal');
         // Скидаємо можливі класи/фон від інших модалок (наприклад, madlibs-bg)
         if (modalContent) {
-            modalContent.classList.remove('madlibs-bg', 'winer-modal', 'winer-modal-scaled');
+            modalContent.classList.remove('madlibs-bg', 'winer-modal', 'winer-modal-scaled', 'winer-modal-content');
             modalContent.style.removeProperty('--quest-bg');
             modalContent.style.filter = '';
             modalContent.style.transform = '';
@@ -71,13 +77,26 @@ class GameUI {
             
             // Додаємо клас для winer модального вікна
             if (backgroundImageUrl && (backgroundImageUrl.includes('winer') || scaleUp || noDarken)) {
-                modalContent.classList.add('winer-modal');
+                modalContent.classList.add('winer-modal', 'winer-modal-content');
                 if (scaleUp) {
                     modalContent.classList.add('winer-modal-scaled');
                 }
                 if (noDarken) {
                     modalContent.style.filter = 'none';
                 }
+                // Додаємо клас до батьківського контейнера та body/html
+                if (questModal) {
+                    questModal.classList.add('winer-modal-container');
+                }
+                document.body.classList.add('winer-modal-active');
+                document.documentElement.classList.add('winer-modal-active');
+            } else {
+                // Видаляємо клас з батьківського контейнера, якщо це не winer
+                if (questModal) {
+                    questModal.classList.remove('winer-modal-container');
+                }
+                document.body.classList.remove('winer-modal-active');
+                document.documentElement.classList.remove('winer-modal-active');
             }
         }
         const buttonsHTML = buttons.map((btn, index) => 

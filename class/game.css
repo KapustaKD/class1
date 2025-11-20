@@ -7,6 +7,7 @@ body {
 /* Контейнер ігрового поля */
 #game-container {
     min-height: 500px; /* Мінімальна висота для контейнера */
+    margin-left: -50px; /* Переміщуємо на 50px вліво */
 }
 
 /* Ігрове поле */
@@ -2122,4 +2123,3 @@ body.glassmorphism-bg {
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
 }
-

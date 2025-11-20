@@ -1831,10 +1831,14 @@ class MultiplayerGame extends EducationalPathGame {
                 player.class = data.newClass;
             }
             
-            // Якщо гравець зупинився на межі епохи, не обробляємо події - вони будуть оброблені після переродження
+            // Якщо гравець зупинився на межі епохи, запитуємо дані переродження після завершення анімації
             if (data.stopAtEpochBoundary) {
-                console.log('Гравець зупинився на межі епохи, очікуємо на переродження');
-                // Вікно переродження вже показано сервером через early_reincarnation_event
+                console.log('Гравець зупинився на межі епохи, запитуємо дані переродження після анімації');
+                // Запитуємо дані переродження з сервера після завершення анімації
+                this.socket.emit('request_reincarnation_data', {
+                    roomId: this.roomId,
+                    playerId: data.playerId
+                });
                 return;
             }
             

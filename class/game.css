@@ -2123,3 +2123,28 @@ body.glassmorphism-bg {
     transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
 }
+
+/* Спеціальні стилі для вікна перемоги (winer) */
+#quest-modal-content.winer-modal::before {
+    display: none !important; /* Вимикаємо затемнення */
+}
+
+#quest-modal-content.winer-modal-scaled {
+    transform: scale(1.5) !important;
+    transform-origin: center center;
+}
+
+#quest-modal-content.winer-modal .winer-text-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    text-align: center;
+    z-index: 10;
+}
+
+#quest-modal-content.winer-modal h3 {
+    display: none !important; /* Приховуємо заголовок */
+}

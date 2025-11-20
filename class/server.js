@@ -734,24 +734,111 @@ io.on('connection', (socket) => {
         console.log('Обробляємо кидання кубика для гравця:', currentPlayer.name);
         
         const roll = Math.floor(Math.random() * 6) + 1;
+        
+        // Заборонені клітинки, на які гравець не може потрапити
+        const FORBIDDEN_CELLS = [5, 14];
+        const oldPosition = currentPlayer.position;
+        
+        // Функція для обчислення фінальної позиції з урахуванням модифікаторів
+        const calculateFinalPosition = (diceRoll) => {
+            let tempMoveModifier = 0;
+            
+            // Перераховуємо модифікатори ефектів для нового roll
+            if (currentPlayer.effects) {
+                if (currentPlayer.effects.hateClone && currentPlayer.effects.hateClone > 0) {
+                    tempMoveModifier = -Math.ceil(diceRoll / 2);
+                } else if (currentPlayer.effects.happinessCharm && currentPlayer.effects.happinessCharm > 0) {
+                    tempMoveModifier = diceRoll;
+                }
+            }
+            
+            let tempMove = diceRoll + tempMoveModifier;
+            tempMove = Math.max(1, tempMove);
+            
+            if (currentPlayer.class) {
+                tempMove += currentPlayer.class.moveModifier;
+                if (currentPlayer.class.id === 'peasant') {
+                    tempMove = Math.max(1, tempMove);
+                }
+            }
+            
+            // Перевіряємо межі епох
+            const EPOCH_BOUNDARIES = [12, 22, 42, 75, 97, 101];
+            let tempFinalPosition = oldPosition;
+            let tempStopMove = false;
+            
+            for (let i = 1; i <= tempMove; i++) {
+                const nextStep = oldPosition + i;
+                if (EPOCH_BOUNDARIES.includes(nextStep)) {
+                    if (nextStep !== 101) {
+                        tempFinalPosition = nextStep;
+                        tempStopMove = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!tempStopMove) {
+                tempFinalPosition = Math.min(oldPosition + tempMove, 101);
+            }
+            
+            return tempFinalPosition;
+        };
+        
+        // Перевіряємо, чи поточна комбінація приведе до забороненої клітинки
+        let adjustedRoll = roll;
+        let finalPosition = calculateFinalPosition(adjustedRoll);
+        
+        // Якщо фінальна позиція - заборонена клітинка, шукаємо альтернативний roll
+        if (FORBIDDEN_CELLS.includes(finalPosition)) {
+            console.log(`⚠️ Гравець ${currentPlayer.name} на позиції ${oldPosition} з roll ${roll} потрапить на заборонену клітинку ${finalPosition}, шукаємо альтернативу...`);
+            
+            // Перевіряємо всі можливі значення кубика (1-6)
+            let foundAlternative = false;
+            for (let altRoll = 1; altRoll <= 6; altRoll++) {
+                if (altRoll === roll) continue; // Пропускаємо поточний roll
+                
+                const altFinalPosition = calculateFinalPosition(altRoll);
+                if (!FORBIDDEN_CELLS.includes(altFinalPosition)) {
+                    adjustedRoll = altRoll;
+                    finalPosition = altFinalPosition;
+                    foundAlternative = true;
+                    console.log(`✅ Знайдено альтернативний roll: ${altRoll}, фінальна позиція: ${finalPosition}`);
+                    break;
+                }
+            }
+            
+            // Якщо всі можливі roll приведуть до забороненої клітинки, пропускаємо клітинку
+            if (!foundAlternative) {
+                console.log(`⚠️ Всі можливі roll приведуть до забороненої клітинки, пропускаємо клітинку ${finalPosition}`);
+                // Переміщуємо на наступну клітинку після забороненої
+                if (finalPosition === 5) {
+                    finalPosition = 6;
+                } else if (finalPosition === 14) {
+                    finalPosition = 15;
+                }
+            }
+        }
+        
+        // Перераховуємо модифікатори з урахуванням скоригованого roll
         let moveModifier = 0;
         let effectApplied = null;
         
         if (currentPlayer.effects) {
             if (currentPlayer.effects.hateClone && currentPlayer.effects.hateClone > 0) {
-                moveModifier = -Math.ceil(roll / 2);
+                moveModifier = -Math.ceil(adjustedRoll / 2);
                 currentPlayer.effects.hateClone--;
                 effectApplied = 'hateClone';
                 if (currentPlayer.effects.hateClone <= 0) delete currentPlayer.effects.hateClone;
             } else if (currentPlayer.effects.happinessCharm && currentPlayer.effects.happinessCharm > 0) {
-                moveModifier = roll;
+                moveModifier = adjustedRoll;
                 currentPlayer.effects.happinessCharm--;
                 effectApplied = 'happinessCharm';
                 if (currentPlayer.effects.happinessCharm <= 0) delete currentPlayer.effects.happinessCharm;
             }
         }
         
-        let move = roll + moveModifier;
+        let move = adjustedRoll + moveModifier;
         // Гарантуємо мінімальний хід 1 (якщо це не пропуск ходу через інший ефект)
         move = Math.max(1, move);
         
@@ -762,28 +849,43 @@ io.on('connection', (socket) => {
             }
         }
         
-        console.log(`Кубик: ${roll}, Клас: ${currentPlayer.class ? currentPlayer.class.moveModifier : 0}, Ефект: ${moveModifier} (${effectApplied || 'немає'}), Фінальний хід: ${move}`);
+        console.log(`Кубик: ${roll} -> ${adjustedRoll} (скориговано), Клас: ${currentPlayer.class ? currentPlayer.class.moveModifier : 0}, Ефект: ${moveModifier} (${effectApplied || 'немає'}), Фінальний хід: ${move}, Фінальна позиція: ${finalPosition}`);
         
         const EPOCH_BOUNDARIES = [12, 22, 42, 75, 97, 101];
-        const oldPosition = currentPlayer.position;
-        let finalPosition = oldPosition;
         let stopMove = false;
         
+        // Перевіряємо межі епох з урахуванням скоригованого руху
         for (let i = 1; i <= move; i++) {
             const nextStep = oldPosition + i;
             if (EPOCH_BOUNDARIES.includes(nextStep)) {
                 if (nextStep !== 101) {
-                finalPosition = nextStep;
-                stopMove = true;
+                    finalPosition = nextStep;
+                    stopMove = true;
                     break;
                 }
             }
         }
         
         if (stopMove) {
+            // Перевіряємо, чи не потрапили на заборонену клітинку через межу епохи
+            if (FORBIDDEN_CELLS.includes(finalPosition)) {
+                if (finalPosition === 5) {
+                    finalPosition = 6;
+                } else if (finalPosition === 14) {
+                    finalPosition = 15;
+                }
+            }
             currentPlayer.position = finalPosition;
         } else {
-            finalPosition = Math.min(oldPosition + move, 101);
+            // Якщо фінальна позиція все ще заборонена (через пропуск), переміщуємо далі
+            if (FORBIDDEN_CELLS.includes(finalPosition)) {
+                if (finalPosition === 5) {
+                    finalPosition = 6;
+                } else if (finalPosition === 14) {
+                    finalPosition = 15;
+                }
+            }
+            finalPosition = Math.min(Math.max(finalPosition, oldPosition + 1), 101);
             currentPlayer.position = finalPosition;
             
             if (finalPosition === 100) {
@@ -896,7 +998,8 @@ io.on('connection', (socket) => {
         io.to(room.id).emit('dice_result', {
             playerId: currentPlayer.id,
             playerName: currentPlayer.name,
-            roll,
+            roll: adjustedRoll, // Відправляємо скоригований roll
+            originalRoll: roll, // Зберігаємо оригінальний roll для інформації
             move,
             oldPosition: oldPosition,
             newPosition: currentPlayer.position,

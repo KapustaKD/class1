@@ -1,5 +1,8 @@
 // Головний файл гри
 document.addEventListener('DOMContentLoaded', () => {
+    // Показуємо модальне вікно love одразу при завантаженні сторінки для всіх користувачів
+    showLoveModalOnLoad();
+    
     // Ініціалізуємо UI
     window.gameUI = new GameUI();
     
@@ -53,6 +56,97 @@ document.addEventListener('DOMContentLoaded', () => {
     
     console.log('🎮 Освітній Шлях: Революція завантажено!');
 });
+
+// Функція для показу модального вікна love при завантаженні сторінки
+function showLoveModalOnLoad() {
+    // Перевіряємо, чи модальне вікно вже було показано (щоб не показувати повторно)
+    if (localStorage.getItem('loveModalShown') === 'true') {
+        return;
+    }
+    
+    // Створюємо backdrop
+    const backdrop = document.createElement('div');
+    backdrop.className = 'love-modal-backdrop';
+    backdrop.id = 'love-modal-backdrop';
+    backdrop.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    // Створюємо контент модального вікна
+    const content = document.createElement('div');
+    content.className = 'love-modal-content';
+    content.style.cssText = `
+        position: relative;
+        width: 75%;
+        height: 75%;
+        max-width: 1200px;
+        max-height: 900px;
+        background-image: url('image/modal_window/love.png');
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: transparent;
+        border-radius: 1rem;
+    `;
+    
+    // Створюємо кнопку закриття (хрестик)
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '✖';
+    closeBtn.style.cssText = `
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        border: 2px solid white;
+        border-radius: 50%;
+        font-size: 24px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10001;
+        transition: all 0.3s ease;
+    `;
+    
+    // Додаємо hover ефект
+    closeBtn.addEventListener('mouseenter', () => {
+        closeBtn.style.background = 'rgba(255, 0, 0, 0.8)';
+        closeBtn.style.transform = 'scale(1.1)';
+    });
+    closeBtn.addEventListener('mouseleave', () => {
+        closeBtn.style.background = 'rgba(0, 0, 0, 0.7)';
+        closeBtn.style.transform = 'scale(1)';
+    });
+    
+    // Обробник закриття
+    const closeModal = () => {
+        backdrop.remove();
+        localStorage.setItem('loveModalShown', 'true');
+    };
+    
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+            closeModal();
+        }
+    });
+    
+    content.appendChild(closeBtn);
+    backdrop.appendChild(content);
+    document.body.appendChild(backdrop);
+}
 
 function setupGlobalEventListeners() {
     // Обробка помилок

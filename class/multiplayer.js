@@ -1793,7 +1793,8 @@ class MultiplayerGame extends EducationalPathGame {
             this.diceInner.style.transform = `${rotations[data.roll]} translateZ(40px)`;
             
             // Використовуємо плавну анімацію руху
-            const oldPosition = Math.max(0, data.newPosition - data.move);
+            // Використовуємо реальну поточну позицію гравця або oldPosition з сервера
+            const oldPosition = data.oldPosition !== undefined ? data.oldPosition : player.position;
             await this.animatePawnMovement(player, oldPosition, data.newPosition, data.move);
             
             // Оновлюємо позицію гравця

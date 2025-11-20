@@ -1331,61 +1331,73 @@ body.glassmorphism-bg {
     max-width: 500px;
 }
 
-/* === ВИПРАВЛЕННЯ ДИЗАЙНУ ХРЕСТИКІВ-НУЛИКІВ === */
+/* === ВИПРАВЛЕННЯ ДИЗАЙНУ ХРЕСТИКІВ-НУЛИКІВ (Фінальна версія) === */
 
-/* 1. Робимо саме вікно вужчим */
+/* 1. Стискаємо контейнер вікна під розмір гри */
 #tictactoe-modal .glassmorphism-content-tictactoe-small {
-    max-width: 380px !important; /* Жорстке обмеження ширини */
-    width: 95% !important;       /* Для мобільних */
+    max-width: 340px !important; /* Жорстке обмеження ширини */
+    width: auto !important;      /* Ширина по вмісту */
     min-width: 300px;
-    margin: 0 auto;             /* Центрування */
+    margin: 0 auto;              /* Центрування */
 }
 
-/* 2. Налаштовуємо сітку (Grid), щоб вона не мала "дірок" справа */
+/* 2. Фіксуємо сітку: 3 колонки фіксованої ширини */
 .tic-tac-toe-grid {
     display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important; /* Рівно 3 стовпчики однакової ширини */
-    gap: 4px !important;          /* Зменшуємо відступи між клітинками */
-    width: fit-content !important; /* Сітка займає рівно стільки місця, скільки треба клітинкам */
-    margin: 0 auto 1rem auto !important; /* Центрування сітки */
-    padding: 12px;                /* Відступ всередині темного блоку */
+    /* Рівно 3 колонки по 80 пікселів - це прибере "зайве" місце */
+    grid-template-columns: repeat(3, 80px) !important; 
+    grid-template-rows: repeat(3, 80px) !important;
     
-    /* Якщо темний фон на самій сітці, це змусить його стиснутись */
-    background-color: rgba(30, 41, 59, 0.5); /* Темний фон (якщо його немає в HTML) */
+    gap: 8px !important;           /* Відступи */
+    width: fit-content !important; /* Сітка займає тільки необхідне місце */
+    margin: 0 auto 1.5rem auto !important; /* Центрування */
+    padding: 10px !important;
+    
+    background-color: rgba(30, 41, 59, 0.5);
     border-radius: 12px;
 }
 
-/* 3. Фіксуємо розмір самих клітинок, щоб вони були квадратними та більшими */
+/* 3. Фіксуємо розмір клітинок під розмір колонок */
 .tic-tac-toe-cell {
-    width: 90px !important;   /* Збільшена ширина */
-    height: 90px !important;  /* Збільшена висота */
-    min-width: 90px;
-    min-height: 90px;
+    width: 80px !important;
+    height: 80px !important;
+    min-width: 80px;
+    min-height: 80px;
+    
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(255, 255, 255, 0.1); /* Колір порожньої клітинки */
-    border-radius: 10px;
+    
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s;
-    border: 2px solid rgba(255, 255, 255, 0.2); /* Додаємо рамку для кращого вигляду */
+    border: 2px solid rgba(255, 255, 255, 0.1); /* Тонка рамка */
 }
 
 /* Ефект наведення */
 .tic-tac-toe-cell:hover:not(.disabled) {
     background-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
-/* 4. Вирівнюємо кнопки знизу */
+/* 4. Вирівнювання кнопок */
 #tictactoe-modal .glassmorphism-actions {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
+    padding: 0 20px 20px 20px; /* Відступи */
 }
 
 #tictactoe-modal .glassmorphism-actions button {
-    width: 100%; /* Кнопки на всю ширину вузького вікна */
+    width: 100%;
+    margin-top: 5px;
+}
+
+/* Розмір SVG іконок всередині клітинок */
+.svg-x, .svg-o {
+    width: 60px;
+    height: 60px;
 }
 
 /* Спеціальні стилі для Мегамозок - світліша картинка */

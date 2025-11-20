@@ -464,7 +464,10 @@ io.on('connection', (socket) => {
             
             // Перевіряємо, чи кімната з таким кодом вже існує
             if (rooms.has(data.customRoomCode)) {
-                socket.emit('error', { message: 'Кімната з таким кодом вже існує' });
+                socket.emit('room_code_taken', { 
+                    message: 'Цей код кімнати вже використовується. Будь ласка, придумайте інший код.',
+                    code: data.customRoomCode
+                });
                 return;
             }
             
@@ -736,7 +739,7 @@ io.on('connection', (socket) => {
         const roll = Math.floor(Math.random() * 6) + 1;
         
         // Заборонені клітинки, на які гравець не може потрапити
-        const FORBIDDEN_CELLS = [5, 14];
+        const FORBIDDEN_CELLS = [5, 14, 26, 46, 80];
         const oldPosition = currentPlayer.position;
         
         // Функція для обчислення фінальної позиції з урахуванням модифікаторів
@@ -812,10 +815,8 @@ io.on('connection', (socket) => {
             if (!foundAlternative) {
                 console.log(`⚠️ Всі можливі roll приведуть до забороненої клітинки, пропускаємо клітинку ${finalPosition}`);
                 // Переміщуємо на наступну клітинку після забороненої
-                if (finalPosition === 5) {
-                    finalPosition = 6;
-                } else if (finalPosition === 14) {
-                    finalPosition = 15;
+                if (FORBIDDEN_CELLS.includes(finalPosition)) {
+                    finalPosition = finalPosition + 1;
                 }
             }
         }
@@ -869,21 +870,13 @@ io.on('connection', (socket) => {
         if (stopMove) {
             // Перевіряємо, чи не потрапили на заборонену клітинку через межу епохи
             if (FORBIDDEN_CELLS.includes(finalPosition)) {
-                if (finalPosition === 5) {
-                    finalPosition = 6;
-                } else if (finalPosition === 14) {
-                    finalPosition = 15;
-                }
+                finalPosition = finalPosition + 1;
             }
             currentPlayer.position = finalPosition;
         } else {
             // Якщо фінальна позиція все ще заборонена (через пропуск), переміщуємо далі
             if (FORBIDDEN_CELLS.includes(finalPosition)) {
-                if (finalPosition === 5) {
-                    finalPosition = 6;
-                } else if (finalPosition === 14) {
-                    finalPosition = 15;
-                }
+                finalPosition = finalPosition + 1;
             }
             finalPosition = Math.min(Math.max(finalPosition, oldPosition + 1), 101);
             currentPlayer.position = finalPosition;

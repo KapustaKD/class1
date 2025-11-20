@@ -411,6 +411,21 @@ class MultiplayerGame extends EducationalPathGame {
             }
         });
         
+        // Обробник помилки, коли код кімнати вже зайнятий
+        this.socket.on('room_code_taken', (data) => {
+            console.log('Код кімнати вже використовується:', data);
+            if (window.gameUI) {
+                window.gameUI.showNotification(data.message || 'Цей код кімнати вже використовується. Будь ласка, придумайте інший код.', 'error');
+            } else {
+                alert(data.message || 'Цей код кімнати вже використовується. Будь ласка, придумайте інший код.');
+            }
+            // Очищаємо поле вводу коду, щоб користувач міг ввести новий
+            if (this.customRoomCodeInput) {
+                this.customRoomCodeInput.value = '';
+                this.customRoomCodeInput.focus();
+            }
+        });
+        
         this.socket.on('room_created', (data) => {
             console.log('Отримано подію room_created:', data);
             this.roomId = data.roomId;

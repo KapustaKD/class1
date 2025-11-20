@@ -144,14 +144,29 @@ function handleImmediateEvent(room, player, eventType) {
             if (playerClassId === 'aristocrat') {
                 const lostPoints = roomPlayer.points; // Запам'ятовуємо скільки втратив
                 roomPlayer.points = 0;
+                // Оновлюємо очки в глобальному об'єкті гравця
+                const globalPlayer = players.get(roomPlayer.id);
+                if (globalPlayer) {
+                    globalPlayer.points = 0;
+                }
                 resultMessage = `💸 ${roomPlayer.name} (${playerClassName})! Вітаємо! Ви втратили усі статки (${lostPoints} ОО), які століттями накопичувала ваша родина у ${eventName}! Відтепер життя стане складнішим, проте не засмучуйтесь: все ще є шанси перемогти!`;
             } else if (playerClassId === 'burgher') {
                 const lostPoints = Math.floor(roomPlayer.points / 2);
                 roomPlayer.points -= lostPoints;
+                // Оновлюємо очки в глобальному об'єкті гравця
+                const globalPlayer = players.get(roomPlayer.id);
+                if (globalPlayer) {
+                    globalPlayer.points = roomPlayer.points;
+                }
                 resultMessage = `💰 ${roomPlayer.name} (${playerClassName})! Вітаємо! Ви втратили половину (${lostPoints} ОО) вашого нажитого майна у ${eventName}! Відтепер життя стане дещо складнішим, проте не засмучуйтесь: все ще є шанси перемогти!`;
             } else { // peasant — замість вибування робимо переродження в поточну епоху
                 const lostPoints = roomPlayer.points;
                 roomPlayer.points = 0;
+                // Оновлюємо очки в глобальному об'єкті гравця
+                const globalPlayer = players.get(roomPlayer.id);
+                if (globalPlayer) {
+                    globalPlayer.points = 0;
+                }
                 // Визначаємо поточну епоху
                 const currentEpoch = getEpochForPosition(roomPlayer.position);
                 // Стартові позиції епох
@@ -168,7 +183,6 @@ function handleImmediateEvent(room, player, eventType) {
                 
                 // Переміщуємо
                 roomPlayer.position = targetPosition;
-                const globalPlayer = players.get(roomPlayer.id);
                 if (globalPlayer) globalPlayer.position = targetPosition;
                 
                 // Призначаємо новий клас відповідно до поточної епохи (правила як для ранньої реінкарнації)

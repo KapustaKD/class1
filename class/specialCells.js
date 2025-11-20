@@ -71,7 +71,7 @@ const specialCells = {
     71: { type: 'test-question' },
     74: { type: 'test-question' },
     77: { type: 'test-question' },
-    80: { type: 'test-question' },
+    // 80: { type: 'test-question' }, // Видалено, бо тут alternative-path
     83: { type: 'test-question' },
     86: { type: 'test-question' },
     89: { type: 'test-question' },

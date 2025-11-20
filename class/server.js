@@ -929,7 +929,7 @@ io.on('connection', (socket) => {
             
             const newClass = availableClassPool[Math.floor(Math.random() * availableClassPool.length)];
             
-            // Зберігаємо дані для переродження
+            // Зберігаємо дані для переродження (відправимо після завершення анімації)
             room.currentEventPlayerId = currentPlayer.id;
             room.currentEventData = {
                 type: 'epoch_reincarnation',
@@ -937,22 +937,11 @@ io.on('connection', (socket) => {
                 newClass: newClass,
                 bonusPoints: 50,
                 currentEpoch: currentEpoch,
-                nextEpoch: nextEpoch
+                nextEpoch: nextEpoch,
+                cellNumber: finalPosition
             };
             
-            // Показуємо вікно переродження
-            io.to(currentPlayer.id).emit('early_reincarnation_event', {
-                playerId: currentPlayer.id,
-                playerName: currentPlayer.name,
-                cellNumber: finalPosition,
-                eventData: {
-                    points: 50,
-                    targetEpoch: nextEpoch,
-                    cellNumber: finalPosition
-                },
-                newClass: newClass
-            });
-            
+            // НЕ відправляємо early_reincarnation_event одразу - відправимо після завершення анімації на клієнті
             // Відправляємо dice_result, щоб показати рух до межі епохи
             io.to(room.id).emit('dice_result', {
                 playerId: currentPlayer.id,
@@ -1116,6 +1105,37 @@ io.on('connection', (socket) => {
             passTurnToNextPlayer(room);
         } else {
             passTurnToNextPlayer(room);
+        }
+    });
+    
+    // Обробник запиту даних переродження (після завершення анімації руху)
+    socket.on('request_reincarnation_data', (data) => {
+        console.log('Запит даних переродження:', data);
+        const player = players.get(socket.id);
+        if (!player) return;
+        
+        const room = rooms.get(data.roomId);
+        if (!room || room.gameState !== 'playing') return;
+        
+        // Перевіряємо, чи це правильний гравець і чи є дані для переродження
+        if (room.currentEventPlayerId === player.id && room.currentEventData && room.currentEventData.type === 'epoch_reincarnation') {
+            const eventData = room.currentEventData;
+            console.log(`Відправляємо дані переродження гравцю ${player.name}`);
+            
+            // Відправляємо дані переродження
+            io.to(player.id).emit('early_reincarnation_event', {
+                playerId: player.id,
+                playerName: player.name,
+                cellNumber: eventData.cellNumber,
+                eventData: {
+                    points: eventData.bonusPoints,
+                    targetEpoch: eventData.nextEpoch,
+                    cellNumber: eventData.cellNumber
+                },
+                newClass: eventData.newClass
+            });
+        } else {
+            console.log('Немає даних для переродження або не той гравець');
         }
     });
     

@@ -53,11 +53,7 @@ function passTurnToNextPlayer(room) {
             nextPlayer.effects.skipTurn--;
             if (nextPlayer.effects.skipTurn <= 0) delete nextPlayer.effects.skipTurn;
             
-            // Відправляємо повідомлення в чат
-            io.to(room.id).emit('chat_message', {
-                type: 'system',
-                message: `⏳ ${nextPlayer.name} піддався Прокрастинації та пропускає хід!`
-            });
+            // Системні повідомлення не відправляємо в чат (тільки повідомлення гравців)
             
             // Відправляємо оновлення стану
             io.to(room.id).emit('game_state_update', room.gameData);
@@ -198,11 +194,7 @@ function handleImmediateEvent(room, player, eventType) {
             resultMessage = `Невідома миттєва подія: ${eventType}`;
     }
 
-    // Повідомляємо всіх про результат
-    io.to(room.id).emit('chat_message', {
-        type: 'system',
-        message: resultMessage
-    });
+    // Системні повідомлення не відправляємо в чат (тільки повідомлення гравців)
     
     // Оновлюємо стан гри (очки, пропуск ходу, статус вибування)
     io.to(room.id).emit('game_state_update', room.gameData);
@@ -1161,10 +1153,7 @@ io.on('connection', (socket) => {
                 player.class = roomPlayer.class;
             }
             
-            io.to(room.id).emit('chat_message', {
-                type: 'system',
-                message: `${player.name} зазнав ранньої смерті та переродився у епосі ${targetEpoch}! Переміщено на клітинку ${targetPosition}, отримано ${data.eventData.points} ОО.`
-            });
+            // Системні повідомлення не відправляємо в чат (тільки повідомлення гравців)
             
             io.to(player.id).emit('early_reincarnation_event', {
                 playerId: player.id,
@@ -1350,6 +1339,9 @@ io.on('connection', (socket) => {
             newPoints: roomPlayer ? roomPlayer.points : player.points
         });
         
+        // Для alternative-path не додаємо системне повідомлення в чат
+        // (тільки повідомлення гравців будуть в чаті)
+        
         io.to(room.id).emit('game_state_update', room.gameData);
         
         if (shouldContinue) {
@@ -1391,7 +1383,7 @@ io.on('connection', (socket) => {
             gameActive: room.gameState === 'playing'
         });
         
-        io.to(room.id).emit('chat_message', { type: 'system', message: resultMessage });
+        // Системні повідомлення не відправляємо в чат (тільки повідомлення гравців)
         
         io.to(room.id).emit('test_result', {
             playerId: player.id,
@@ -1819,15 +1811,27 @@ io.on('connection', (socket) => {
                      cellNumber: data.cellNumber
                  };
                  
-                 // Відправляємо show_event_prompt для всіх типів подій
-                 io.to(room.id).emit('show_event_prompt', {
-                     eventType: cellData.type,
-                     eventData: { ...cellData, cellNumber: data.cellNumber },
-                     playerId: currentPlayer.id,
-                     playerName: currentPlayer.name,
-                     activePlayerId: currentPlayer.id,
-                     cellNumber: data.cellNumber
-                 });
+                 // Для alternative-path показуємо тільки активному гравцю
+                 if (cellData.type === 'alternative-path') {
+                     socket.emit('show_event_prompt', {
+                         eventType: cellData.type,
+                         eventData: { ...cellData, cellNumber: data.cellNumber },
+                         playerId: currentPlayer.id,
+                         playerName: currentPlayer.name,
+                         activePlayerId: currentPlayer.id,
+                         cellNumber: data.cellNumber
+                     });
+                 } else {
+                     // Для інших подій відправляємо всім
+                     io.to(room.id).emit('show_event_prompt', {
+                         eventType: cellData.type,
+                         eventData: { ...cellData, cellNumber: data.cellNumber },
+                         playerId: currentPlayer.id,
+                         playerName: currentPlayer.name,
+                         activePlayerId: currentPlayer.id,
+                         cellNumber: data.cellNumber
+                     });
+                 }
                  
                  // Відправляємо сигнал хосту, щоб він надіслав player_on_event
                  // Це дозволить запустити подію через стандартний механізм
@@ -1863,7 +1867,7 @@ io.on('connection', (socket) => {
                     const newHost = room.players[0];
                     const globalNewHost = players.get(newHost.id);
                     if (globalNewHost) globalNewHost.isHost = true;
-                    io.to(room.id).emit('chat_message', { type: 'system', message: `👑 Новий хост: ${newHost.name}` });
+                    // Системні повідомлення не відправляємо в чат (тільки повідомлення гравців)
                 }
                 
                 // Оновлюємо стан гри (наприклад, якщо це був поточний гравець)
@@ -1906,10 +1910,7 @@ io.on('connection', (socket) => {
                     position: winner.finalPosition 
                 });
                 
-                io.to(room.id).emit('chat_message', {
-                    type: 'system',
-                    message: `🏆 ${winner.name} здобув перемогу та зайняв ${winner.finalPosition} місце!`
-                });
+                // Системні повідомлення не відправляємо в чат (тільки повідомлення гравців)
 
                 // Перевіряємо, чи залишилося більше 1 активного гравця
                 const activePlayers = room.gameData.players.filter(p => !p.hasWon && !p.hasLost);

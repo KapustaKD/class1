@@ -683,6 +683,40 @@ body {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
 }
 
+/* Білий текст для Хронік Неіснуючого Вояжу (Shvalb) */
+#quest-modal-content[style*="shvalb"] h3,
+#quest-modal-content[style*="shvalb"] p,
+#quest-modal-content[style*="shvalb"] div,
+#quest-modal-content[style*="shvalb"] span,
+#quest-modal-content[style*="shvalb"] button,
+#quest-modal-content[style*="shvalb"] h4,
+#quest-modal-content[style*="shvalb"] * {
+    color: white !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Білий текст для Шинку */
+#quest-modal-content[style*="shinok"] h3,
+#quest-modal-content[style*="shinok"] p,
+#quest-modal-content[style*="shinok"] div,
+#quest-modal-content[style*="shinok"] span,
+#quest-modal-content[style*="shinok"] button,
+#quest-modal-content[style*="shinok"] * {
+    color: white !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Білий текст для Казино */
+#quest-modal-content[style*="casino"] h3,
+#quest-modal-content[style*="casino"] p,
+#quest-modal-content[style*="casino"] div,
+#quest-modal-content[style*="casino"] span,
+#quest-modal-content[style*="casino"] button,
+#quest-modal-content[style*="casino"] * {
+    color: white !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
 /* Білий текст для Шинку */
 #quest-modal-content[style*="shinok"] h3,
 #quest-modal-content[style*="shinok"] p,

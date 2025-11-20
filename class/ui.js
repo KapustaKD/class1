@@ -75,13 +75,13 @@ class GameUI {
                 existingVideo.remove();
             }
             
-            // Додаємо клас для winer модального вікна
-            if (backgroundImageUrl && (backgroundImageUrl.includes('winer') || scaleUp || noDarken)) {
+            // Додаємо клас для winer модального вікна (також для 101.png)
+            if (backgroundImageUrl && (backgroundImageUrl.includes('winer') || backgroundImageUrl.includes('101.png') || scaleUp || noDarken)) {
                 modalContent.classList.add('winer-modal', 'winer-modal-content');
-                if (scaleUp) {
+                if (scaleUp || backgroundImageUrl.includes('101.png')) {
                     modalContent.classList.add('winer-modal-scaled');
                 }
-                if (noDarken) {
+                if (noDarken || backgroundImageUrl.includes('101.png')) {
                     modalContent.style.filter = 'none';
                 }
                 // Додаємо клас до батьківського контейнера та body/html

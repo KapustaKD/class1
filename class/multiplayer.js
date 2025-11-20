@@ -764,7 +764,7 @@ class MultiplayerGame extends EducationalPathGame {
             }
         });
         
-        this.socket.on('player_reincarnated', (data) => {
+        this.socket.on('player_reincarnated', async (data) => {
             console.log('Реінкарнація гравця:', data);
             
             // Знаходимо гравця в локальному масиві
@@ -772,13 +772,21 @@ class MultiplayerGame extends EducationalPathGame {
             if (player) {
                 // Оновлюємо клас гравця та очки
                 player.class = data.newClass;
-                player.points += data.bonusPoints;
+                player.points = data.newPoints;
+                
+                // Анімуємо переміщення з межі епохи на початок нової епохи
+                if (data.oldPosition !== undefined && data.newPosition !== undefined) {
+                    await this.animatePawnMovement(player, data.oldPosition, data.newPosition, 1);
+                }
+                
+                // Оновлюємо позицію гравця
+                player.position = data.newPosition;
                 
                 // Оновлюємо інформацію про гравця
                 this.updatePlayerInfo();
                 this.updateLeaderboard();
                 
-                console.log(`${player.name} реінкарнувався в епоху ${data.newEpoch} як ${data.newClass.name}`);
+                console.log(`${player.name} реінкарнувався і перемістився на клітинку ${data.newPosition} як ${data.newClass.name}`);
             }
         });
         
@@ -1823,6 +1831,13 @@ class MultiplayerGame extends EducationalPathGame {
                 player.class = data.newClass;
             }
             
+            // Якщо гравець зупинився на межі епохи, не обробляємо події - вони будуть оброблені після переродження
+            if (data.stopAtEpochBoundary) {
+                console.log('Гравець зупинився на межі епохи, очікуємо на переродження');
+                // Вікно переродження вже показано сервером через early_reincarnation_event
+                return;
+            }
+            
             // Після завершення анімації перевіряємо події
             if (data.eventInfo && data.eventInfo.hasEvent) {
                 console.log('Подія виявлена після завершення анімації:', data.eventInfo);
@@ -2640,13 +2655,24 @@ class MultiplayerGame extends EducationalPathGame {
         backdrop.appendChild(content);
         document.body.appendChild(backdrop);
 
-        // Закриття
+        // Закриття та обробка погодження
             setTimeout(() => {
                 const closeBtn = document.getElementById('close-class-modal-btn');
                 if (closeBtn) {
                     closeBtn.addEventListener('click', () => {
-                    const el = document.getElementById('reincarnation-backdrop-v2');
-                    if (el) el.remove();
+                        const el = document.getElementById('reincarnation-backdrop-v2');
+                        if (el) el.remove();
+                        
+                        // Якщо це переродження на межі епохи (early_reincarnation_event), відправляємо подію на сервер
+                        if (earlyReincarnationData && earlyReincarnationData.eventData && earlyReincarnationData.playerId === this.playerId) {
+                            console.log('Гравець погодився на переродження на межі епохи');
+                            this.socket.emit('player_on_event', {
+                                roomId: this.roomId,
+                                eventType: 'epoch_reincarnation',
+                                eventData: earlyReincarnationData.eventData,
+                                cellNumber: earlyReincarnationData.cellNumber
+                            });
+                        }
                     });
                 }
         }, 50);

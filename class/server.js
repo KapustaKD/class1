@@ -8,11 +8,29 @@ function passTurnToNextPlayer(room) {
     // Переходимо до наступного гравця
     console.log('Старий currentPlayerIndex:', room.gameData.currentPlayerIndex);
     
+    // ВАЖЛИВО: Очищаємо currentEventPlayerId перед передачею ходу
+    room.currentEventPlayerId = null;
+    room.currentEventData = null;
+    
     // Визначаємо початок кола, якщо ще не визначено
     if (room.roundStartPlayerIndex === undefined) {
         room.roundStartPlayerIndex = room.gameData.currentPlayerIndex;
         // Ініціалізуємо лічильник використань бафів
         room.playersBuffUsedThisRound = {};
+    }
+    
+    // ВАЖЛИВО: Перевірка на подвійний/потрійний хід
+    // Зберігаємо історію ходів для перевірки
+    if (!room.turnHistory) room.turnHistory = [];
+    const lastThreeTurns = room.turnHistory.slice(-2); // Останні 2 ходи (разом з поточним буде 3)
+    const currentPlayerId = room.gameData.players[room.gameData.currentPlayerIndex]?.id;
+    
+    // Перевіряємо, чи поточний гравець ходив останні 2 рази
+    if (lastThreeTurns.length >= 2 && lastThreeTurns.every(turn => turn === currentPlayerId)) {
+        console.warn(`⚠️ Гравець ${currentPlayerId} намагається ходити третій раз підряд! Пропускаємо його.`);
+        // Пропускаємо цього гравця і переходимо до наступного
+        room.gameData.currentPlayerIndex = (room.gameData.currentPlayerIndex + 1) % room.gameData.players.length;
+        room.currentPlayerIndex = room.gameData.currentPlayerIndex;
     }
     
     let nextPlayerFound = false;
@@ -67,6 +85,14 @@ function passTurnToNextPlayer(room) {
         // 3. Знайшли активного гравця без пропуску ходу
         nextPlayerFound = true;
         console.log('Наступний гравець:', nextPlayer.name, 'ID:', nextPlayer.id);
+        
+        // Додаємо хід в історію
+        if (!room.turnHistory) room.turnHistory = [];
+        room.turnHistory.push(nextPlayer.id);
+        // Обмежуємо історію останніми 10 ходами
+        if (room.turnHistory.length > 10) {
+            room.turnHistory = room.turnHistory.slice(-10);
+        }
         
         io.to(room.id).emit('turn_update', {
             currentPlayerIndex: room.gameData.currentPlayerIndex,
@@ -1180,6 +1206,9 @@ io.on('connection', (socket) => {
             });
             
             io.to(room.id).emit('game_state_update', room.gameData);
+            // ВАЖЛИВО: Очищаємо currentEventPlayerId перед передачею ходу
+            room.currentEventPlayerId = null;
+            room.currentEventData = null;
             passTurnToNextPlayer(room);
         } else {
             socket.emit('show_event_prompt', {
@@ -1232,6 +1261,8 @@ io.on('connection', (socket) => {
             } else {
                 resultMessage = `${player.name} відмовився від переходу між епохами.`;
             }
+            // ВАЖЛИВО: Передача ходу після реінкарнації
+            shouldContinue = true;
         } else if (data.eventType === 'alternative-path') {
             if (data.choice === 'yes') {
                 if (player.points < data.eventData.cost) {
@@ -1325,6 +1356,7 @@ io.on('connection', (socket) => {
             shouldContinue = false;
         }
         
+        // ВАЖЛИВО: Очищаємо currentEventPlayerId перед передачею ходу
         room.currentEventPlayerId = null;
         room.currentEventData = null;
         
@@ -1445,7 +1477,16 @@ io.on('connection', (socket) => {
                 gameState.currentRound = currentRound + 1;
                 if (!gameState.rounds[gameState.currentRound]) gameState.rounds[gameState.currentRound] = {board: Array(9).fill(null), winner: null, currentPlayer: null};
                 gameState.gameState = Array(9).fill(null);
+                // ВАЖЛИВО: Встановлюємо початкового гравця для нового раунду
                 gameState.currentPlayer = gameState.players[0];
+                gameState.rounds[gameState.currentRound].currentPlayer = gameState.currentPlayer;
+                // Відправляємо оновлення стану для нового раунду
+                io.to(room.id).emit('tic_tac_toe_move_update', {
+                    gameState: room.tictactoeState,
+                    winner: null,
+                    currentRound: gameState.currentRound,
+                    newRound: true
+                });
             }
         } else if (!roundBoard.includes(null)) {
             gameState.rounds[currentRound].winner = null;
@@ -1462,7 +1503,16 @@ io.on('connection', (socket) => {
             } else {
                 if (!gameState.rounds[gameState.currentRound]) gameState.rounds[gameState.currentRound] = {board: Array(9).fill(null), winner: null, currentPlayer: null};
                 gameState.gameState = Array(9).fill(null);
+                // ВАЖЛИВО: Встановлюємо початкового гравця для нового раунду
                 gameState.currentPlayer = gameState.players[0];
+                gameState.rounds[gameState.currentRound].currentPlayer = gameState.currentPlayer;
+                // Відправляємо оновлення стану для нового раунду
+                io.to(room.id).emit('tic_tac_toe_move_update', {
+                    gameState: room.tictactoeState,
+                    winner: null,
+                    currentRound: gameState.currentRound,
+                    newRound: true
+                });
             }
         } else {
             gameState.currentPlayer = gameState.players.find(p => p !== player.id);
@@ -2424,6 +2474,9 @@ io.on('connection', (socket) => {
 
             io.to(room.id).emit('game_state_update', room.gameData);
 
+            // ВАЖЛИВО: Очищаємо currentEventPlayerId перед передачею ходу
+            room.currentEventPlayerId = null;
+            room.currentEventData = null;
             room.madLibsState = null;
             passTurnToNextPlayer(room); // ВИПРАВЛЕННЯ: Передача ходу після завершення гри
         }

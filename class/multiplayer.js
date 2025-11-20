@@ -4803,6 +4803,23 @@ class MultiplayerGame extends EducationalPathGame {
         const board = document.getElementById('tic-tac-toe-board') || document.getElementById('tic-tac-toe-board-view');
         if (!board) return;
         
+        // Якщо це новий раунд, очищаємо дошку та переініціалізуємо обробники
+        if (data.newRound) {
+            const cells = board.querySelectorAll('.tic-tac-toe-cell');
+            cells.forEach((cell, index) => {
+                cell.innerHTML = '';
+                cell.classList.remove('x', 'o', 'disabled');
+                cell.style.cursor = '';
+                // Переініціалізуємо обробники кліків
+                cell.onclick = null;
+                cell.addEventListener('click', () => {
+                    if (gameState.currentPlayer === this.playerId && !cell.classList.contains('disabled')) {
+                        this.makeTicTacToeMove(index);
+                    }
+                });
+            });
+        }
+        
         const cells = board.querySelectorAll('.tic-tac-toe-cell');
         cells.forEach((cell, index) => {
             const value = roundBoard[index];
@@ -4815,9 +4832,11 @@ class MultiplayerGame extends EducationalPathGame {
                 // Блокуємо клітинку якщо вона зайнята
                 cell.classList.add('disabled');
             } else {
-                // Очищаємо клітинку
-                cell.innerHTML = '';
-                cell.classList.remove('x', 'o', 'disabled');
+                // Очищаємо клітинку тільки якщо вона не була зайнята
+                if (!cell.classList.contains('disabled')) {
+                    cell.innerHTML = '';
+                    cell.classList.remove('x', 'o');
+                }
             }
         });
         
@@ -4826,8 +4845,11 @@ class MultiplayerGame extends EducationalPathGame {
             const winnerName = gameState.playerNames && gameState.players.includes(data.winner)
                 ? gameState.playerNames[gameState.players.indexOf(data.winner)]
                 : 'Гравець';
-            this.updateTicTacToeStatus(`Гравець ${winnerName} переміг!`);
-            this.disableTicTacToeBoard();
+            this.updateTicTacToeStatus(`Гравець ${winnerName} переміг раунд ${currentRound + 1}!`);
+            // Не блокуємо дошку, якщо це не останній раунд
+            if (currentRound >= 2 || !gameState.gameActive) {
+                this.disableTicTacToeBoard();
+            }
         } else if (!gameState.gameActive) {
             this.updateTicTacToeStatus('Гра завершена!');
             this.disableTicTacToeBoard();
@@ -4836,14 +4858,26 @@ class MultiplayerGame extends EducationalPathGame {
             const currentPlayerName = gameState.playerNames && gameState.players.includes(gameState.currentPlayer)
                 ? gameState.playerNames[gameState.players.indexOf(gameState.currentPlayer)]
                 : 'Гравець';
-            this.updateTicTacToeStatus(isMyTurn ? 'Ваш хід!' : `Хід гравця: ${currentPlayerName}`);
+            const roundInfo = gameState.rounds && gameState.rounds.length > 1 
+                ? ` (Раунд ${currentRound + 1}/3)` 
+                : '';
+            this.updateTicTacToeStatus(isMyTurn ? `Ваш хід!${roundInfo}` : `Хід гравця: ${currentPlayerName}${roundInfo}`);
             
             // Блокуємо/розблоковуємо клітинки залежно від черги
-            cells.forEach(cell => {
-                if (isMyTurn && !cell.classList.contains('disabled')) {
-                    cell.style.cursor = 'pointer';
+            cells.forEach((cell, index) => {
+                // Видаляємо старі обробники
+                const newCell = cell.cloneNode(true);
+                cell.parentNode.replaceChild(newCell, cell);
+                
+                if (isMyTurn && !roundBoard[index]) {
+                    newCell.style.cursor = 'pointer';
+                    newCell.addEventListener('click', () => {
+                        if (gameState.currentPlayer === this.playerId && !newCell.classList.contains('disabled')) {
+                            this.makeTicTacToeMove(index);
+                        }
+                    });
                 } else {
-                    cell.style.cursor = 'not-allowed';
+                    newCell.style.cursor = 'not-allowed';
                 }
             });
         }

@@ -2128,8 +2128,22 @@ class MultiplayerGame extends EducationalPathGame {
             backgroundImage = 'image/modal_window/amfiteatr.jpg';
         } else if (data.eventType === 'casino') {
             backgroundImage = 'image/modal_window/casino.jpg';
+            // Додаємо затемнення для казино
+            setTimeout(() => {
+                const modal = document.getElementById('quest-modal-content');
+                if (modal) {
+                    modal.style.filter = 'brightness(0.6)';
+                }
+            }, 100);
         } else if (data.eventType === 'tavern') {
             backgroundImage = 'image/modal_window/shinok.jpg';
+            // Додаємо затемнення для шинку
+            setTimeout(() => {
+                const modal = document.getElementById('quest-modal-content');
+                if (modal) {
+                    modal.style.filter = 'brightness(0.6)';
+                }
+            }, 100);
         }
         
         // Показуємо модальне вікно з картинкою, якщо є
@@ -2372,7 +2386,32 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     handleRemoteGameEnd(data) {
-        this.endGame(data.winner, data.message);
+        // Перевіряємо, чи гравець досяг 101 клітинки
+        const winner = data.winner;
+        if (winner && winner.position === 101) {
+            // Показуємо спеціальне вікно перемоги з картинками
+            const modalContent = `
+                <h2 class="text-4xl font-bold text-yellow-400 mb-6">🎉 Перемога! 🎉</h2>
+                <p class="text-xl mb-4">${data.reason || `${winner.name} успішно завершив Освітній Шлях!`}</p>
+                <div class="space-y-4 mb-6">
+                    <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">🥇</span>
+                            <span class="text-xl font-semibold" style="color: ${winner.color || '#fff'};">${winner.name}</span>
+                        </div>
+                        <span class="text-lg text-yellow-300">${winner.points || 0} ОО</span>
+                    </div>
+                </div>
+            `;
+            
+            // Використовуємо winer.jpg як фонове зображення
+            this.showQuestModal('Перемога!', modalContent, [
+                { text: 'Закрити', callback: () => this.closeMiniGame() }
+            ], 'image/modal_window/winer.jpg');
+        } else {
+            // Для інших випадків використовуємо стандартну обробку
+            this.endGame(data.winner, data.message);
+        }
     }
     
     // Перевизначення методів квестів для мультиплеєру
@@ -3240,6 +3279,9 @@ class MultiplayerGame extends EducationalPathGame {
                     <div class="glassmorphism-actions">
                         ${isParticipant ? `
                             <div class="mb-4">
+                                <div class="mb-2">
+                                    <div id="timer" class="text-2xl font-bold text-red-500">30</div>
+                                </div>
                                 <textarea id="text-input" class="w-full h-32 p-3 border-2 border-gray-400 rounded bg-gray-800/70 border-gray-500/50 text-white" placeholder="Введіть якомога більше якостей гарного педагога, розділяючи їх комами..."></textarea>
                             </div>
                             <button id="submit-result-btn" class="glassmorphism-btn-primary w-full" disabled>
@@ -3292,7 +3334,9 @@ class MultiplayerGame extends EducationalPathGame {
         // Додаємо обробники подій
         if (isParticipant) {
             setTimeout(() => {
-            this.startTimedTextQuestTimer(data.gameState.timer);
+            // Для педагобота завжди 30 секунд
+            const timerSeconds = data.gameState?.timer || 30;
+            this.startTimedTextQuestTimer(timerSeconds);
             }, 100);
         }
     }
@@ -3409,12 +3453,12 @@ class MultiplayerGame extends EducationalPathGame {
         const isMyTurn = data.activePlayerId === this.playerId;
         
         let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Хроніки Неіснуючого Вояжу</h3>
-            <p class="mb-4">${data.gameState.gameData.description}</p>
+            <h3 class="text-2xl font-bold mb-4" style="color: #000;">Хроніки Неіснуючого Вояжу</h3>
+            <p class="mb-4" style="color: #000;">${data.gameState.gameData.description}</p>
             <div class="mb-4">
-                <h4 class="font-bold">Історія:</h4>
+                <h4 class="font-bold" style="color: #000;">Історія:</h4>
                 <div id="story-content" class="bg-gray-100 p-3 rounded min-h-20">
-                    <p>${data.gameState.story.map(s => s.sentence).join(' ')}</p>
+                    <p style="color: #000;">${data.gameState.story.map(s => s.sentence).join(' ')}</p>
                 </div>
             </div>
         `;
@@ -3529,11 +3573,11 @@ class MultiplayerGame extends EducationalPathGame {
         const isMyTurn = data.currentPlayer.id === this.playerId;
         
         let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Хроніки Неіснуючого Вояжу</h3>
+            <h3 class="text-2xl font-bold mb-4" style="color: #000;">Хроніки Неіснуючого Вояжу</h3>
             <div class="mb-4">
-                <h4 class="font-bold">Історія:</h4>
+                <h4 class="font-bold" style="color: #000;">Історія:</h4>
                 <div id="story-content" class="bg-gray-100 p-3 rounded min-h-20">
-                    <p>${data.gameState.story.map(s => s.sentence).join(' ')}</p>
+                    <p style="color: #000;">${data.gameState.story.map(s => s.sentence).join(' ')}</p>
                 </div>
             </div>
         `;
@@ -3557,7 +3601,7 @@ class MultiplayerGame extends EducationalPathGame {
             `;
         } else {
             modalContent += `
-                <p class="text-center text-gray-600">Черга гравця ${data.currentPlayer.name}</p>
+                <p class="text-center" style="color: #000;">Черга гравця ${data.currentPlayer.name}</p>
             `;
         }
         
@@ -3573,20 +3617,18 @@ class MultiplayerGame extends EducationalPathGame {
     
     endCollaborativeStory(data) {
         let modalContent = `
-            <h3 class="text-2xl font-bold mb-4">Хроніки Неіснуючого Вояжу завершено!</h3>
-            <p class="mb-4">${data.resultMessage}</p>
+            <h3 class="text-2xl font-bold mb-4" style="color: #000;">Хроніки Неіснуючого Вояжу завершено!</h3>
+            <p class="mb-4" style="color: #000;">${data.resultMessage}</p>
             <div class="mb-4">
-                <h4 class="font-bold">Фінальна історія:</h4>
+                <h4 class="font-bold" style="color: #000;">Фінальна історія:</h4>
                 <div class="bg-gray-100 p-3 rounded">
-                    <p>${data.story.map(s => s.sentence).join(' ')}</p>
+                    <p style="color: #000;">${data.story.map(s => s.sentence).join(' ')}</p>
                 </div>
             </div>
         `;
         
-        // Отримуємо URL картинки Shvalb з Cloudinary
-        const shvalbImageUrl = typeof window !== 'undefined' && window.cloudinaryConfig 
-            ? window.cloudinaryConfig.getImageUrl('shvalb') 
-            : null;
+        // Використовуємо локальну картинку Shvalb
+        const shvalbImageUrl = 'image/modal_window/shvalb.jpg';
         
         this.showQuestModal('Творчий квест', modalContent, [
             { text: 'Закрити', callback: () => this.closeMiniGame() }
@@ -4040,15 +4082,13 @@ class MultiplayerGame extends EducationalPathGame {
             }
         }
         
-        // Застосовуємо filter для event_2 після створення модального вікна
-        if (isEvent2) {
-            setTimeout(() => {
-                const questModal = document.getElementById('quest-modal-content');
-                if (questModal) {
-                    questModal.style.filter = 'brightness(1.3)';
-                }
-            }, 100);
-        }
+        // Застосовуємо filter для всіх вебновел - робимо темнішими
+        setTimeout(() => {
+            const questModal = document.getElementById('quest-modal-content');
+            if (questModal && backgroundImage) {
+                questModal.style.filter = 'brightness(0.7)';
+            }
+        }, 100);
     }
     
     makeWebNovellaChoice(choiceIndex) {
@@ -4064,9 +4104,12 @@ class MultiplayerGame extends EducationalPathGame {
             <p class="mb-4">${data.resultMessage}</p>
         `;
         
+        // Використовуємо останнє фонове зображення вебновели
+        const backgroundImage = this.currentWebNovellaBackground || 'image/modal_window/event_1.jpg';
+        
         this.showQuestModal('Вебновела', modalContent, [
             { text: 'Закрити', callback: () => this.closeMiniGame() }
-        ]);
+        ], backgroundImage);
     }
     
     // Методи для роботи з аватарами

@@ -661,6 +661,28 @@ body {
     z-index: 1;
 }
 
+/* Білий текст для амфітеатру - застосовується коли є фонове зображення амфітеатру */
+#quest-modal-content[style*="amfiteatr"] h3,
+#quest-modal-content[style*="amfiteatr"] p,
+#quest-modal-content[style*="amfiteatr"] div,
+#quest-modal-content[style*="amfiteatr"] span,
+#quest-modal-content[style*="amfiteatr"] button,
+#quest-modal-content[style*="amfiteatr"] * {
+    color: white !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Альтернативний спосіб через data-атрибут (якщо додається) */
+#quest-modal-content[data-event-type="amphitheater"] h3,
+#quest-modal-content[data-event-type="amphitheater"] p,
+#quest-modal-content[data-event-type="amphitheater"] div,
+#quest-modal-content[data-event-type="amphitheater"] span,
+#quest-modal-content[data-event-type="amphitheater"] button,
+#quest-modal-content[data-event-type="amphitheater"] * {
+    color: white !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
 /* Стилі для вкладок */
 .tab-btn {
     background-color: rgba(255, 255, 255, 0.1);
@@ -1456,7 +1478,7 @@ body.glassmorphism-bg {
     color: #e2e8f0; /* Light gray text (Tailwind gray-200) */
     font-family: 'Montserrat', sans-serif;
     height: calc(100vh - 2rem); /* Match container height */
-    max-height: 822px;
+    max-height: 90vh;
     border-radius: 1rem;
     padding: 1rem;
     display: flex;

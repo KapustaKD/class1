@@ -1286,6 +1286,9 @@ io.on('connection', (socket) => {
             if (data.choice === 'pay') {
                 if (roomPlayer.points >= cost) {
                     roomPlayer.points -= cost;
+                    roomPlayer.position = 101;
+                    player.position = 101;
+                    io.to(room.id).emit('player_moved', { playerId: roomPlayer.id, position: 101 });
                     roomPlayer.hasWon = true;
                     resultMessage = `🤖 ${player.name} відкупився від ШІ за ${cost} ОО та успішно завершив Освітній Шлях! Перемога!`;
                     room.gameState = 'finished';

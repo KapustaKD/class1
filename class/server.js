@@ -898,6 +898,7 @@ io.on('connection', (socket) => {
             playerName: currentPlayer.name,
             roll,
             move,
+            oldPosition: oldPosition,
             newPosition: currentPlayer.position,
             newPoints: currentPlayer.points,
             newClass: currentPlayer.class,
@@ -1279,43 +1280,62 @@ io.on('connection', (socket) => {
                         let targetPosition = data.eventData.target;
                         const currentPosition = roomPlayer.position;
                         
-                        // Fallback logic - жорстко встановлюємо target для конкретних клітинок
-                        if (currentPosition === 5) targetPosition = 11;
-                        else if (currentPosition === 14) targetPosition = 18;
-                        else if (currentPosition === 26) targetPosition = 33;
-                        else if (currentPosition === 46) targetPosition = 57;
-                        else if (currentPosition === 80) targetPosition = 91;
-                        // Якщо target не встановлено, використовуємо з eventData
-                        else if (!targetPosition && data.eventData.target) {
-                            targetPosition = data.eventData.target;
-                        }
-                        
-                        // Якщо все ще немає target, беремо з specialCells
-                        if (!targetPosition) {
-                            const specialCells = require('./specialCells.js');
-                            const cellData = specialCells[currentPosition];
-                            if (cellData && cellData.target) {
-                                targetPosition = cellData.target;
+                        // Обхідний шлях 5-11 (копія логіки з 46-57)
+                        if (currentPosition === 5) {
+                            targetPosition = 11;
+                            if (roomPlayer) {
+                                roomPlayer.position = targetPosition;
+                                roomPlayer.points = Math.max(0, roomPlayer.points - data.eventData.cost);
+                                player.position = targetPosition;
+                                player.points = Math.max(0, player.points - data.eventData.cost);
+                                // Оновлюємо позицію фішки на клієнті
+                                io.to(room.id).emit('player_moved', {
+                                    playerId: player.id,
+                                    newPosition: targetPosition,
+                                    position: targetPosition,
+                                    newPoints: roomPlayer.points
+                                });
+                                console.log(`Гравець ${player.name} переміщено з клітинки ${currentPosition} на клітинку ${targetPosition} через альтернативний шлях`);
+                                resultMessage = `${player.name} успішно скоротив шлях! Переміщено на клітинку ${targetPosition}, втрачено ${data.eventData.cost} ОО.`;
                             }
-                        }
-                        
-                        if (targetPosition) {
-                            roomPlayer.position = targetPosition;
-                            roomPlayer.points = Math.max(0, roomPlayer.points - data.eventData.cost);
-                            player.position = targetPosition;
-                            player.points = Math.max(0, player.points - data.eventData.cost);
-                            // Оновлюємо позицію фішки на клієнті
-                            io.to(room.id).emit('player_moved', {
-                                playerId: player.id,
-                                newPosition: targetPosition,
-                                position: targetPosition,
-                                newPoints: roomPlayer.points
-                            });
-                            console.log(`Гравець ${player.name} переміщено з клітинки ${currentPosition} на клітинку ${targetPosition} через альтернативний шлях`);
-                            resultMessage = `${player.name} успішно скоротив шлях! Переміщено на клітинку ${targetPosition}, втрачено ${data.eventData.cost} ОО.`;
                         } else {
-                            console.error(`Не вдалося визначити target для альтернативного шляху на клітинці ${currentPosition}`);
-                            resultMessage = `${player.name} не вдалося скористатися обхідною дорогою. ОО не списано.`;
+                            // Fallback logic - жорстко встановлюємо target для конкретних клітинок
+                            if (currentPosition === 14) targetPosition = 18;
+                            else if (currentPosition === 26) targetPosition = 33;
+                            else if (currentPosition === 46) targetPosition = 57;
+                            else if (currentPosition === 80) targetPosition = 91;
+                            // Якщо target не встановлено, використовуємо з eventData
+                            else if (!targetPosition && data.eventData.target) {
+                                targetPosition = data.eventData.target;
+                            }
+                            
+                            // Якщо все ще немає target, беремо з specialCells
+                            if (!targetPosition) {
+                                const specialCells = require('./specialCells.js');
+                                const cellData = specialCells[currentPosition];
+                                if (cellData && cellData.target) {
+                                    targetPosition = cellData.target;
+                                }
+                            }
+                            
+                            if (targetPosition) {
+                                roomPlayer.position = targetPosition;
+                                roomPlayer.points = Math.max(0, roomPlayer.points - data.eventData.cost);
+                                player.position = targetPosition;
+                                player.points = Math.max(0, player.points - data.eventData.cost);
+                                // Оновлюємо позицію фішки на клієнті
+                                io.to(room.id).emit('player_moved', {
+                                    playerId: player.id,
+                                    newPosition: targetPosition,
+                                    position: targetPosition,
+                                    newPoints: roomPlayer.points
+                                });
+                                console.log(`Гравець ${player.name} переміщено з клітинки ${currentPosition} на клітинку ${targetPosition} через альтернативний шлях`);
+                                resultMessage = `${player.name} успішно скоротив шлях! Переміщено на клітинку ${targetPosition}, втрачено ${data.eventData.cost} ОО.`;
+                            } else {
+                                console.error(`Не вдалося визначити target для альтернативного шляху на клітинці ${currentPosition}`);
+                                resultMessage = `${player.name} не вдалося скористатися обхідною дорогою. ОО не списано.`;
+                            }
                         }
                     }
                 } else {

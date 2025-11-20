@@ -943,12 +943,35 @@ class MultiplayerGame extends EducationalPathGame {
         this.playersContainer.innerHTML = '';
         
         players.forEach(player => {
+            // Формуємо рядок з ефектами
+            let effectsIcons = '';
+            if (player.effects) {
+                const effectIconsMap = {
+                    hateClone: '🐢',
+                    happinessCharm: '🚀',
+                    procrastination: '⏸️',
+                    pushBack: '⬅️',
+                    skipTurn: '⏸️'
+                };
+                const activeEffects = [];
+                for (const [effectType, icon] of Object.entries(effectIconsMap)) {
+                    if (player.effects[effectType] && player.effects[effectType] > 0) {
+                        activeEffects.push(icon);
+                    }
+                }
+                if (activeEffects.length > 0) {
+                    effectsIcons = ` <span class="effects-indicator" title="Активні ефекти">${activeEffects.join(' ')}</span>`;
+                }
+            }
+            
             const playerCard = document.createElement('div');
             playerCard.className = 'player-card';
             playerCard.innerHTML = `
                 <div class="flex items-center gap-2">
                     <img src="${player.avatarUrl || 'image/chips/avatar1.png'}" class="w-8 h-8 rounded-full border-2 border-gray-500">
-                    <div style="color: ${player.color};">${player.name}</div>
+                    <div style="color: ${player.color};">
+                        ${player.name}${effectsIcons}
+                    </div>
                 </div>
                 <div class="text-sm text-gray-400">${player.class?.name || 'Очікує...'}</div>
                 <div class="text-sm">${player.points || 0} ОО</div>
@@ -2164,6 +2187,11 @@ class MultiplayerGame extends EducationalPathGame {
         // Оновлюємо UI
         this.updatePlayerInfo();
         this.updateLeaderboard();
+        
+        // Оновлюємо стан кнопок бафів/дебафів, якщо це поточний гравець
+        if (data.playerId === this.playerId) {
+            this.updateBuffButtonsState();
+        }
     }
     
     // Обробка результату тестового завдання
@@ -2482,6 +2510,10 @@ class MultiplayerGame extends EducationalPathGame {
             // Якщо це середньовіччя (епоха 2), змінюємо текст на про чуму
             if (currentEpoch === 2 && earlyReincarnationData) {
                 reincarnationText = 'Вітаю! Вас вкусив енцифалітний кліщ і ви померли від бубонної чуми) Попереду чекає нове життя в новому часі з новою родиною та новою долею. Вчіться на своїх помилках і використовуйте засіб від комах!';
+            }
+            // Якщо це 20 століття (епоха 5), змінюємо текст на про скулшутінг
+            if (currentEpoch === 5 && earlyReincarnationData) {
+                reincarnationText = 'Вітаю! Ви стали жертвою скулшутінгу в Україні. Ваше життя обірвалося передчасно через насильство. Попереду чекає нове життя в новому часі з новою родиною та новою долею. Вчіться на помилках минулого та прагніть до миру!';
             }
             
             if (earlyReincarnationData) {

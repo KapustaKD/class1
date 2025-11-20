@@ -464,16 +464,16 @@ class MultiplayerGame extends EducationalPathGame {
         
         this.socket.on('player_joined', (data) => {
             this.updatePlayersList(data.players);
-            this.addChatMessage('system', `${data.player.name} приєднався до гри`);
+            // Системні повідомлення не додаємо в чат
         });
         
         this.socket.on('player_left', (data) => {
             this.updatePlayersList(data.players);
-            this.addChatMessage('system', `${data.player.name} покинув гру`);
+            // Системні повідомлення не додаємо в чат
         });
         
         this.socket.on('player_reconnected', (data) => {
-            this.addChatMessage('system', `${data.playerName} повернувся до гри`);
+            // Системні повідомлення не додаємо в чат
         });
         
         this.socket.on('joined_as_spectator', (data) => {
@@ -740,7 +740,7 @@ class MultiplayerGame extends EducationalPathGame {
                 }
             }
             
-            this.addChatMessage('system', message);
+            // Системні повідомлення не додаємо в чат
             
             if (showModal) {
                 this.showQuestModal(modalTitle, modalContent, [
@@ -2127,8 +2127,7 @@ class MultiplayerGame extends EducationalPathGame {
             );
         }
         
-        // Показуємо повідомлення всім
-        this.addChatMessage('system', data.resultMessage);
+        // Системні повідомлення не додаємо в чат (тільки повідомлення гравців)
         
         // Закриваємо модальне вікно для всіх гравців (якщо не показуємо нове)
         if (!backgroundImage) {
@@ -2290,7 +2289,7 @@ class MultiplayerGame extends EducationalPathGame {
     
     handleQuestVote(data) {
         // Обробка голосування в квестах
-        this.addChatMessage('system', `${data.player.name} проголосував за "${data.choice}"`);
+        // Системні повідомлення не додаємо в чат
     }
     
     // Показ тестового завдання в мультиплеєрі
@@ -4239,7 +4238,7 @@ class MultiplayerGame extends EducationalPathGame {
                 this.onlinePanel.classList.add('hidden');
                 
                 // Показуємо повідомлення
-                this.addChatMessage('system', 'Гра почалася! Перший хід за ' + this.players[this.currentPlayerIndex].name);
+                // Системні повідомлення не додаємо в чат
                 
                 // Фокусуємо камеру на старті
                 setTimeout(() => {

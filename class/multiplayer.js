@@ -397,8 +397,6 @@ class MultiplayerGame extends EducationalPathGame {
             console.log('Підключено до сервера, ID:', this.socket.id);
             this.updateConnectionStatus(true, 'Підключено');
             this.playerId = this.socket.id;
-            // Показуємо модальне вікно love одразу після отримання ID
-            this.showLoveModal();
         });
         
         this.socket.on('disconnect', () => {

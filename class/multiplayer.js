@@ -6124,10 +6124,10 @@ class MultiplayerGame extends EducationalPathGame {
         content.className = 'love-modal-content';
         content.style.cssText = `
             position: relative;
-            width: 50%;
-            height: 50%;
-            max-width: 800px;
-            max-height: 600px;
+            width: 125%;
+            height: 125%;
+            max-width: 2000px;
+            max-height: 1500px;
             background-image: url('image/modal_window/love.png');
             background-size: contain;
             background-position: center;

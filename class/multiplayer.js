@@ -2311,10 +2311,10 @@ class MultiplayerGame extends EducationalPathGame {
     }
     
     // Перевизначення showQuestModal для підтримки фонових зображень
-    showQuestModal(title, content, buttons = [], backgroundImageUrl = null) {
+    showQuestModal(title, content, buttons = [], backgroundImageUrl = null, noDarken = false, scaleUp = false) {
         // Якщо є window.gameUI, використовуємо його (підтримує backgroundImageUrl)
         if (window.gameUI && window.gameUI.showQuestModal) {
-            window.gameUI.showQuestModal(title, content, buttons, backgroundImageUrl);
+            window.gameUI.showQuestModal(title, content, buttons, backgroundImageUrl, noDarken, scaleUp);
         } else {
             // Fallback на базовий метод з game.js
             super.showQuestModal(title, typeof content === 'string' ? content : '', buttons, backgroundImageUrl);
@@ -2390,25 +2390,19 @@ class MultiplayerGame extends EducationalPathGame {
         // Перевіряємо, чи гравець досяг 101 клітинки
         const winner = data.winner;
         if (winner && winner.position === 101) {
-            // Показуємо спеціальне вікно перемоги з картинками
+            // Показуємо спеціальне вікно перемоги тільки з картинкою
             const modalContent = `
-                <h2 class="text-4xl font-bold text-yellow-400 mb-6">🎉 Перемога! 🎉</h2>
-                <p class="text-xl mb-4">${data.reason || `${winner.name} успішно завершив Освітній Шлях!`}</p>
-                <div class="space-y-4 mb-6">
-                    <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
-                        <div class="flex items-center gap-3">
-                            <span class="text-2xl">🥇</span>
-                            <span class="text-xl font-semibold" style="color: ${winner.color || '#fff'};">${winner.name}</span>
-                        </div>
-                        <span class="text-lg text-yellow-300">${winner.points || 0} ОО</span>
+                <div class="winer-modal-content" style="position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
+                    <div class="winer-text-overlay" style="width: 100%; background: rgba(0, 0, 0, 0.7); padding: 20px; text-align: center; margin-top: auto;">
+                        <p style="color: #fff; font-size: 24px; font-weight: bold; margin: 0;">Наливайко пишається тобою!</p>
                     </div>
                 </div>
             `;
             
-            // Використовуємо winer.jpg як фонове зображення
-            this.showQuestModal('Перемога!', modalContent, [
+            // Використовуємо winer.jpg як фонове зображення без затемнення
+            this.showQuestModal('', modalContent, [
                 { text: 'Закрити', callback: () => this.closeMiniGame() }
-            ], 'image/modal_window/winer.jpg');
+            ], 'image/modal_window/winer.jpg', true, true);
         } else {
             // Для інших випадків використовуємо стандартну обробку
             this.endGame(data.winner, data.message);

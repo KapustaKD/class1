@@ -127,6 +127,15 @@ class GameUI {
             modalContent.style.backgroundSize = 'cover';
             modalContent.style.backgroundPosition = 'center';
             modalContent.style.backgroundRepeat = 'no-repeat';
+            
+            // Додаємо data-атрибут для амфітеатру для CSS стилізації
+            if (backgroundImageUrl.includes('amfiteatr')) {
+                modalContent.setAttribute('data-event-type', 'amphitheater');
+            } else {
+                modalContent.removeAttribute('data-event-type');
+            }
+        } else {
+            modalContent.removeAttribute('data-event-type');
         }
         
         this.showModal('quest');
